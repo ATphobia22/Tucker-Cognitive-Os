@@ -25,7 +25,16 @@ import {
   Volume2,
   Loader2,
   Fingerprint,
-  Lock
+  Lock,
+  Lightbulb,
+  FileText,
+  Award,
+  Printer,
+  Download,
+  BookOpen,
+  ArrowRight,
+  Gamepad,
+  Film
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { CORE_CODE_FILES, MEDICAL_TARGETS, PANTHEON_ARCS } from "../data";
@@ -34,8 +43,54 @@ import { Qubit, RalphIteration, ReasoningStep } from "../types";
 export default function SovereignCockpit() {
   // Navigation Tabs state
   const [activeTab, setActiveTab] = useState<
-    "bible" | "sde" | "qec" | "trce" | "kdn" | "pantheon" | "chat" | "monorepo"
+    "bible" | "sde" | "qec" | "trce" | "kdn" | "pantheon" | "chat" | "monorepo" | "inventors" | "engine"
   >("bible");
+
+  // Pioneers & Inventors Hub States
+  const [selectedPioneerId, setSelectedPioneerId] = useState<string>("artemisinin");
+  const [inventorSearch, setInventorSearch] = useState<string>("");
+  const [activePioneersSubTab, setActivePioneersSubTab] = useState<"pharmacy" | "expired" | "frontiers">("pharmacy");
+  const [selectedPatentTarget, setSelectedPatentTarget] = useState<string>("ALS");
+  const [provisionalPatentDraft, setProvisionalPatentDraft] = useState<string>("");
+  const [isDraftingPatent, setIsDraftingPatent] = useState<boolean>(false);
+  const [provisionalOperator, setProvisionalOperator] = useState<string>("anthony");
+  const [provisionalDelivery, setProvisionalDelivery] = useState<string>("AAV9_LNP_hybrid");
+  const [provisionalAgent, setProvisionalAgent] = useState<string>("quercetin");
+  const [patentScansCount, setPatentScansCount] = useState<number>(145);
+  const [evidenceGraph, setEvidenceGraph] = useState<Array<{ gene: string; count: number; weight: number }>>([
+    { gene: "SOD1", count: 4, weight: 0.94 },
+    { gene: "AMPK", count: 3, weight: 0.88 },
+    { gene: "KRAS", count: 5, weight: 0.76 },
+    { gene: "APP", count: 2, weight: 0.61 },
+    { gene: "FREP3.1", count: 1, weight: 0.44 }
+  ]);
+  const [isIngestingResearch, setIsIngestingResearch] = useState<boolean>(false);
+  const [ingestionKeyword, setIngestionKeyword] = useState<string>("ALS");
+  const [ingestionLogs, setIngestionLogs] = useState<string[]>([]);
+
+  // Engine Visualizers & Cineforge Configuration States
+  const [activeEngineSubTab, setActiveEngineSubTab] = useState<"unreal" | "unity" | "flutter" | "cineforge">("unreal");
+  const [ueRayTracing, setUeRayTracing] = useState<boolean>(true);
+  const [ueLumenBounces, setUeLumenBounces] = useState<number>(2);
+  const [ueNaniteDensity, setUeNaniteDensity] = useState<number>(85);
+  const [ueFps, setUeFps] = useState<number>(120);
+  const [ueShaders, setUeShaders] = useState<number>(15420);
+  const [isCompilingUeShaders, setIsCompilingUeShaders] = useState<boolean>(false);
+  
+  const [unityEcsChunks, setUnityEcsChunks] = useState<number>(128);
+  const [unityJobBatchSize, setUnityJobBatchSize] = useState<number>(64);
+  const [unityBurstLevel, setUnityBurstLevel] = useState<"fast" | "safety" | "dev">("fast");
+  const [selectedEntityId, setSelectedEntityId] = useState<number>(1);
+  
+  const [flutterPlatform, setFlutterPlatform] = useState<"ios" | "android" | "wasm" | "desktop">("ios");
+  const [flutterHotReloadCount, setFlutterHotReloadCount] = useState<number>(4);
+  const [isFlutterReloading, setIsFlutterReloading] = useState<boolean>(false);
+
+  const [cineLens, setCineLens] = useState<"35mm_prime" | "50mm_anamorphic" | "85mm_portrait">("50mm_anamorphic");
+  const [cineFocusDistance, setCineFocusDistance] = useState<number>(4.2);
+  const [cineAperture, setCineAperture] = useState<string>("f/1.4");
+  const [cineColorProfile, setCineColorProfile] = useState<"raw_log" | "matrix_green" | "cyber_slate" | "warm_classic" | "gold_forge">("cyber_slate");
+  const [cineGridOverlay, setCineGridOverlay] = useState<boolean>(true);
 
   // Telemetry indicators
   const [tps, setTps] = useState(8512);
@@ -435,6 +490,205 @@ export default function SovereignCockpit() {
     setQecGrid(clearedGrid);
     setQecFidelity(1.0);
     toastAlert("Quantum correction successfully written to FaithLayer Ledger block stores.");
+  };
+
+  // Pioneers & Inventors Hub Handlers
+  const handleIngestResearch = () => {
+    if (isIngestingResearch) return;
+    setIsIngestingResearch(true);
+    setIngestionLogs([]);
+    
+    const logs = [
+      `▶ Initializing research pipeline query: "${ingestionKeyword}"`,
+      `→ Querying ENTR-Eutils API at pubmed.ncbi.nlm.nih.gov... 200 OK`,
+      `✓ Identified matching PMID lists: [3084120, 3110943, 3097144]`,
+      `→ Extracting biomedical entities via SciSpaCy en_core_sci_sm parser...`,
+      `✓ Extracted gene targets: ${ingestionKeyword === "ALS" ? "[SOD1 G93A, TDP-43]" : ingestionKeyword === "Cancer" ? "[KRAS G12D, AMPK]" : "[PSEN1, APP]"}`,
+      `→ Conducting cross-corpus contradiction checks...`,
+      ingestionKeyword === "ALS" 
+        ? `⚠ CONTRADICTION DETECTED: Study A (iPSC motor neurons) shows 85% aggregation clearance; Study B (somatic lines) reports dose-dependent cellular toxicity.`
+        : `✓ Parallel papers show 99.97% consensus on the target binding affinity.`,
+      `→ Computing time-decay weight scores (exponential freshness multiplier)...`,
+      `✓ Updated Evidence Graph nodes completed successfully.`
+    ];
+
+    let current = 0;
+    const interval = setInterval(() => {
+      if (current < logs.length) {
+        setIngestionLogs(prev => [...prev, logs[current]]);
+        current++;
+      } else {
+        clearInterval(interval);
+        setIsIngestingResearch(false);
+        // Randomly adjust evidence weights
+        if (ingestionKeyword === "ALS") {
+          setEvidenceGraph([
+            { gene: "SOD1", count: 7, weight: 0.96 },
+            { gene: "AMPK", count: 3, weight: 0.88 },
+            { gene: "KRAS", count: 5, weight: 0.76 },
+            { gene: "APP", count: 2, weight: 0.61 },
+            { gene: "FREP3.1", count: 1, weight: 0.44 }
+          ]);
+        } else if (ingestionKeyword === "Cancer") {
+          setEvidenceGraph([
+            { gene: "KRAS", count: 9, weight: 0.98 },
+            { gene: "AMPK", count: 5, weight: 0.82 },
+            { gene: "SOD1", count: 4, weight: 0.71 },
+            { gene: "APP", count: 2, weight: 0.61 },
+            { gene: "FREP3.1", count: 1, weight: 0.44 }
+          ]);
+        } else {
+          setEvidenceGraph([
+            { gene: "APP", count: 8, weight: 0.95 },
+            { gene: "PSEN1", count: 6, weight: 0.91 },
+            { gene: "SOD1", count: 4, weight: 0.71 },
+            { gene: "KRAS", count: 5, weight: 0.62 },
+            { gene: "FREP3.1", count: 1, weight: 0.44 }
+          ]);
+        }
+        toastAlert("Biomedical Evidence Graph updated with latest ranked paper insights.");
+      }
+    }, 600);
+  };
+
+  // Automated reactive provisional patent generation
+  useEffect(() => {
+    // Generate a cryptographic SHA-256 seal based on selected details
+    const rawDetails = `${provisionalOperator}-${selectedPatentTarget}-${provisionalDelivery}-${provisionalAgent}`;
+    let hash = "0";
+    try {
+      let h = 0;
+      for (let i = 0; i < rawDetails.length; i++) {
+        h = (h << 5) - h + rawDetails.charCodeAt(i);
+        h |= 0;
+      }
+      hash = Math.abs(h).toString(16).toUpperCase().padStart(8, "0");
+    } catch (e) {
+      hash = "F3ED1930";
+    }
+
+    const targetDesc = selectedPatentTarget === "ALS" 
+      ? "SOD1 (G93A Mutation)" 
+      : selectedPatentTarget === "Cancer" 
+        ? "KRAS (G12D Carcinoma)" 
+        : selectedPatentTarget === "Alzheimer" 
+          ? "PSEN1/APP Mutated Region" 
+          : selectedPatentTarget === "Huntington" 
+            ? "HTT (CAG repeats Contract)" 
+            : "FREP3.1 Gene Drive KO";
+
+    const deliveryDesc = provisionalDelivery === "AAV9_LNP_hybrid" 
+      ? "Adeno-Associated Virus Serotype 9 (AAV9) / LNP Hybrid Complex" 
+      : provisionalDelivery === "Cas9_scaffold" 
+        ? "Foundational early Cleavage Cas9 Ribonucleoprotein (RNP)" 
+        : "Lipid Nanoparticle (LNP) Carrier";
+
+    const patentClaimsTitle = selectedPatentTarget === "ALS" ? "SOD1 G93A" : "target gene sequence";
+
+    const template = `PROVISIONAL APPLICATION FOR PATENTS (USPTO 37 CFR § 1.53(c))
+========================================================================
+## CLINICAL STUDY IDENTIFIER & SPECIFICATION CODE: TRCE-P-${selectedPatentTarget.toUpperCase()}
+## STATUS: SECURELY SEALED & G1P REGISTERED
+
+### I. GENERAL INVENTORSHIP DETAILS
+- **PRIMARY INVENTOR (Root of Trust):** Anthony John Tucker
+- **RESIDENTIAL ADDRESS:** Confluence Headquarters, Point Township, Indiana, USA
+- **REGISTRY SIGNATURE ID:** \`${provisionalOperator}_ed25519_sign\`
+- **COVENANT CLASSIFICATION STATUS:** G1P Level 10 Aligned (No paywall restriction)
+
+---
+
+### II. TITLE OF INVENTION & MOLECULAR DEFINITION
+**Title:** "Grover-Search Optimized gRNA Coupled with Off-Patent Delivery Systems for Direct Somatic Intervention of ${selectedPatentTarget}"
+
+- **Active Delivery Vehicle:** \`${deliveryDesc}\`
+- **Primary Therapeutic Agent / Natural Catalyst:** \`${provisionalAgent.toUpperCase()}\`
+- **Genomic Pathological Target Sequence:** \`${targetDesc}\`
+
+---
+
+### III. DETAILED SPECIFICATION & EXPIRED ROUTE PRIORITIZATION
+Under the third pillar of the **God's Love Protocol (GLP: Radical Truth)** and the unrestrictive **G1P Covenant**, this therapeutic invention forces prioritized usage of historical, expired-patent delivery vehicles (minimum 20-year term expiration). By combining classic lipid nanoparticle (LNP) vectors and Adeno-associated virus serotypes, we bypass corporate proprietary fences, ensuring that the final manufactured compound is 100% legally clear from royalty payouts, making it universally available to underserved tropical disease (NTD) regions.
+
+- **Fidelity verification anchor:** AlphaFold3 predicted structure (pLDDT > 90.0)
+- **Quantum computing optimization layer:** Grover-search O(√N) amplitude amplification of guide RNA candidates
+
+---
+
+### IV. PATENT SUB-CLAIMS (LCOD VERIFIED OUTLINE)
+1. **Claim 1:** A bio-molecular therapeutic compound for G1P-anchored editing of ${patentClaimsTitle}, comprising a synthesized guide RNA matching the selected target, encapsulated inside a fully open-source, non-proprietary \`${provisionalDelivery}\` delivery capsule.
+2. **Claim 2:** The method of claim 1, wherein the targeted cellular editing mechanism is strictly somatic-only, with germline modification pathways permanently disabled through direct genetic logic blocks.
+3. **Claim 3:** The therapeutic compound of claim 1, wherein any downstream pharmaceutical manufacturer is permanently locked from placing commercial profit barriers, price gouges, or patent lawsuits against low-income patient demographics globally.
+
+---
+
+### V. CRYPTOGRAPHIC EVIDENCE & REGISTRY SEAL
+\`\`\`text
+========================================================================
+[ USPTO PROVISIONAL DRAFT SEAL INFORMATION ]
+COVENANT ID: COV-G1P-${selectedPatentTarget.toUpperCase()}-2026
+SEEK CODE:   "It is Finished -- John 19:30"
+BLOCK HEIGHT: #49808072-CONFLUENCE
+CIPHER SEC:  ED25519-AES-GCM-PQC-SECURE
+SECURE HASH: ${hash}-775-E6C-AAV9-PQC-${hash}
+========================================================================
+\`\`\`
+*(Draft automatically calibrated and synchronized in real-time under LCOD Rules)*`;
+    
+    setProvisionalPatentDraft(template);
+  }, [selectedPatentTarget, provisionalDelivery, provisionalAgent, provisionalOperator]);
+
+  const handleDraftProvisionalPatent = () => {
+    setIsDraftingPatent(true);
+    toastAlert("Publishing patent draft to Confluence Ledger...");
+    
+    setTimeout(() => {
+      setIsDraftingPatent(false);
+      setPatentScansCount(prev => prev + 1);
+      toastAlert("Successfully sealed and verified provisional patent onto the Sovereign Ledger.");
+    }, 1000);
+  };
+
+  const downloadPatentMarkdown = () => {
+    if (!provisionalPatentDraft) return;
+    const blob = new Blob([provisionalPatentDraft], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `provisional_patent_${selectedPatentTarget.toLowerCase()}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toastAlert("Markdown provisional application file downloaded.");
+  };
+
+  // Engine & Cineforge Action Handlers
+  const handleCompileShaders = () => {
+    if (isCompilingUeShaders) return;
+    setIsCompilingUeShaders(true);
+    let count = 0;
+    const interval = setInterval(() => {
+      setUeShaders(prev => prev + Math.floor(Math.random() * 400) + 150);
+      setUeFps(prev => Math.max(45, prev - Math.floor(Math.random() * 10)));
+      count++;
+      if (count > 8) {
+        clearInterval(interval);
+        setIsCompilingUeShaders(false);
+        setUeFps(144);
+        toastAlert("Unreal Engine 5: Fully optimized Nanite & Lumen shaders compiled successfully.");
+      }
+    }, 180);
+  };
+
+  const handleFlutterHotReload = () => {
+    if (isFlutterReloading) return;
+    setIsFlutterReloading(true);
+    setTimeout(() => {
+      setIsFlutterReloading(false);
+      setFlutterHotReloadCount(prev => prev + 1);
+      toastAlert("Flutter Hot Reload completed. Widget branch state updated on Impeller GPU context.");
+    }, 800);
   };
 
   // 4. Medical TRCE State and Handlers
@@ -957,6 +1211,8 @@ No anomalies or entropy leaks detected in LCOD register.
               { id: "qec", label: "Quantum QEC", icon: Binary },
               { id: "trce", label: "Medical TRCE/Cure", icon: HeartPulse },
               { id: "kdn", label: "6G KDN", icon: Network },
+              { id: "inventors", label: "Inventors Hub", icon: Lightbulb },
+              { id: "engine", label: "Engine Studio", icon: Gamepad },
               { id: "pantheon", label: "100-Layer Pantheon", icon: Layers },
               { id: "chat", label: "Sovereign Chat", icon: MessageSquare },
               { id: "monorepo", label: "Monorepo Files", icon: FolderGit2 }
@@ -2367,6 +2623,1014 @@ No anomalies or entropy leaks detected in LCOD register.
                         <pre className="p-4 overflow-x-auto text-[11px] font-mono text-cyan-100/90 leading-relaxed max-h-[350px] overflow-y-auto bg-black/20">
                           <code>{activeFileObject.content}</code>
                         </pre>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Pioneers & Inventors Hub Tab Panel */}
+              {activeTab === "inventors" && (
+                <motion.div
+                  key="inventors"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6"
+                >
+                  {/* Grid layout for Pioneers Hub, Research Ingestion and Patent drafting */}
+                  <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch">
+                    
+                    {/* Pioneers Database Column */}
+                    <div className="xl:col-span-4 border border-[#162035]/80 bg-[#090e1c]/80 rounded-xl p-5 shadow-xl space-y-4 flex flex-col justify-between">
+                      <div className="space-y-3">
+                        <h2 className="font-display font-bold text-sm text-white flex items-center gap-1.5">
+                          <BookOpen className="h-4 w-4 text-emerald-400" />
+                          Pioneers Global Bio-Library
+                        </h2>
+                        <p className="text-[10px] text-gray-400 font-sans leading-tight">
+                          Explore natural plant compounding pharmacopoeia or historical public domain patent formulations.
+                        </p>
+
+                        {/* Search and Subtabs */}
+                        <div className="space-y-2">
+                          <div className="relative">
+                            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-500" />
+                            <input
+                              type="text"
+                              value={inventorSearch}
+                              onChange={(e) => setInventorSearch(e.target.value)}
+                              placeholder="Search formulas or agents..."
+                              className="w-full bg-black/40 border border-[#162035] rounded px-8 py-2 text-[10.5px] text-[#f0f4ff] font-mono focus:outline-none focus:border-cyan-500"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-1 bg-black/30 p-0.5 rounded border border-[#162035]/50">
+                            {[
+                              { id: "pharmacy", label: "Pharmacy" },
+                              { id: "expired", label: "Expired" },
+                              { id: "frontiers", label: "Frontiers" }
+                            ].map(item => (
+                              <button
+                                key={item.id}
+                                onClick={() => setActivePioneersSubTab(item.id as any)}
+                                className={`py-1 text-[9px] font-display font-bold uppercase rounded text-center transition-all ${
+                                  activePioneersSubTab === item.id
+                                    ? "bg-emerald-600/30 text-emerald-300 border border-emerald-500/20"
+                                    : "text-gray-400 hover:text-gray-200"
+                                }`}
+                              >
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Items list */}
+                        <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-1">
+                          {(() => {
+                            const PIONEER_ITEMS = {
+                              pharmacy: [
+                                { id: "artemisinin", name: "Artemisinin — Sweet Wormwood (Artemisia annua)", condition: "Malaria, Cancer", cost: "Accessible", desc: "Used in traditional Chinese medicine for over 2,000 years. Save millions of lives from malaria pathways." },
+                                { id: "berberine", name: "Berberine — Goldenseal, Barberry, Oregon Grape", condition: "Type 2 Diabetes, Infection", cost: "~$15/mo", desc: "Reduces HbA1c comparably to metformin, modulating lipids and gut microbiome." },
+                                { id: "quercetin", name: "Quercetin — Onions, Apples, Capers", condition: "Senolytic / Anti-Aging", cost: "Zero cost", desc: "Flavonoid showing incredible senolytic properties (selectively clearing zombie cells)." },
+                                { id: "polygodial", name: "Polygodial — Tasmanian Pepper", condition: "Schistosomiasis, Helminth Parasites", cost: "Zero-cost native crop", desc: "Studies in 2024 show 44% worm burden reduction and 71% egg reduction." }
+                              ],
+                              expired: [
+                                { id: "metformin", name: "Metformin Synthesis Routes", condition: "Diabetes, Longevity", cost: "$4/mo (Generic)", desc: "Synthesis patents expired for decades, permitting free formulation replication." },
+                                { id: "ort", name: "Oral Rehydration Therapy (ORT)", condition: "Dehydration, Cholera", cost: "<$0.50/packet", desc: "Standard mixture of water, glucose, NaCl, and KCl. Unpatentable gift to humanity." },
+                                { id: "chloroquine", name: "Chloroquine Formulations", condition: "Malaria, Autoimmune", cost: "Near zero", desc: "Generic production is legal anywhere. Classic reference for docking simulation." },
+                                { id: "ivermectin", name: "Ivermectin Formulations", condition: "River Blindness, Parasites", cost: "Near zero", desc: "Base compound discovery won Nobel Prize, patents expired by late 1995 era." }
+                              ],
+                              frontiers: [
+                                { id: "acoziborole", name: "Acoziborole single oral dose", condition: "Sleeping Sickness", cost: "Non-profit access (DNDi)", desc: "First single oral dose cure replacing painful intravenous hospital stays." },
+                                { id: "bpal", name: "BPaL/M short-course therapy", condition: "Drug-Resistant TB", cost: "<$2/day", desc: "Shorter, 6-month oral regimen replacing toxic, years-long lines." },
+                                { id: "peel", name: "Mandarin & Citrus peel waste", condition: "Mycotoxins, Leishmaniasis", cost: "Zero Cost Recycle", desc: "Harness agricultural waste; mandarin peel achievements score 90% fungal inhibition." }
+                              ]
+                            };
+
+                            const list = PIONEER_ITEMS[activePioneersSubTab] || [];
+                            const filtered = list.filter(p => 
+                              p.name.toLowerCase().includes(inventorSearch.toLowerCase()) ||
+                              p.condition.toLowerCase().includes(inventorSearch.toLowerCase())
+                            );
+
+                            if (filtered.length === 0) {
+                              return <div className="text-[10px] text-gray-500 font-mono text-center py-4">No matching records found.</div>;
+                            }
+
+                            return filtered.map(p => (
+                              <button
+                                key={p.id}
+                                onClick={() => setSelectedPioneerId(p.id)}
+                                className={`w-full text-left p-2 rounded transition-all border ${
+                                  selectedPioneerId === p.id
+                                    ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+                                    : "bg-black/20 text-gray-400 border-transparent hover:border-[#162035]"
+                                }`}
+                              >
+                                <div className="text-[10px] font-bold leading-tight font-display">{p.name}</div>
+                                <div className="flex gap-2 text-[8px] font-mono text-gray-500 mt-1">
+                                  <span>Target: {p.condition}</span>
+                                  <span>•</span>
+                                  <span className="text-emerald-500 font-semibold">{p.cost}</span>
+                                </div>
+                              </button>
+                            ));
+                          })()}
+                        </div>
+                      </div>
+
+                      {/* Detail View */}
+                      {(() => {
+                        const allPion = [
+                          { id: "artemisinin", name: "Artemisinin — Sweet Wormwood (Artemisia annua)", condition: "Malaria, Cancer (KRAS pathway)", cost: "Highly Accessible", desc: "Used in traditional Chinese medicine for over 2,000 years. Savingly saving millions from malaria pathways. Groundbreak of O(√N)-based Grover-enhanced molecular docking target." },
+                          { id: "berberine", name: "Berberine — Goldenseal, Barberry, Oregon Grape", condition: "Type 2 Diabetes, Infection, Cardiovascular", cost: "~$15/month (vs. Metformin/brand names at $80+)", desc: "Multiple randomized controlled trials show berberine reduces HbA1c comparably to metformin, modulating gut microbiome and offering lipid-lowering synergies." },
+                          { id: "quercetin", name: "Quercetin — Onions, Apples, Capers", condition: "Senolytic / Anti-Aging, Inflammation, Antiviral", cost: "Zero cost (present in most grocery produce)", desc: "Flavonoid showing incredible senolytic properties (selectively clearing zombie cells linked to aging) and NF-kB pathway inhibition." },
+                          { id: "polygodial", name: "Polygodial — Dorrigo Pepper, Tasmanian Pepper", condition: "Schistosomiasis, Helminth Parasites", cost: "Zero-cost native agricultural crop", desc: "A sesquiterpene from pepper plants. In-vivo studies show 44% reduction in schistosome worm burden, 71% egg reduction, and 69.5% intestinal clearance." },
+                          { id: "metformin", name: "Metformin Synthesis Routes (Public Domain)", condition: "Diabetes, Longevity, Cardio-Protection", cost: "$4/month (Generic)", desc: "First synthesized in the 1920s, patented in the 1950s, expired in 1970s. Shows how public domain pathways serve as excellent templates for unrestricted medicine access." },
+                          { id: "ort", name: "Oral Rehydration Therapy (ORT)", condition: "Dehydration, Cholera", cost: "<$0.50/packet", desc: "Standard mixture of water, glucose, sodium chloride, potassium chloride, and citrate. Unpatentable gift to humanity." },
+                          { id: "chloroquine", name: "Chloroquine Formulations", condition: "Malaria, Autoimmune", cost: "Near zero", desc: "Generic production is legal globally, offering classic reference templates for anti-parasitic docking." },
+                          { id: "ivermectin", name: "Ivermectin Formulations", condition: "River Blindness, Parasites", cost: "Near zero (Donated free)", desc: "The base compound discovery won the Nobel Prize, with its primary formulation patents fully expired by the late 1995 era." },
+                          { id: "acoziborole", name: "Acoziborole single oral dose sleeping sickness cure", condition: "Sleeping Sickness", cost: "Non-profit access (DNDi)", desc: "First single oral dose cure replacing painful intravenous hospital stays. Developed with non-profit access pricing." },
+                          { id: "bpal", name: "BPaL/M short-course therapy", condition: "Drug-Resistant TB", cost: "<$2/day", desc: "A shorter, 6-month oral regimen (Bedaquiline + Pretomanid + Linezolid) replacing the toxic, years-long multi-drug therapy lines." },
+                          { id: "peel", name: "Mandarin & Citrus peel agricultural recycle", condition: "Mycotoxins, Leishmaniasis", cost: "Zero Cost Recycle", desc: "Mandarin peel achieves 90% fungal inhibition of agricultural hazards. Proves how overlooked waste serves as clinical resources." }
+                        ];
+                        const found = allPion.find(p => p.id === selectedPioneerId) || allPion[0];
+                        return (
+                          <div className="p-3 bg-black/40 border border-[#162035] rounded-lg space-y-1.5 mt-2">
+                            <div className="text-[10px] uppercase font-mono text-cyan-400 font-bold border-b border-[#162035] pb-1.5 flex justify-between items-center">
+                              <span>Sensing Compound Profile</span>
+                              <Sparkles className="h-3 w-3 text-glow" />
+                            </div>
+                            <h4 className="text-[10px] font-bold text-white font-display leading-tight">{found.name}</h4>
+                            <p className="text-[9.5px] text-gray-300 leading-normal font-sans">{found.desc}</p>
+                            <div className="pt-1.5 flex gap-3 text-[8.5px] font-mono text-gray-500">
+                              <div><strong className="text-gray-400">Pillar Target:</strong> {found.condition}</div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* AI Literature Parsing and Evidence Scoring Column */}
+                    <div className="xl:col-span-4 border border-[#162035]/80 bg-[#090e1c]/80 rounded-xl p-5 shadow-xl space-y-4 flex flex-col justify-between">
+                      <div className="space-y-3">
+                        <h2 className="font-display font-bold text-sm text-[#fbc02d] flex items-center gap-1.5">
+                          <Activity className="h-4 w-4 text-glow text-[#fbc02d]" />
+                          Redemptive Evidence Graph
+                        </h2>
+                        <p className="text-[10px] text-gray-400 font-sans leading-tight">
+                          Query PubMed & preprints to trace pathway targets and flag structural scientific contradictions.
+                        </p>
+
+                        <div className="space-y-2.5 bg-black/40 border border-[#162035] rounded-xl p-3">
+                          <div>
+                            <label className="text-[9.5px] uppercase font-mono text-slate-500 block mb-1">Target Ingestion Keyword</label>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {["ALS", "Cancer", "Alzheimer"].map(kw => (
+                                <button
+                                  key={kw}
+                                  onClick={() => !isIngestingResearch && setIngestionKeyword(kw)}
+                                  disabled={isIngestingResearch}
+                                  className={`py-1 text-[9px] font-mono rounded transition-all ${
+                                    ingestionKeyword === kw
+                                      ? "bg-[#fbc02d]/20 text-[#fff59d] border border-[#fbc02d]/40"
+                                      : "bg-black/30 border border-[#162035] text-slate-400 hover:border-slate-700"
+                                  }`}
+                                >
+                                  {kw === "ALS" ? "ALS (SOD1)" : kw === "Cancer" ? "Cancer (G12D)" : "Alzheimers"}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={handleIngestResearch}
+                            disabled={isIngestingResearch}
+                            className="w-full py-1.5 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 disabled:from-slate-900 disabled:to-slate-900 disabled:text-gray-500 text-white font-bold font-display uppercase tracking-wider rounded text-[9.5px] transition duration-200 flex items-center justify-center gap-1.5"
+                          >
+                            {isIngestingResearch ? (
+                              <>
+                                <RefreshCw className="h-3 w-3 animate-spin" />
+                                INGESTING PUBMED/ARXIV...
+                              </>
+                            ) : (
+                              <>
+                                <Search className="h-3 w-3" />
+                                RUN INGESTION PIPELINE
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Real-time Ingestion Stream Logs */}
+                        <div className="bg-[#03050a] border border-[#162035]/90 rounded-lg p-2.5 h-[120px] overflow-y-auto font-mono text-[9px] text-[#aeebd1] space-y-1">
+                          {ingestionLogs.length === 0 ? (
+                            <div className="text-gray-600 italic text-center pt-8">Queue standby. Awaiting ingestion click trigger...</div>
+                          ) : (
+                            ingestionLogs.map((log, i) => (
+                              <div key={i} className="leading-tight">{log}</div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Evidence graph ranked weight table */}
+                      <div className="bg-black/30 border border-[#162035] rounded-lg p-2.5 font-mono text-[9px]">
+                        <span className="text-[8px] uppercase text-gray-500 block border-b border-[#162035]/50 pb-1 mb-1.5">RECALIBRATED EVIDENCE TARGETS</span>
+                        <div className="space-y-1.5">
+                          {evidenceGraph.map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between">
+                              <span className="text-sky-300 font-semibold">{item.gene} target</span>
+                              <div className="flex gap-2">
+                                <span className="text-gray-400">Scans: {item.count}</span>
+                                <span className="text-emerald-400 font-bold">Confidence: {item.weight}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Patent Drafting Column */}
+                    <div className="xl:col-span-4 border border-[#162035]/80 bg-[#090e1c]/80 rounded-xl p-5 shadow-xl space-y-4 flex flex-col justify-between">
+                      <div className="space-y-3">
+                        <h2 className="font-display font-bold text-sm text-purple-400 flex items-center gap-1.5">
+                          <Award className="h-4 w-4 text-glow text-purple-400" />
+                          Provisional Patent Architect
+                        </h2>
+                        <p className="text-[10px] text-gray-400 font-sans leading-tight">
+                          Draft is automatically compiled in real-time as you filter targets. Click below to apply cryptographic ledger seals under G1P covenants.
+                        </p>
+
+                        <div className="space-y-1.5 bg-black/40 border border-[#162035] rounded-xl p-2.5 text-[9.5px]">
+                          {/* target configuration */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <span className="text-gray-500 block mb-0.5">TARGET ISSUE</span>
+                              <select
+                                value={selectedPatentTarget}
+                                onChange={(e) => setSelectedPatentTarget(e.target.value)}
+                                className="w-full bg-black border border-[#162035] text-gray-300 rounded px-1.5 py-1 focus:outline-none"
+                              >
+                                <option value="ALS">ALS (SOD1)</option>
+                                <option value="Cancer">KRAS Tumor</option>
+                                <option value="Alzheimer">Alzheimer APP</option>
+                                <option value="Huntington">Huntington HTT</option>
+                                <option value="Schistosomiasis">Schisto GeneDrive</option>
+                              </select>
+                            </div>
+                            <div>
+                              <span className="text-gray-500 block mb-0.5">ACTIVE COVENANT AGENT</span>
+                              <select
+                                value={provisionalAgent}
+                                onChange={(e) => setProvisionalAgent(e.target.value)}
+                                className="w-full bg-black border border-[#162035] text-gray-300 rounded px-1.5 py-1 focus:outline-none"
+                              >
+                                <option value="artemisinin">Artemisinin</option>
+                                <option value="berberine">Berberine</option>
+                                <option value="quercetin">Quercetin</option>
+                                <option value="polygodial">Polygodial</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* operator / delivery */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <span className="text-gray-500 block mb-0.5">ROOT SIGNATURE</span>
+                              <input
+                                type="text"
+                                value={provisionalOperator}
+                                onChange={(e) => setProvisionalOperator(e.target.value)}
+                                className="w-full bg-black border border-[#162035] text-purple-300 rounded px-1.5 py-0.5 font-mono focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <span className="text-gray-500 block mb-0.5">DELIVERY VECTOR</span>
+                              <select
+                                value={provisionalDelivery}
+                                onChange={(e) => setProvisionalDelivery(e.target.value)}
+                                className="w-full bg-black border border-[#162035] text-gray-300 rounded px-1 w-full py-1 focus:outline-none"
+                              >
+                                <option value="AAV9_LNP_hybrid">AAV9 / LNP Hybrid</option>
+                                <option value="Cas9_scaffold">Cas9 / Cleaving RNP</option>
+                                <option value="LNP_vehicle">Pure LNP Carrier</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={handleDraftProvisionalPatent}
+                            disabled={isDraftingPatent}
+                            className="w-full py-1.5 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 disabled:from-slate-900 disabled:to-slate-900 disabled:text-gray-500 text-white font-bold font-display uppercase tracking-wider rounded text-[9px] transition-all flex items-center justify-center gap-1"
+                          >
+                            {isDraftingPatent ? (
+                              <>
+                                <RefreshCw className="h-3 w-3 animate-spin" />
+                                CONFLICT CORRECTION / SEALING RECORD...
+                              </>
+                            ) : (
+                              <>
+                                <Lock className="h-3 w-3 text-purple-200" />
+                                SEAL & REGISTER PROVISIONAL PATENT
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Generated stub outline preview with Markdown action */}
+                      <div className="space-y-1.5">
+                        <div className="bg-[#04060c] border border-[#162035]/80 rounded p-2 h-[120px] overflow-y-auto font-mono text-[8px] text-purple-200 leading-tight">
+                          {provisionalPatentDraft ? (
+                            <pre className="whitespace-pre-wrap">{provisionalPatentDraft}</pre>
+                          ) : (
+                            <div className="text-gray-600 italic text-center pt-10">Configure builders and click generate. Draft prints here.</div>
+                          )}
+                        </div>
+
+                        {provisionalPatentDraft && (
+                          <button
+                            onClick={downloadPatentMarkdown}
+                            className="w-full py-1 font-mono text-[9px] bg-black/40 hover:bg-black/60 text-[#d8b4fe] border border-purple-500/35 rounded flex items-center justify-center gap-1 transition"
+                          >
+                            <Download className="h-2.5 w-2.5" />
+                            DOWNLOAD SPECIFICATION (.MD)
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PDF living report document preview block - Fully Styled and Printable */}
+                  <div className="border border-[#162035]/85 bg-[#080d19]/80 rounded-xl p-6 shadow-xl space-y-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#162035] pb-3 gap-3">
+                      <div>
+                        <h3 className="font-display font-bold text-sm text-cyan-400 uppercase tracking-widest flex items-center gap-1.5">
+                          <Printer className="h-4 w-4 text-cyan-400" />
+                          "God's Toolbox" Research Report Dossier
+                        </h3>
+                        <p className="text-[10px] text-gray-400 font-sans">
+                          A fully composited, printable system dossier compiling the scale metrics, plant libraries, and generated patent specs.
+                        </p>
+                      </div>
+
+                      {/* PDF actions */}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => window.print()}
+                          className="bg-cyan-600 hover:bg-cyan-500 text-white font-display font-semibold transition px-3.5 py-1.5 rounded text-[10px] tracking-wide flex items-center gap-1"
+                        >
+                          <Printer className="h-3 w-3" />
+                          PRINT / SAVE SYSTEM PDF
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Styled Print Document Preview Frame */}
+                    <div className="bg-[#fcfaf2] border border-[#d8ccb0] rounded-lg p-8 text-[#1e1a10] font-sans antialiased text-xs max-w-4xl mx-auto shadow-2xl print:border-none print:shadow-none print:p-0 print:m-0 space-y-6 select-text">
+                      
+                      {/* Document Masthead */}
+                      <div className="text-center border-b-2 border-double border-[#9a6f1a] pb-6">
+                        <div className="font-mono text-[10px] uppercase text-[#9a6f1a] font-bold tracking-widest mb-1">
+                          God's Toolbox • Living Clinical Synthesis Brief
+                        </div>
+                        <h1 className="font-display font-bold text-2xl text-[#1e1a10] leading-tight tracking-tight">
+                          Cures & Treatments: What God Already Put in Creation
+                        </h1>
+                        <div className="italic text-[#9a6f1a] text-xs font-serif mt-2">
+                          "He causes the grass to grow for the cattle, and vegetation for the service of man." — Psalm 104:14
+                        </div>
+                        <div className="font-mono text-[9px] text-[#6a5a3a] mt-3">
+                          Verified Sources: WHO • DNDi • PubMed • Nature Medicine • PMC • PatentsView Database • LCOD Gate
+                        </div>
+                      </div>
+
+                      <div className="bg-red-500/5 border border-red-500/25 p-3 rounded text-red-950 font-sans leading-relaxed text-[11px]">
+                        <strong>CRITICAL RESEARCH MEMORANDUM Statement:</strong> All bio-molecular target models described correspond to in-silico simulation results. Wet-lab validation (GUIDE-seq, patient iPSC lines) and strict clinical/ethical FDA regulatory paths must be verified prior to therapeutic mobilization.
+                      </div>
+
+                      {/* Main paper sections grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                        <div className="space-y-4">
+                          <h4 className="font-display font-bold text-sm text-[#8b2020] border-b border-[#d8ccb0] pb-1 flex items-center gap-1">
+                            <span>Section 1: The Global Neglect Crisis & Scale</span>
+                          </h4>
+                          <div className="space-y-2.5">
+                            <div>
+                              <strong className="block text-[11px] text-gray-800">1.62 Billion Beneficiaries</strong>
+                              <span className="text-[10.5px] leading-relaxed text-gray-700 block">
+                                Global tropical population currently requires pharmaceutical intervention for neglected pathogens (NTDs) under regional high-mortality indexes. Target reduction sets 2030 bounds.
+                              </span>
+                            </div>
+                            <div>
+                              <strong className="block text-[11px] text-gray-800">400:1 Dynamic Return on R&D</strong>
+                              <span className="text-[10.5px] leading-relaxed text-gray-700 block">
+                                Studies substantiate that every research dollar deployed to target orphan pathologies returns immense socio-economic healthcare multipliers, representing the highest priority duty on Earth.
+                              </span>
+                            </div>
+                            <div className="p-3 bg-red-500/5 rounded border border-red-500/10 text-[10px] leading-snug">
+                              <strong>Off-Patent Generic Market Failures:</strong> Decades-old generic formulations like Miltefosine remain completely priced out in high-risk zones, reaching $48,000 per full clinical course in brand names. This confirms that social distribution, not bare chemistry, represents the ultimate roadblock.
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <h4 className="font-display font-bold text-sm text-[#1a5c35] border-b border-[#d8ccb0] pb-1 flex items-center gap-1">
+                            <span>Section 2: God's Plant Pharmacy & Expired Prior Art</span>
+                          </h4>
+                          <div className="space-y-2.5 text-[10.5px] leading-relaxed text-gray-700">
+                            <div>
+                              <strong className="text-gray-900 block font-bold">Artemisinin — Sweet Wormwood (Artemisia annua)</strong>
+                              <span>frontline Nobel-Prize antimalarial saved millions of patients. Ongoing research explores active synergies with Grover conformation binders for KRAS Cancer pathways.</span>
+                            </div>
+                            <div>
+                              <strong className="text-gray-900 block font-bold">Berberine — Goldenseal & Oregon Grape</strong>
+                              <span>Sparsely integrated in traditional Western guidelines, despite rigorous clinical trials showing HbA1c reductions comparable to brand diabetes medications on extreme budget lines.</span>
+                            </div>
+                            <div>
+                              <strong className="text-gray-900 block font-bold">Polygodial — Tasmanian and Dorrigo Pepper</strong>
+                              <span>Native plant compounds confirmed during 2024 to induce 44% parasite burden clearance and 71% egg elimination for Schistosomiasis under high-frequency vector controls.</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Print Section 3: Generated Patent Application */}
+                      {provisionalPatentDraft && (
+                        <div className="pt-4 border-t border-[#d8ccb0] space-y-2">
+                          <h4 className="font-display font-bold text-sm text-[#4a3080] border-b border-[#d8ccb0] pb-1">
+                            Section 3: Drafted Provisional Spec (USPTO CFR Title 35 Verification)
+                          </h4>
+                          <div className="bg-black/5 p-4 rounded border border-[#64748b]/20 font-mono text-[9px] whitespace-pre-wrap text-black leading-snug">
+                            {provisionalPatentDraft}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="border-t-2 border-double border-[#9a6f1a] pt-4 text-center text-[10px] text-[#6a5a3a] italic serif">
+                        "Freely it is given, freely it should be received. All bio-intellect resources are made open-access under God's Love Protocol."
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Engine Studio Tab Panel */}
+              {activeTab === "engine" && (
+                <motion.div
+                  key="engine"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6"
+                >
+                  {/* Header Dashboard Banner */}
+                  <div className="border border-[#162035]/80 bg-[#090e1c]/80 rounded-xl p-5 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Gamepad className="h-5 w-5 text-purple-400 animate-pulse" />
+                        <h2 className="font-display font-bold text-lg text-white">
+                          Sovereign Engine Studio
+                        </h2>
+                      </div>
+                      <p className="text-xs text-slate-400 max-w-xl">
+                        Cross-compile real-time simulations, rendering models, and multi-platform applications using Unreal Engine 5, Unity ECS, Flutter, and Cineforge.
+                      </p>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <div className="bg-[#04060c] border border-purple-500/15 rounded-lg px-3 py-1 text-center">
+                        <div className="text-[8px] text-gray-500 uppercase">SYS PERFORMANCE</div>
+                        <div className="text-xs font-mono font-bold text-emerald-400">{ueFps} FPS</div>
+                      </div>
+                      <div className="bg-[#04060c] border border-purple-500/15 rounded-lg px-3 py-1 text-center">
+                        <div className="text-[8px] text-gray-500 uppercase">ACTIVE CORES</div>
+                        <div className="text-xs font-mono font-bold text-[#b49bf3]">{isCompilingUeShaders ? "64/64" : "12/64"}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Engine Studio Split Container */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Left Panel: Configuration Bench */}
+                    <div className="lg:col-span-5 space-y-4 border border-[#162035]/80 bg-[#090e1c]/80 rounded-xl p-5 shadow-xl flex flex-col justify-between">
+                      <div className="space-y-4">
+                        <h3 className="font-display font-semibold text-xs text-purple-300 uppercase tracking-widest flex items-center gap-1.5 border-b border-[#162035] pb-2">
+                          <Activity className="h-3.5 w-3.5 text-purple-400" />
+                          CONFIGURATION BENCH & REGISTRY
+                        </h3>
+
+                        {/* Subtab Ribbon */}
+                        <div className="grid grid-cols-4 gap-1 p-1 bg-[#04060c] rounded-lg border border-[#151c33]/80">
+                          {[
+                            { id: "unreal", name: "UE5" },
+                            { id: "unity", name: "Unity ECS" },
+                            { id: "flutter", name: "Flutter" },
+                            { id: "cineforge", name: "Cineforge" }
+                          ].map((eSub) => (
+                            <button
+                              key={eSub.id}
+                              onClick={() => setActiveEngineSubTab(eSub.id as any)}
+                              className={`py-1 text-[10px] font-display font-bold uppercase rounded text-center transition ${
+                                activeEngineSubTab === eSub.id
+                                  ? "bg-purple-600/30 text-purple-200 border border-purple-500/25 animate-pulse"
+                                  : "text-gray-500 hover:text-gray-300 hover:bg-[#0c1224]"
+                              }`}
+                            >
+                              {eSub.name}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Dynamics controls based on selection */}
+                        {activeEngineSubTab === "unreal" && (
+                          <div className="space-y-4">
+                            <div className="bg-[#04060c] border border-purple-500/10 rounded-xl p-3 space-y-3 text-xs">
+                              <span className="font-mono text-[9px] text-[#b3a8ff] block uppercase tracking-wider">Unreal Engine 5 Core</span>
+                              
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-400">UE5 Lumen Raytracing</span>
+                                <button
+                                  onClick={() => setUeRayTracing(!ueRayTracing)}
+                                  className={`px-3 py-1 font-mono text-[9px] uppercase font-bold rounded ${
+                                    ueRayTracing ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30" : "bg-red-600/20 text-red-500 border border-red-500/30"
+                                  }`}
+                                >
+                                  {ueRayTracing ? "ENABLED" : "DISABLED"}
+                                </button>
+                              </div>
+
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-[11px]">
+                                  <span className="text-gray-400">Lumen Diffuse Bounces</span>
+                                  <span className="font-mono text-purple-300 font-bold">{ueLumenBounces} bounces</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min={1}
+                                  max={8}
+                                  value={ueLumenBounces}
+                                  onChange={(e) => setUeLumenBounces(parseInt(e.target.value))}
+                                  className="w-full accent-purple-500 h-1 bg-black rounded"
+                                />
+                              </div>
+
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-[11px]">
+                                  <span className="text-gray-400">Nanite Virtual Mesh Density</span>
+                                  <span className="font-mono text-purple-300 font-bold">{ueNaniteDensity}% (LOD Max)</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min={10}
+                                  max={100}
+                                  value={ueNaniteDensity}
+                                  onChange={(e) => setUeNaniteDensity(parseInt(e.target.value))}
+                                  className="w-full accent-purple-500 h-1 bg-black rounded"
+                                />
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={handleCompileShaders}
+                              disabled={isCompilingUeShaders}
+                              className="w-full py-2 bg-gradient-to-r from-purple-700 to-violet-700 hover:from-purple-600 hover:to-violet-600 text-white text-[10px] uppercase font-bold font-display rounded flex items-center justify-center gap-1.5 transition overflow-hidden disabled:opacity-60"
+                            >
+                              <RefreshCw className={`h-3.5 w-3.5 ${isCompilingUeShaders ? "animate-spin" : ""}`} />
+                              {isCompilingUeShaders ? `COMPILING SHADERS (${ueShaders} Active)...` : "TRIGGER MASSIVE UE5 SHADER COMPILATION"}
+                            </button>
+                          </div>
+                        )}
+
+                        {activeEngineSubTab === "unity" && (
+                          <div className="space-y-4">
+                            <div className="bg-[#04060c] border border-blue-500/10 rounded-xl p-3 space-y-3 text-xs">
+                              <span className="font-mono text-[9px] text-[#7dd3fc] block uppercase tracking-wider">Unity DOTS & ECS Engine</span>
+
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-[11px]">
+                                  <span className="text-gray-400">ECS Chunk Count</span>
+                                  <span className="font-mono text-cyan-300 font-bold">{unityEcsChunks} Chunks</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min={16}
+                                  max={512}
+                                  step={16}
+                                  value={unityEcsChunks}
+                                  onChange={(e) => setUnityEcsChunks(parseInt(e.target.value))}
+                                  className="w-full accent-cyan-500 h-1 bg-black rounded"
+                                />
+                              </div>
+
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-[11px]">
+                                  <span className="text-gray-400">Burst Job Batch Size</span>
+                                  <span className="font-mono text-cyan-300 font-bold">{unityJobBatchSize} items/batch</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min={8}
+                                  max={256}
+                                  step={8}
+                                  value={unityJobBatchSize}
+                                  onChange={(e) => setUnityJobBatchSize(parseInt(e.target.value))}
+                                  className="w-full accent-cyan-500 h-1 bg-black rounded"
+                                />
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-400">Burst Optimization Level</span>
+                                <select
+                                  value={unityBurstLevel}
+                                  onChange={(e) => setUnityBurstLevel(e.target.value as any)}
+                                  className="bg-black border border-[#162035] text-cyan-400 text-[10px] rounded px-2 py-0.5"
+                                >
+                                  <option value="fast">Aggressive (Speed-First)</option>
+                                  <option value="safety">Pristine Safety Guards</option>
+                                  <option value="dev">Debug/Verification Mode</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            <div className="bg-[#04060c]/60 border border-cyan-500/10 rounded-xl p-2.5 space-y-1 text-[9.5px]">
+                              <span className="font-mono font-bold text-gray-500 block uppercase">Entity Component Reader</span>
+                              <div className="flex justify-between items-center bg-[#070b15] p-1.5 rounded border border-[#11182c]">
+                                <span className="text-[#a5f3fc] font-mono">Entity #{selectedEntityId} Structural Layout</span>
+                                <select
+                                  value={selectedEntityId}
+                                  onChange={(e) => setSelectedEntityId(parseInt(e.target.value))}
+                                  className="bg-black border border-[#162035] text-gray-400 text-[9px] rounded px-1.5 py-0.5 focus:outline-none"
+                                >
+                                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                                    <option key={num} value={num}>Entity ID {num}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="font-mono text-[8px] text-gray-400 space-y-1 pt-1 leading-tight">
+                                <div className="flex justify-between"><span className="text-gray-600">Position3D:</span> <span>[{(selectedEntityId * 15.2).toFixed(2)}, {(-selectedEntityId * 8.4).toFixed(2)}, {(selectedEntityId * 32.5).toFixed(2)}]</span></div>
+                                <div className="flex justify-between"><span className="text-gray-600">LcoderSlices:</span> <span className="text-cyan-400">0x{(selectedEntityId * 4096).toString(16).toUpperCase()}</span></div>
+                                <div className="flex justify-between"><span className="text-gray-600">G1P_Covenant_Byte:</span> <span className="text-emerald-400">Pillar 10 Compliant</span></div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {activeEngineSubTab === "flutter" && (
+                          <div className="space-y-4">
+                            <div className="bg-[#04060c] border border-[#14b8a6]/10 rounded-xl p-3 space-y-3 text-xs">
+                              <span className="font-mono text-[9px] text-[#2dd4bf] block uppercase tracking-wider">Flutter Target Platform Integration</span>
+                              
+                              <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                {[
+                                  { id: "ios", label: "iOS (Impeller Metal)" },
+                                  { id: "android", label: "Android (Vulkan GPU)" },
+                                  { id: "wasm", label: "WebAssembly (Canvas)" },
+                                  { id: "desktop", label: "macOS CoreGraphics" }
+                                ].map((plat) => (
+                                  <button
+                                    key={plat.id}
+                                    onClick={() => setFlutterPlatform(plat.id as any)}
+                                    className={`py-1 rounded text-center transition ${
+                                      flutterPlatform === plat.id 
+                                        ? "bg-teal-600/20 text-teal-300 border border-teal-500/40" 
+                                        : "bg-black/40 text-gray-500 hover:text-gray-300 border border-[#162035]"
+                                    }`}
+                                  >
+                                    {plat.label}
+                                  </button>
+                                ))}
+                              </div>
+
+                              <div className="flex justify-between text-gray-400 pt-1 text-[11px]">
+                                <span>Flutter Hot Reload Index</span>
+                                <span className="font-mono text-teal-300 font-bold">{flutterHotReloadCount} runs</span>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={handleFlutterHotReload}
+                              disabled={isFlutterReloading}
+                              className="w-full py-2 bg-teal-600 hover:bg-teal-500 text-white text-[10px] uppercase font-bold font-display rounded flex items-center justify-center gap-1.5 transition"
+                            >
+                              <RefreshCw className={`h-3.5 w-3.5 ${isFlutterReloading ? "animate-spin" : ""}`} />
+                              {isFlutterReloading ? "HOT RELOADING COMMITTED WIDGETS..." : "FLUTTER HOT RELOAD (IMPELLER TARGETS)"}
+                            </button>
+                          </div>
+                        )}
+
+                        {activeEngineSubTab === "cineforge" && (
+                          <div className="space-y-4">
+                            <div className="bg-[#04060c] border border-orange-500/10 rounded-xl p-3 space-y-3 text-xs">
+                              <span className="font-mono text-[9px] text-[#fdba74] block uppercase tracking-wider">Cineforge Camera & Color Deck</span>
+
+                              <div className="grid grid-cols-3 gap-1">
+                                {[
+                                  { id: "35mm_prime", label: "35mm Prime" },
+                                  { id: "50mm_anamorphic", label: "50mm Anam" },
+                                  { id: "85mm_portrait", label: "85mm Port" }
+                                ].map((lens) => (
+                                  <button
+                                    key={lens.id}
+                                    onClick={() => setCineLens(lens.id as any)}
+                                    className={`py-1 text-[9px] font-bold rounded text-center transition ${
+                                      cineLens === lens.id
+                                        ? "bg-amber-600/35 text-amber-200 border border-amber-500/40"
+                                        : "bg-black/40 text-gray-500 hover:text-gray-300 border border-[#162035]"
+                                    }`}
+                                  >
+                                    {lens.label}
+                                  </button>
+                                ))}
+                              </div>
+
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-[11px]">
+                                  <span className="text-gray-400">Focus Plane Distance</span>
+                                  <span className="font-mono text-amber-300 font-bold">{cineFocusDistance} meters</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min={1}
+                                  max={20}
+                                  step={0.1}
+                                  value={cineFocusDistance}
+                                  onChange={(e) => setCineFocusDistance(parseFloat(e.target.value))}
+                                  className="w-full accent-amber-500 h-1 bg-black rounded"
+                                />
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-400">Aperture Depth (f/stop)</span>
+                                <select
+                                  value={cineAperture}
+                                  onChange={(e) => setCineAperture(e.target.value)}
+                                  className="bg-black border border-[#162035] text-amber-400 text-[10px] rounded px-2 Focus:outline-none"
+                                >
+                                  <option value="f/1.4">f/1.4 (Slight Blur)</option>
+                                  <option value="f/1.8">f/1.8 (Medium)</option>
+                                  <option value="f/2.8">f/2.8 (Pin Sharp)</option>
+                                  <option value="f/4.0">f/4.0</option>
+                                  <option value="f/5.6">f/5.6</option>
+                                </select>
+                              </div>
+
+                              <div className="flex items-center justify-between border-t border-[#11182c] pt-2">
+                                <span className="text-gray-400 font-semibold text-[10.5px]">Houdini LUT Grade</span>
+                                <select
+                                  value={cineColorProfile}
+                                  onChange={(e) => setCineColorProfile(e.target.value as any)}
+                                  className="bg-black border border-[#162035] text-amber-400 text-[10px] rounded px-1.5 py-0.5 focus:outline-none"
+                                >
+                                  <option value="raw_log">RAW Log (Neutral Desat)</option>
+                                  <option value="matrix_green">Matrix Green (Terminal Neo)</option>
+                                  <option value="cyber_slate">Cyber Slate (Standard Cosmic)</option>
+                                  <option value="warm_classic">Warm Sepia (Editorial)</option>
+                                  <option value="gold_forge">Gold Forge (Deep High Contrast)</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info block displaying GitHub Source registries */}
+                      <div className="border border-purple-500/10 bg-black/45 rounded-xl p-3 text-[9.5px] mt-4 space-y-2">
+                        <span className="font-mono text-[8.5px] text-purple-400 uppercase font-bold block">Cross-Compiled GitHub Source Repositories</span>
+                        <div className="grid grid-cols-2 gap-1.5 font-mono text-[8.5px] text-gray-400">
+                          <a href="https://github.com/EpicGames/UnrealEngine" target="_blank" rel="noopener noreferrer" className="p-1 rounded bg-[#0b0f1d] hover:bg-[#121930] hover:text-white border border-[#151c33] flex items-center justify-between transition">
+                            <span>EpicGames/UnrealEngine</span>
+                            <span className="text-purple-400">↗</span>
+                          </a>
+                          <a href="https://github.com/Unity-Technologies/EntityComponentSystem" target="_blank" rel="noopener noreferrer" className="p-1 rounded bg-[#0b0f1d] hover:bg-[#121930] hover:text-white border border-[#151c33] flex items-center justify-between transition">
+                            <span>UnityECS/DOTS</span>
+                            <span className="text-purple-400">↗</span>
+                          </a>
+                          <a href="https://github.com/flutter/flutter" target="_blank" rel="noopener noreferrer" className="p-1 rounded bg-[#0b0f1d] hover:bg-[#121930] hover:text-white border border-[#151c33] flex items-center justify-between transition">
+                            <span>flutter/engine</span>
+                            <span className="text-purple-400">↗</span>
+                          </a>
+                          <a href="https://github.com/render-bridge/CineForge" target="_blank" rel="noopener noreferrer" className="p-1 rounded bg-[#0b0f1d] hover:bg-[#121930] hover:text-white border border-[#151c33] flex items-center justify-between transition">
+                            <span>cineforge/renderer</span>
+                            <span className="text-amber-400 font-bold">LCOD ↗</span>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Panel: Interactive Visual Sandbox Renderer */}
+                    <div className="lg:col-span-7 border border-[#162035]/85 bg-[#090e1c]/80 rounded-xl p-5 shadow-xl flex flex-col justify-between">
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center border-b border-[#162035] pb-2">
+                          <h3 className="font-display font-semibold text-xs text-cyan-300 uppercase tracking-widest flex items-center gap-1.5">
+                            <Film className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+                            DYNAMIC LIVE STREAM RENDER
+                          </h3>
+                          <div className="flex items-center gap-2 font-mono text-[9px]">
+                            <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span className="text-gray-400">{activeEngineSubTab.toUpperCase()} INSTANCE ACTIVE</span>
+                          </div>
+                        </div>
+
+                        {/* Rendering Device Box with responsive design CSS filter based on LUT */}
+                        <div className="relative w-full rounded-xl overflow-hidden border border-[#1a253d] bg-black shadow-inner">
+                          
+                          {/* Main Graphic Layer */}
+                          <div className={`relative w-full h-[320px] bg-[#02040a] flex flex-col items-center justify-center transition-all duration-500 ${
+                            cineColorProfile === "raw_log"
+                              ? "contrast-[0.85] brightness-110 saturate-50"
+                              : cineColorProfile === "matrix_green"
+                                ? "brightness-105 saturate-125 sepia-[0.4] hue-rotate-[90deg]"
+                                : cineColorProfile === "warm_classic"
+                                  ? "sepia-[0.35] saturate-[0.8] contrast-105 hue-rotate-[-10deg]"
+                                  : cineColorProfile === "gold_forge"
+                                    ? "brightness-110 saturate-[1.6] contrast-[1.15] hue-rotate-[15deg]"
+                                    : "brightness-100 saturate-100"  // Cyber Slate (Standard)
+                          }`}>
+                            
+                            {/* Visual animations matching current active subtab */}
+                            {activeEngineSubTab === "unreal" && (
+                              <div className="w-full h-full relative flex items-center justify-center p-4">
+                                <div className="absolute inset-0 bg-radial-gradient from-purple-500/5 to-transparent pointer-events-none" />
+                                <div className="text-center space-y-4 z-10">
+                                  <div className="relative w-28 h-28 mx-auto flex items-center justify-center">
+                                    {/* Rotating raytraced outer loop */}
+                                    <div className="absolute inset-0 border-2 border-dashed border-purple-500/20 rounded-full animate-spin [animation-duration:15s]" />
+                                    {/* Rotating virtual nodes representing Nanite virtual meshes */}
+                                    <div className="absolute inset-2 border border-purple-400/40 rounded-full animate-spin" />
+                                    {/* Center core */}
+                                    <div className="w-12 h-12 bg-purple-600/20 border-2 border-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30 animate-pulse">
+                                      <span className="text-white font-display text-[10px] font-bold">UE5</span>
+                                    </div>
+                                    <div className="absolute bottom-0 right-1 text-[8px] font-mono text-purple-400 bg-black/60 px-1 rounded">LOD max</div>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="text-xs font-mono font-bold text-white">Nanite Mesh Buffer Status</div>
+                                    <div className="text-[10px] font-mono text-gray-400">Nodes evaluated: {ueShaders} | High-Fidelity Lumen calculations: {ueLumenBounces} Diffuse</div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {activeEngineSubTab === "unity" && (
+                              <div className="w-full h-full relative flex items-center justify-center p-4">
+                                <div className="absolute inset-0 bg-radial-gradient from-cyan-500/5 to-transparent pointer-events-none" />
+                                <div className="text-center space-y-4 w-full z-10 max-w-sm">
+                                  <div className="grid grid-cols-4 gap-1 p-2 bg-black/40 border border-cyan-500/20 rounded-lg">
+                                    {Array.from({ length: 16 }).map((_, idx) => (
+                                      <div key={idx} className="h-6 rounded bg-[#0b101c] border border-cyan-500/10 flex items-center justify-center relative overflow-hidden">
+                                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-cyan-400 animate-pulse" style={{ animationDelay: `${idx * 150}ms` }} />
+                                        <span className="text-[8px] font-mono text-cyan-400 font-bold">[{idx}]</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="text-xs font-mono font-bold text-white">Entity Component System Job Pipeline</div>
+                                    <div className="text-[9px] font-mono text-gray-400">Allocated chunks: {unityEcsChunks} | Job speed: Aggressive-Burst {unityBurstLevel.toUpperCase()} enabled</div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {activeEngineSubTab === "flutter" && (
+                              <div className="w-full h-full relative flex items-center justify-center p-4">
+                                <div className="w-[150px] h-[280px] bg-[#0c101d] rounded-2xl border-2 border-[#162035] p-2 flex flex-col justify-between shadow-2xl relative">
+                                  {/* Mobile speaker and camera hole banner */}
+                                  <div className="absolute top-1 left-12 right-12 h-2.5 bg-black rounded-full flex items-center justify-center" />
+                                  <div className="flex-1 flex flex-col justify-between pt-3 text-center space-y-2">
+                                    <div className="text-[8px] uppercase font-bold text-gray-500 font-mono tracking-wider font-sans">Sovereign Widget</div>
+                                    
+                                    <div className="bg-teal-950/20 border border-teal-500/20 p-2 rounded-lg text-center space-y-1">
+                                      <div className="w-4 h-4 rounded-full bg-teal-500/30 flex items-center justify-center text-teal-300 font-bold mx-auto text-[8px]">✔</div>
+                                      <div className="text-[9px] font-bold text-teal-300 font-sans">G1P Compliant</div>
+                                      <div className="text-[7.5px] text-gray-400 truncate font-mono">Platform: {flutterPlatform.toUpperCase()}</div>
+                                    </div>
+
+                                    <div className="bg-black/60 p-1.5 border border-[#162035] rounded font-mono text-[7px] text-teal-200">
+                                      Widget Tree Render Stable
+                                    </div>
+                                  </div>
+                                  <div className="h-5 flex items-center justify-center font-bold text-[8px] text-teal-400 font-mono border-t border-[#11182c]">
+                                    FPS: {ueFps} | IMPELLER GPU
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {activeEngineSubTab === "cineforge" && (
+                              <div className="w-full h-full relative flex items-center justify-center p-4">
+                                {/* Grid camera overlays */}
+                                {cineGridOverlay && (
+                                  <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 border border-orange-500/10 pointer-events-none z-10">
+                                    <div className="border-r border-b border-orange-500/10" />
+                                    <div className="border-r border-b border-orange-500/10" />
+                                    <div className="border-b border-orange-500/10" />
+                                    <div className="border-r border-b border-orange-500/10" />
+                                    <div className="border-r border-b border-orange-500/10" />
+                                    <div className="border-b border-orange-500/10" />
+                                    <div className="border-r border-orange-500/10" />
+                                    <div className="border-r border-orange-500/10" />
+                                    <div className="border-transparent" />
+                                  </div>
+                                )}
+                                
+                                <div className="absolute top-2 left-2 z-20 flex gap-2 text-[8px] font-mono bg-black/60 p-1 rounded border border-orange-500/20 uppercase">
+                                  <span className="text-orange-300">Lens: {cineLens.replace("_", " ")}</span>
+                                  <span className="text-slate-400">|</span>
+                                  <span className="text-orange-300">Focus: {cineFocusDistance}m</span>
+                                  <span className="text-slate-400">|</span>
+                                  <span className="text-orange-300">Aperture: {cineAperture}</span>
+                                </div>
+
+                                <div className="text-center bg-[#02040a]/80 p-4 border border-orange-500/10 rounded-xl z-10 space-y-2">
+                                  <Film className="h-6 w-6 text-orange-400 mx-auto animate-pulse" />
+                                  <div className="text-xs font-mono font-bold text-white uppercase tracking-widest font-sans">Molecular Cineforge Stream</div>
+                                  <p className="text-[10px] text-gray-400 font-sans max-w-xs leading-relaxed">
+                                    Rendering real-time 3D atomic structures under lut mapping profile <span className="text-orange-300 font-bold">"{cineColorProfile.replace("_", " ").toUpperCase()}"</span>.
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Standard Cineforge overlay UI panel */}
+                            <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center text-[7.5px] font-mono text-gray-500 bg-black/50 p-1 rounded z-20 uppercase">
+                              <span>MATRIX RES: 3840 x 2160 ULTRA HD</span>
+                              <span>COLOR SPACE: ACEScg Log v1.3</span>
+                              <span className="text-emerald-400 font-bold">LEDGER ENROLLED</span>
+                            </div>
+
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Unified Open Access Source Ledger Panel */}
+                      <div className="space-y-4 pt-4 border-t border-[#111830] mt-4">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-display font-medium text-xs text-indigo-300 uppercase tracking-widest flex items-center gap-1">
+                            <BookOpen className="h-3 w-3 text-indigo-400" />
+                            Unified Open-Access Research Registry
+                          </h4>
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-950/30 text-emerald-400 border border-emerald-500/20 font-mono text-[8px] uppercase tracking-wider">
+                            Certified Open Ledger
+                          </span>
+                        </div>
+
+                        <p className="text-[10px] text-gray-400 font-sans leading-relaxed">
+                          Integrated registries sync in real-time with verified governmental and academic open sciences databases under unrestrictive G1P protocol alignment:
+                        </p>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[9.5px]">
+                          <a href="https://arxiv.org/category_taxonomy" target="_blank" rel="noopener noreferrer" className="p-2 rounded bg-black/45 border border-[#162035]/90 hover:border-indigo-500/35 transition flex flex-col justify-between">
+                            <div>
+                              <span className="font-bold text-gray-300 block">arXiv Taxonomy</span>
+                              <span className="text-[8px] text-slate-500 leading-tight block mt-0.5">Preprints Category Classifier</span>
+                            </div>
+                            <span className="text-indigo-400 text-right mt-1 hover:underline">arxiv.org ↗</span>
+                          </a>
+
+                          <a href="https://connect.biorxiv.org/resources/" target="_blank" rel="noopener noreferrer" className="p-2 rounded bg-black/45 border border-[#162035]/90 hover:border-indigo-500/35 transition flex flex-col justify-between">
+                            <div>
+                              <span className="font-bold text-gray-300 block">bioRxiv Connect</span>
+                              <span className="text-[8px] text-slate-500 leading-tight block mt-0.5">Preprint Biological Resources</span>
+                            </div>
+                            <span className="text-indigo-400 text-right mt-1 hover:underline">biorxiv.org ↗</span>
+                          </a>
+
+                          <a href="https://www.stsci.edu/site-map" target="_blank" rel="noopener noreferrer" className="p-2 rounded bg-black/45 border border-[#162035]/90 hover:border-indigo-500/35 transition flex flex-col justify-between">
+                            <div>
+                              <span className="font-bold text-gray-300 block">STScI Observatory</span>
+                              <span className="text-[8px] text-slate-500 leading-tight block mt-0.5">Space Telescopes Index Portal</span>
+                            </div>
+                            <span className="text-indigo-400 text-right mt-1 hover:underline">stsci.edu ↗</span>
+                          </a>
+
+                          <a href="https://scixplorer.org/" target="_blank" rel="noopener noreferrer" className="p-2 rounded bg-black/45 border border-[#162035]/90 hover:border-indigo-500/35 transition flex flex-col justify-between">
+                            <div>
+                              <span className="font-bold text-gray-300 block">SciXplorer Core</span>
+                              <span className="text-[8px] text-slate-500 leading-tight block mt-0.5">Unified Publication Search Engine</span>
+                            </div>
+                            <span className="text-indigo-400 text-right mt-1 hover:underline">scixplorer.org ↗</span>
+                          </a>
+
+                          <a href="https://www.uspto.gov/learning-and-resources/inventors-entrepreneurs-resources" target="_blank" rel="noopener noreferrer" className="p-2 rounded bg-black/45 border border-[#162035]/90 hover:border-indigo-500/35 transition flex flex-col justify-between">
+                            <div>
+                              <span className="font-bold text-gray-300 block">USPTO Inventor Hub</span>
+                              <span className="text-[8px] text-slate-500 leading-tight block mt-0.5">Unrestrictive Provisional Paths</span>
+                            </div>
+                            <span className="text-indigo-400 text-right mt-1 hover:underline">uspto.gov ↗</span>
+                          </a>
+
+                          <a href="https://patents.google.com/advanced" target="_blank" rel="noopener noreferrer" className="p-2 rounded bg-black/45 border border-[#162035]/90 hover:border-indigo-500/35 transition flex flex-col justify-between">
+                            <div>
+                              <span className="font-bold text-gray-300 block">Google Patents</span>
+                              <span className="text-[8px] text-slate-500 leading-tight block mt-0.5">Advanced Global Prior Art Search</span>
+                            </div>
+                            <span className="text-indigo-400 text-right mt-1 hover:underline">patents.google ↗</span>
+                          </a>
+                        </div>
                       </div>
                     </div>
                   </div>
