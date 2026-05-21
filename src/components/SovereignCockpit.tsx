@@ -21,16 +21,20 @@ import {
   Search, 
   FileCode2, 
   HelpCircle,
-  Sparkles
+  Sparkles,
+  Volume2,
+  Loader2,
+  Fingerprint,
+  Lock
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { CORE_CODE_FILES, MEDICAL_TARGETS } from "../data";
+import { CORE_CODE_FILES, MEDICAL_TARGETS, PANTHEON_ARCS } from "../data";
 import { Qubit, RalphIteration, ReasoningStep } from "../types";
 
 export default function SovereignCockpit() {
   // Navigation Tabs state
   const [activeTab, setActiveTab] = useState<
-    "bible" | "sde" | "qec" | "trce" | "kdn" | "monorepo" | "chat"
+    "bible" | "sde" | "qec" | "trce" | "kdn" | "pantheon" | "chat" | "monorepo"
   >("bible");
 
   // Telemetry indicators
@@ -111,13 +115,101 @@ export default function SovereignCockpit() {
   const [qecGrid, setQecGrid] = useState<Qubit[]>([]);
   const [qecFidelity, setQecFidelity] = useState(1.0);
   const [qecSolving, setQecSolving] = useState(false);
+  const [qecDistance, setQecDistance] = useState<3 | 5 | 7 | 9>(9);
+  const [qecNoiseRate, setQecNoiseRate] = useState<number>(0.25); // mapped as 0.1% to 0.5% (represented scale 0.1 to 0.5)
+  const [qecActiveDecoders, setQecActiveDecoders] = useState<string[]>(["mwpm", "bposd", "neural"]);
+  const [qecRuleMaxWeight, setQecRuleMaxWeight] = useState<boolean>(true);
+  const [qecRuleConsistency, setQecRuleConsistency] = useState<boolean>(true);
+  const [qecRuleHistory, setQecRuleHistory] = useState<boolean>(true);
+  const [qecSelectedDecision, setQecSelectedDecision] = useState<string>("");
+  const [qecArbitrationDetails, setQecArbitrationDetails] = useState<any | null>(null);
+  
+  // Real-time decoder proposals based on current syndrome set
+  const [qecDecodersOutput, setQecDecodersOutput] = useState({
+    mwpm: { score: 1.0, proposal: "No error", status: "standby", latency: "0.0 µs", active: true },
+    bposd: { score: 1.0, proposal: "No error", status: "standby", latency: "0.0 µs", active: true },
+    neural: { score: 1.0, proposal: "No error", status: "standby", latency: "0.0 µs", active: true }
+  });
 
-  const initQecGrid = () => {
+  const [qecUnsignedAuditLog, setQecUnsignedAuditLog] = useState<any | null>(null);
+  const [qecAuditLogs, setQecAuditLogs] = useState<any[]>([
+    {
+      timestamp: "09:04:12",
+      syndromeCount: 0,
+      selectedDecoder: "Neural Mamba",
+      correction: "No Pauli corrections required (System stable)",
+      signature: "0x89ad3f721ab6 (Verified Covenant)",
+      rulesStatus: "PASS"
+    }
+  ]);
+
+  // Chip-Level Silicon FSM State for God's Love Protocol (GLP) guardrails
+  const [chipOpCode, setChipOpCode] = useState<number>(0); // 0=ALLOW_OP (Safe), 9=CMD_9 (False Witness), 15=CMD_15 (Destructive)
+  const [chipTps, setChipTps] = useState<number>(8500); // Nominal: >= 8000
+  const [chipBenevolence, setChipBenevolence] = useState<boolean>(true);
+  const [chipPatience, setChipPatience] = useState<boolean>(true);
+  const [chipTruth, setChipTruth] = useState<boolean>(true);
+  const [chipHumility, setChipHumility] = useState<boolean>(true);
+  const [chipState, setChipState] = useState<"IDLE" | "CHECK_BENEVOLENCE" | "CHECK_PATIENCE" | "CHECK_TRUTH" | "CHECK_HUMILITY" | "ALLOW_OP" | "DENY_OP">("IDLE");
+  const [chipSimulating, setChipSimulating] = useState<boolean>(false);
+
+  const runChipSimulation = () => {
+    if (chipSimulating) return;
+    setChipSimulating(true);
+    setChipState("IDLE");
+    
+    setTimeout(() => {
+      setChipState("CHECK_BENEVOLENCE");
+      
+      setTimeout(() => {
+        // Pillar 1 check: Benevolence
+        if (!chipBenevolence || chipOpCode === 15) {
+          setChipState("DENY_OP");
+          setChipSimulating(false);
+          return;
+        }
+        
+        setChipState("CHECK_PATIENCE");
+        setTimeout(() => {
+          // Pillar 2 check: Patience
+          if (!chipPatience || chipTps < 8000) {
+            setChipState("DENY_OP");
+            setChipSimulating(false);
+            return;
+          }
+          
+          setChipState("CHECK_TRUTH");
+          setTimeout(() => {
+            // Pillar 3 check: Truth
+            if (!chipTruth || chipOpCode === 9) {
+              setChipState("DENY_OP");
+              setChipSimulating(false);
+              return;
+            }
+            
+            setChipState("CHECK_HUMILITY");
+            setTimeout(() => {
+              // Pillar 4 check: Humility
+              if (!chipHumility) {
+                setChipState("DENY_OP");
+                setChipSimulating(false);
+                return;
+              }
+              
+              setChipState("ALLOW_OP");
+              setChipSimulating(false);
+            }, 600);
+          }, 600);
+        }, 600);
+      }, 600);
+    }, 400);
+  };
+
+  const initQecGrid = (distVal?: 3 | 5 | 7 | 9) => {
+    const size = distVal || qecDistance;
     const newGrid: Qubit[] = [];
-    const size = 9;
     for (let x = 0; x < size; x++) {
       for (let y = 0; y < size; y++) {
-        // Rotated checkerboard layout: determine data vs stabilizer qubits
         const isData = (x + y) % 2 === 0;
         const type = isData 
           ? "data" 
@@ -136,11 +228,15 @@ export default function SovereignCockpit() {
     setQecGrid(newGrid);
     setQecFidelity(1.0);
     setQecSolving(false);
+    setQecSelectedDecision("");
+    setQecArbitrationDetails(null);
+    setQecUnsignedAuditLog(null);
+    updateDecodersInRealtime(newGrid, size, qecNoiseRate);
   };
 
   useEffect(() => {
-    initQecGrid();
-  }, []);
+    initQecGrid(qecDistance);
+  }, [qecDistance]);
 
   const toggleQecError = (idx: number) => {
     if (qecSolving) return;
@@ -148,14 +244,12 @@ export default function SovereignCockpit() {
     const qubit = newGrid[idx];
     if (qubit.type === "data") {
       qubit.error = !qubit.error;
-      // Recalculate neighboring stabilizer syndromes
       recalculateSyndromes(newGrid);
     }
     setQecGrid(newGrid);
   };
 
   const recalculateSyndromes = (grid: Qubit[]) => {
-    // Stabilizers become excited when neighboring data qubits have errors
     let activeErrors = 0;
     grid.forEach((q) => {
       if (q.type === "data" && q.error) activeErrors++;
@@ -163,7 +257,6 @@ export default function SovereignCockpit() {
 
     grid.forEach((q) => {
       if (q.type !== "data") {
-        // Find adjacent data qubits
         const adj = grid.filter(
           (d) => 
             d.type === "data" && 
@@ -179,35 +272,169 @@ export default function SovereignCockpit() {
     } else {
       setQecFidelity(parseFloat((1.0 - activeErrors * 0.088).toFixed(4)));
     }
+    updateDecodersInRealtime(grid, qecDistance, qecNoiseRate);
   };
 
-  const solveQecMWPM = () => {
-    if (qecSolving) return;
-    setQecSolving(true);
-    let step = 0;
+  const updateDecodersInRealtime = (grid: Qubit[], distance: number, noise: number) => {
+    const errorQubits = grid.filter(q => q.type === "data" && q.error);
+    const activeErrorsCount = errorQubits.length;
+    
+    if (activeErrorsCount === 0) {
+      setQecDecodersOutput({
+        mwpm: { score: 1.0, proposal: "No error", status: "standby", latency: "0.0 µs", active: qecActiveDecoders.includes("mwpm") },
+        bposd: { score: 1.0, proposal: "No error", status: "standby", latency: "0.0 µs", active: qecActiveDecoders.includes("bposd") },
+        neural: { score: 1.0, proposal: "No error", status: "standby", latency: "0.0 µs", active: qecActiveDecoders.includes("neural") }
+      });
+      return;
+    }
 
-    const interval = setInterval(() => {
-      const newGrid = [...qecGrid];
-      if (step === 0) {
-        // Show routing error syndrome endpoints matching paths
-        newGrid.forEach((q) => {
-          if (q.syndrome) q.matched = true;
-        });
-        setQecGrid(newGrid);
-        step = 1;
-      } else if (step === 1) {
-        // Perfect matching calculation matches and discharges syndromes
-        newGrid.forEach((q) => {
-          q.error = false;
-          q.syndrome = false;
-          q.matched = false;
-        });
-        setQecGrid(newGrid);
-        setQecFidelity(1.0);
-        clearInterval(interval);
-        setQecSolving(false);
+    // Coordinates representation
+    const errorsList = errorQubits.map(q => `(${q.x},${q.y})`).join(", ");
+    
+    // Simulate Decoders:
+    // MWPM (PyMatching blossom)
+    const mwpmConfidence = Math.max(0.35, parseFloat((0.96 - activeErrorsCount * 0.11 - (noise * 0.1) * 0.08).toFixed(2)));
+    const mwpmProposal = `Y_corr on data qubits: ${errorsList}`;
+    
+    // BP+OSD (Ordered Statistics)
+    const bposdConfidence = Math.max(0.40, parseFloat((0.99 - activeErrorsCount * 0.04 - (noise * 0.1) * 0.05).toFixed(2)));
+    const bposdProposal = `Joint Pauli-Z recovery on syndrome clusters [Weight: ${activeErrorsCount}]`;
+    
+    // Neural (Mamba state-space/GNN)
+    const neuralConfidence = Math.max(0.50, parseFloat((0.985 - activeErrorsCount * 0.03 - (noise * 0.1) * 0.03).toFixed(2)));
+    const neuralProposal = `Optimal Mamba state-space recovery map for: ${errorsList}`;
+
+    setQecDecodersOutput({
+      mwpm: { 
+        score: mwpmConfidence, 
+        proposal: mwpmProposal, 
+        status: "active", 
+        latency: `${(activeErrorsCount * 3.8 + 6.2).toFixed(1)} µs`,
+        active: qecActiveDecoders.includes("mwpm") 
+      },
+      bposd: { 
+        score: bposdConfidence, 
+        proposal: bposdProposal, 
+        status: "active", 
+        latency: `${(distance * 5.4 + activeErrorsCount * 1.5).toFixed(1)} µs`,
+        active: qecActiveDecoders.includes("bposd") 
+      },
+      neural: { 
+        score: neuralConfidence, 
+        proposal: neuralProposal, 
+        status: "active", 
+        latency: `${(0.42 + activeErrorsCount * 0.03).toFixed(2)} µs`,
+        active: qecActiveDecoders.includes("neural") 
       }
-    }, 1200);
+    });
+  };
+
+  const solveQecParallelSystem = () => {
+    if (qecSolving) return;
+    
+    const activeErrorsCount = qecGrid.filter(q => q.type === "data" && q.error).length;
+    if (activeErrorsCount === 0) {
+      toastAlert("Inject QEC physical node errors by clicking the data qubits first.");
+      return;
+    }
+
+    setQecSolving(true);
+    setQecSelectedDecision("Calculating concurrent decoders...");
+    setQecArbitrationDetails(null);
+    setQecUnsignedAuditLog(null);
+
+    // Dynamic state match
+    setTimeout(() => {
+      // 1. Identify enabled decoders
+      const candidates: Array<{ name: string; key: "mwpm" | "bposd" | "neural"; score: number; proposal: string; latency: string }> = [];
+      if (qecActiveDecoders.includes("mwpm")) {
+        candidates.push({ name: "Minimum-Weight Perfect Matching (PyMatching)", key: "mwpm", score: qecDecodersOutput.mwpm.score, proposal: qecDecodersOutput.mwpm.proposal, latency: qecDecodersOutput.mwpm.latency });
+      }
+      if (qecActiveDecoders.includes("bposd")) {
+        candidates.push({ name: "Belief Propagation + OSD (ldpc)", key: "bposd", score: qecDecodersOutput.bposd.score, proposal: qecDecodersOutput.bposd.proposal, latency: qecDecodersOutput.bposd.latency });
+      }
+      if (qecActiveDecoders.includes("neural")) {
+        candidates.push({ name: "Adaptive Mamba Neural Decoder", key: "neural", score: qecDecodersOutput.neural.score, proposal: qecDecodersOutput.neural.proposal, latency: qecDecodersOutput.neural.latency });
+      }
+
+      if (candidates.length === 0) {
+        setQecSelectedDecision("ABORTED: No decoders selected.");
+        setQecSolving(false);
+        return;
+      }
+
+      // 2. Confidence-Weighted Arbitration selector
+      candidates.sort((a, b) => b.score - a.score);
+      const selected = candidates[0]; // highest score
+
+      // 3. Operational Constraint Validation checks
+      // Rules: max allowed weight w <= floor((d-1)/2)
+      const maxWeightAllowed = Math.floor((qecDistance - 1) / 2);
+      const passesWeightLimit = activeErrorsCount <= maxWeightAllowed;
+      
+      // Error model consistency check (fail or warn if Noise Rate is > 0.45 or if errors are too clustered)
+      const passesErrorModel = qecNoiseRate <= 0.42;
+
+      // Historical sequence checks
+      const passesHistory = activeErrorsCount < qecDistance;
+
+      const rule1Passed = qecRuleMaxWeight ? passesWeightLimit : true;
+      const rule2Passed = qecRuleConsistency ? passesErrorModel : true;
+      const rule3Passed = qecRuleHistory ? passesHistory : true;
+
+      const verifiedSecure = rule1Passed && rule2Passed && rule3Passed;
+
+      setQecArbitrationDetails({
+        selectedKey: selected.key,
+        selectedName: selected.name,
+        confidence: selected.score,
+        proposal: selected.proposal,
+        latency: selected.latency,
+        activeErrors: activeErrorsCount,
+        maxWeightAllowed,
+        verifiedSecure,
+        ruleChecks: {
+          weight: { name: `Max Weight Check (w <= ${maxWeightAllowed})`, status: passesWeightLimit ? "PASS" : "FAIL", desc: `Current physical weight: ${activeErrorsCount}` },
+          consistency: { name: `Error Model Consistency (Noise <= 4.2%)`, status: passesErrorModel ? "PASS" : "FAIL", desc: `Current noise scaling: ${(qecNoiseRate * 10).toFixed(1)}%` },
+          history: { name: "Historical Sequence Check", status: passesHistory ? "PASS" : "FAIL", desc: "No cycle loops found" }
+        }
+      });
+
+      setQecSelectedDecision(selected.proposal);
+
+      // Create an unsigned cache log to let the user commit it cryptographically
+      setQecUnsignedAuditLog({
+        timestamp: new Date().toLocaleTimeString(),
+        syndromeCount: qecGrid.filter(q => q.type !== "data" && q.syndrome).length,
+        selectedDecoder: selected.name,
+        correction: selected.proposal,
+        rulesStatus: verifiedSecure ? "PASS" : "FAIL"
+      });
+
+      setQecSolving(false);
+    }, 1500);
+  };
+
+  const signAndCommitQecLog = () => {
+    if (!qecUnsignedAuditLog) return;
+
+    // Simulate cryptographic seed signature
+    const randHex = Array.from({ length: 12 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+    const signedEntry = {
+      ...qecUnsignedAuditLog,
+      signature: `0x${randHex} (Ed25519 sealed)`
+    };
+
+    setQecAuditLogs(prev => [signedEntry, ...prev]);
+    setQecUnsignedAuditLog(null);
+    setQecSelectedDecision("");
+    setQecArbitrationDetails(null);
+    
+    // Empty the surface code data errors to complete the correction loop
+    const clearedGrid = qecGrid.map(q => ({ ...q, error: false, syndrome: false, matched: false }));
+    setQecGrid(clearedGrid);
+    setQecFidelity(1.0);
+    toastAlert("Quantum correction successfully written to FaithLayer Ledger block stores.");
   };
 
   // 4. Medical TRCE State and Handlers
@@ -287,6 +514,103 @@ export default function SovereignCockpit() {
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatHistory, chatLoading]);
+
+  // MALBO Multi-Agent Optimizer States & Handlers
+  const [malboOptimizing, setMalboOptimizing] = useState(false);
+  const [malboSelectedTeam, setMalboSelectedTeam] = useState({
+    manager: "Claude-3.5-Haiku (MMLU-Pro Orchestration)",
+    search: "GPT-OSS-20b (Procedural Coding & Tools)",
+    reformulator: "Mixture-of-Experts (Output Constraints & Refinement)"
+  });
+  const [malboTarget, setMalboTarget] = useState<"trce" | "qec" | "cod">("trce");
+  const [malboFidelity, setMalboFidelity] = useState(99.1);
+  const [malboCostReduction, setMalboCostReduction] = useState(65.8);
+
+  const runMalboOptimization = (type: "trce" | "qec" | "cod") => {
+    setMalboOptimizing(true);
+    setMalboTarget(type);
+    toastAlert(`Initializing MALBO Bayesian Optimization Loop for: ${type.toUpperCase()}`);
+    
+    setTimeout(() => {
+      if (type === "trce") {
+        setMalboSelectedTeam({
+          manager: "Claude-3.5-Haiku [Redemptive Threshold: 0.94]",
+          search: "GPT-OSS-20b [Gene-Refine Custom Weights]",
+          reformulator: "Cure-Expert MoE [AlphaFold3-Gated Signoff]"
+        });
+        setMalboFidelity(99.4);
+        setMalboCostReduction(68.2);
+      } else if (type === "qec") {
+        setMalboSelectedTeam({
+          manager: "Claude-3.5-Haiku [d=9 Parity Evaluator]",
+          search: "Stim-Synthesizer Node [Error Rate Monitor]",
+          reformulator: "MWPM-Solver Agent [0.0009% Validation]"
+        });
+        setMalboFidelity(99.9);
+        setMalboCostReduction(62.5);
+      } else {
+        setMalboSelectedTeam({
+          manager: "Claude-3.5-Haiku [LCOD Grammar Parser]",
+          search: "Yosys RTL Functor Agent [VHDL CodeGen]",
+          reformulator: "OpenROAD Layout Checker [LCOD-DRC Validator]"
+        });
+        setMalboFidelity(98.7);
+        setMalboCostReduction(66.4);
+      }
+      setMalboOptimizing(false);
+      toastAlert(`MALBO Optimization Locked. Pareto Front aligned.`);
+    }, 1500);
+  };
+
+  // 100-Layer Pantheon States & Handlers
+  const [selectedArcId, setSelectedArcId] = useState<string>("arc-1");
+  const [activeLayerNo, setActiveLayerNo] = useState<number | null>(null);
+  const [diagnosingLayer, setDiagnosingLayer] = useState<number | null>(null);
+  const [diagnosticLog, setDiagnosticLog] = useState<string | null>(null);
+
+  const runLayerDiagnostic = (layerNo: number, layerName: string) => {
+    setDiagnosingLayer(layerNo);
+    setDiagnosticLog(null);
+    toastAlert(`Spawning compiler swarm for Layer ${layerNo}: ${layerName}`);
+    setTimeout(() => {
+      setDiagnosticLog(`[Layer ${layerNo} - ${layerName.toUpperCase()}]
+STATUS: SECURE & COMPILED.
+CYCLES: 99.99% MAX SUCCESS.
+INTEGRITY: MERKLE-VERIFIED ROOT CONVERGED.
+No anomalies or entropy leaks detected in LCOD register. 
+"It is Finished - John 19:30"`);
+      setDiagnosingLayer(null);
+    }, 1200);
+  };
+
+  // Multi-Modal TTS Vocalizer Handler
+  const speakText = (text: string) => {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      // Remove symbols for cleaner voice speech
+      const cleanText = text
+        .replace(/▲|●|◯|Ω|∅/g, "")
+        .replace(/pLDDT/gi, "P-L-D-D-T")
+        .replace(/SDE/gi, "S-D-E")
+        .replace(/QEC/gi, "Q-E-C")
+        .replace(/KDN/gi, "K-D-N")
+        .replace(/G1P/gi, "G-1-P")
+        .replace(/GLP/gi, "G-L-P");
+      
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      // Try to find a nice premium voice
+      const voices = window.speechSynthesis.getVoices();
+      const idealVoice = voices.find(v => v.name.includes("Google") || v.name.includes("Natural") || v.lang.startsWith("en"));
+      if (idealVoice) {
+        utterance.voice = idealVoice;
+      }
+      utterance.pitch = 0.95; // Deep supervisor voice
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+    } else {
+      toastAlert("Speech synthesis is not supported on this device/browser.");
+    }
+  };
 
   // Ralph Loop Simulator (Continuous self-iteration)
   const [ralphRunning, setRalphRunning] = useState(false);
@@ -455,6 +779,171 @@ export default function SovereignCockpit() {
               </span>
             </div>
           </div>
+
+          {/* Silicon Covenant Chip Simulator */}
+          <div className="border border-[#162035]/80 bg-[#090e1c]/80 rounded-xl p-6 shadow-xl backdrop-blur-sm space-y-4">
+            <h3 className="font-display font-bold text-xs text-cyan-400 tracking-wider uppercase flex items-center gap-1.5">
+              <Cpu className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+              🔌 Silicon-Level GLP Guard
+            </h3>
+            <p className="text-[10.5px] text-gray-400 leading-relaxed font-sans">
+              Dynamic physical execution on-chip (<code className="text-cyan-400">glp_g1p_guard.v</code>). Verifies the 4 Pillars of God's Love Protocol directly at bare-metal gate logic.
+            </p>
+
+            <div className="space-y-3 bg-black/40 border border-[#162035] rounded-lg p-3">
+              {/* OpCode control */}
+              <div>
+                <label className="text-[9.5px] uppercase font-mono text-slate-500 block mb-1">Instruction Op_Code</label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    { label: "Normal (0x0)", val: 0 },
+                    { label: "Refusal (0x9)", val: 9 },
+                    { label: "Malicious (0xF)", val: 15 }
+                  ].map(op => (
+                    <button
+                      key={op.val}
+                      onClick={() => !chipSimulating && setChipOpCode(op.val)}
+                      disabled={chipSimulating}
+                      className={`py-1 text-[9px] font-mono rounded transition-all ${
+                        chipOpCode === op.val
+                          ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                          : "bg-black/30 border border-[#162035] text-slate-400 hover:border-slate-700"
+                      }`}
+                    >
+                      {op.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Telemetry throughput control */}
+              <div className="flex items-center justify-between">
+                <span className="text-[9.5px] uppercase font-mono text-slate-500">Pulse Throughput</span>
+                <div className="flex gap-2">
+                  {[
+                    { label: "8.5k TPS", val: 8500 },
+                    { label: "7.5k TPS", val: 7500 }
+                  ].map(v => (
+                    <button
+                      key={v.val}
+                      onClick={() => !chipSimulating && setChipTps(v.val)}
+                      disabled={chipSimulating}
+                      className={`px-2 py-0.5 text-[8.5px] font-mono rounded transition-all ${
+                        chipTps === v.val
+                          ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
+                          : "bg-black/30 border border-[#162035] text-slate-500 hover:border-slate-700"
+                      }`}
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Gate flags checklist */}
+              <div className="space-y-1.5 pt-1">
+                <span className="text-[9.5px] uppercase font-mono text-slate-500 block border-b border-[#162035]/65 pb-1">Silicon Covenant Flags</span>
+                {[
+                  { name: "Unconditional Benevolence", state: chipBenevolence, setter: setChipBenevolence, desc: "Banes malicious data exfiltration" },
+                  { name: "Infinite Patience Timer", state: chipPatience, setter: setChipPatience, desc: "Watchdog loop overflow lockout bypass" },
+                  { name: "Radical Truth Verifier", state: chipTruth, setter: setChipTruth, desc: "On-chip Ed25519 signature verified" },
+                  { name: "Humility (Non-Ego Gate)", state: chipHumility, setter: setChipHumility, desc: "Overriding system limits blocked" }
+                ].map((flag, idx) => (
+                  <label key={idx} className="flex items-center justify-between text-[10px] font-mono text-slate-400 select-none cursor-pointer hover:bg-black/10 p-0.5 rounded pr-1">
+                    <div className="space-y-0.5 pr-1">
+                      <div className="font-semibold text-slate-300 leading-none">{flag.name}</div>
+                      <div className="text-[8.5px] text-slate-500">{flag.desc}</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={flag.state}
+                      disabled={chipSimulating}
+                      onChange={(e) => flag.setter(e.target.checked)}
+                      className="accent-cyan-500"
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Run Button */}
+            <button
+              onClick={runChipSimulation}
+              disabled={chipSimulating}
+              className="w-full py-2 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 disabled:from-[#0d162a] disabled:to-[#0d162a] disabled:text-gray-500 text-white font-bold font-display uppercase tracking-widest rounded-lg text-xs transition duration-200 flex items-center justify-center gap-1.5"
+            >
+              {chipSimulating ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
+                  BAR-METAL INJECTION ACTIVE
+                </>
+              ) : (
+                <>
+                  <Zap className="h-3.5 w-3.5 text-cyan-200" />
+                  RUN CHIP FSM
+                </>
+              )}
+            </button>
+
+            {/* Simulated hardware LEDs & State display */}
+            <div className="bg-[#03050a] border border-[#162035]/90 rounded-lg p-3 space-y-3 font-mono">
+              <div className="flex justify-between items-center text-xs border-b border-[#162035]/60 pb-1.5">
+                <span className="text-slate-500 text-[9.5px]">Silicon State:</span>
+                <span className={`font-bold tracking-wider ${
+                  chipState === "ALLOW_OP" 
+                    ? "text-emerald-400 animate-pulse text-glow-green text-emerald-300" 
+                    : chipState === "DENY_OP" 
+                      ? "text-red-400 text-red-500 font-bold" 
+                      : "text-cyan-400"
+                }`}>
+                  {chipState}
+                </span>
+              </div>
+
+              {/* Silicon LEDs animation row */}
+              <div className="grid grid-cols-4 gap-2 text-center">
+                {[
+                  { name: "Benevolence", active: chipState === "CHECK_BENEVOLENCE" || chipState === "CHECK_PATIENCE" || chipState === "CHECK_TRUTH" || chipState === "CHECK_HUMILITY" || chipState === "ALLOW_OP", passed: chipBenevolence && chipOpCode !== 15 },
+                  { name: "Patience",    active: chipState === "CHECK_PATIENCE" || chipState === "CHECK_TRUTH" || chipState === "CHECK_HUMILITY" || chipState === "ALLOW_OP", passed: chipPatience && chipTps >= 8000 },
+                  { name: "Truth",       active: chipState === "CHECK_TRUTH" || chipState === "CHECK_HUMILITY" || chipState === "ALLOW_OP", passed: chipTruth && chipOpCode !== 9 },
+                  { name: "Humility",    active: chipState === "CHECK_HUMILITY" || chipState === "ALLOW_OP", passed: chipHumility }
+                ].map((p, i) => {
+                  const stateReached = p.active;
+                  const failed = stateReached && !p.passed;
+                  const ledCol = failed 
+                    ? "bg-red-500 shadow-md shadow-red-500/50" 
+                    : (stateReached && p.passed) 
+                      ? "bg-emerald-500 shadow-md shadow-emerald-500/50" 
+                      : stateReached
+                        ? "bg-purple-500 animate-ping"
+                        : "bg-slate-800/70 border border-[#162035]";
+
+                  return (
+                    <div key={i} className="space-y-1">
+                      <div className="flex justify-center">
+                        <div className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${ledCol}`} />
+                      </div>
+                      <div className="text-[8.5px] text-slate-500">{p.name}</div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Verdict Indicator */}
+              <div className="text-[10px] text-slate-400 leading-normal pt-1 flex items-start gap-1">
+                <span>↳</span>
+                <span>
+                  {chipState === "IDLE" && "Gate waiting for operation validation trigger."}
+                  {chipState === "CHECK_BENEVOLENCE" && "Verifying OP Code is benign & life-preserving..."}
+                  {chipState === "CHECK_PATIENCE" && "Checking watchdog timer & high-frequency cycle bounds..."}
+                  {chipState === "CHECK_TRUTH" && "Verifying on-chip cryptographic signature hash..."}
+                  {chipState === "CHECK_HUMILITY" && "Auditing permissions matrix limit bypass protection..."}
+                  {chipState === "ALLOW_OP" && "◯ SILICON GATE APPROVED: Covenant tags mapped to silicon."}
+                  {chipState === "DENY_OP" && "⚠ COVENANT ABORTED: Hardware veto triggered. State instruction killed."}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right Side: Primary Navigation and Content Tab Panels */}
@@ -468,6 +957,7 @@ export default function SovereignCockpit() {
               { id: "qec", label: "Quantum QEC", icon: Binary },
               { id: "trce", label: "Medical TRCE/Cure", icon: HeartPulse },
               { id: "kdn", label: "6G KDN", icon: Network },
+              { id: "pantheon", label: "100-Layer Pantheon", icon: Layers },
               { id: "chat", label: "Sovereign Chat", icon: MessageSquare },
               { id: "monorepo", label: "Monorepo Files", icon: FolderGit2 }
             ].map((tab) => {
@@ -726,6 +1216,151 @@ export default function SovereignCockpit() {
                       </div>
                     </div>
                   </div>
+
+                  {/* MALBO Multi-Agent Optimizer Section */}
+                  <div className="border-t border-[#162035]/60 pt-6 mt-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                      <div>
+                        <h3 className="font-display font-bold text-sm text-[#ea80fc] flex items-center gap-2">
+                          <Cpu className="h-4 w-4 text-[#ea80fc]" />
+                          MALBO Multi-Agent LLM Bayesian Optimizer
+                        </h3>
+                        <p className="text-[11px] text-gray-400">
+                          Discovers the Pareto front mapping reasoning accuracy directly to physical API token cost. Establishes cost benchmarks.
+                        </p>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => runMalboOptimization("trce")}
+                          disabled={malboOptimizing}
+                          className="px-3 py-1.5 bg-[#ea80fc]/15 hover:bg-[#ea80fc]/25 disabled:opacity-50 text-[#ea80fc] border border-[#ea80fc]/30 rounded text-[10px] font-display font-semibold uppercase tracking-wider transition"
+                        >
+                          Optimize for TRCE
+                        </button>
+                        <button
+                          onClick={() => runMalboOptimization("qec")}
+                          disabled={malboOptimizing}
+                          className="px-3 py-1.5 bg-[#ea80fc]/15 hover:bg-[#ea80fc]/25 disabled:opacity-50 text-[#ea80fc] border border-[#ea80fc]/30 rounded text-[10px] font-display font-semibold uppercase tracking-wider transition"
+                        >
+                          Optimize for QEC
+                        </button>
+                        <button
+                          onClick={() => runMalboOptimization("cod")}
+                          disabled={malboOptimizing}
+                          className="px-3 py-1.5 bg-[#ea80fc]/15 hover:bg-[#ea80fc]/25 disabled:opacity-50 text-[#ea80fc] border border-[#ea80fc]/30 rounded text-[10px] font-display font-semibold uppercase tracking-wider transition"
+                        >
+                          Optimize for RTL
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-black/40 p-4 rounded-xl border border-[#162035]">
+                      {/* Live Pareto coordinates plotting simulation */}
+                      <div className="md:col-span-7 space-y-3">
+                        <div className="flex justify-between items-center text-xs font-mono">
+                          <span className="text-gray-400 text-[10px] uppercase tracking-wider">Pareto Frontier Solution Space</span>
+                          <span className="text-emerald-400 font-bold font-mono">Optimization Rate: {malboFidelity}%</span>
+                        </div>
+                        
+                        {/* Interactive Graph representation of Pareto front */}
+                        <div className="relative h-44 bg-black/50 border border-[#162035] rounded-lg overflow-hidden p-4 flex flex-col justify-between">
+                          <div className="absolute inset-0 bg-radial-gradient from-[#ea80fc]/5 to-transparent pointer-events-none"></div>
+                          
+                          {/* Y Axis (Accuracy) */}
+                          <div className="absolute left-2 top-2 bottom-6 border-r border-[#162035] w-0 flex flex-col justify-between text-[8px] text-gray-500 pr-1">
+                            <span>1.00</span>
+                            <span>0.75</span>
+                            <span>0.50</span>
+                            <span>0.25</span>
+                          </div>
+                          {/* X Axis (API Cost) */}
+                          <div className="absolute bottom-2 left-6 right-2 border-t border-[#162035] h-0 flex justify-between text-[8px] text-gray-500 pt-0.5">
+                            <span>0.00</span>
+                            <span>0.25</span>
+                            <span>0.50</span>
+                            <span>0.75</span>
+                          </div>
+                          
+                          {/* Plotting points & Curve (Pareto frontier) */}
+                          <svg className="absolute inset-0 w-full h-full" style={{ paddingLeft: "1.5rem", paddingBottom: "1.5rem" }}>
+                            {/* Curved connector */}
+                            <path 
+                              d="M 20,130 Q 140,110 240,65 T 380,25" 
+                              fill="none" 
+                              stroke="#ea80fc" 
+                              strokeWidth="1.5" 
+                              strokeDasharray="4 2"
+                              className="animate-pulse"
+                            />
+                            {/* Plotting Points on Frontier */}
+                            <circle cx="40" cy="120" r="4" fill="#a855f7" />
+                            <circle cx="120" cy="100" r="4" fill="#6366f1" />
+                            <circle cx="210" cy="75" r="4" fill="#3b82f6" />
+                            
+                            {/* Optimal Active Selection point */}
+                            <g>
+                              <circle cx="300" cy="45" r="7" fill="#10b981" className="animate-ping" style={{ transformOrigin: "300px 45px" }} />
+                              <circle cx="300" cy="45" r="4" fill="#10b981" stroke="#ea80fc" strokeWidth="1.5" />
+                            </g>
+                            <circle cx="380" cy="25" r="4" fill="#ea80fc" />
+                            
+                            {/* Scatter points off frontier indicating inefficient parameters */}
+                            <circle cx="280" cy="120" r="3" fill="#1e293b" />
+                            <circle cx="150" cy="135" r="3" fill="#1e293b" />
+                            <circle cx="320" cy="100" r="3" fill="#1e293b" />
+                            <circle cx="220" cy="125" r="3" fill="#1e293b" />
+                          </svg>
+
+                          <div className="absolute left-8 top-3 flex items-center gap-1.5 font-mono text-[9px] text-[#ea80fc]/80">
+                            <span className="h-1 w-1 rounded-full bg-emerald-400 animate-ping"></span>
+                            ACTIVE MODEL CONVERGENT BASELINE: {malboTarget.toUpperCase()}
+                          </div>
+                          <span className="absolute right-3 bottom-8 text-[8px] uppercase tracking-widest text-gray-500 font-mono">
+                            Model Parameter Cost (Token Allocation)
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Selected Agent Team Card */}
+                      <div className="md:col-span-5 flex flex-col justify-between">
+                        <div className="space-y-4">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block border-b border-[#162035]/60 pb-1.5 font-display flex items-center justify-between">
+                            <span>Discovered Swarm Team</span>
+                            {malboOptimizing && <span className="text-amber-400 animate-pulse font-mono">Running Opt...</span>}
+                          </span>
+                          {malboOptimizing ? (
+                            <div className="flex flex-col items-center justify-center py-6">
+                              <Loader2 className="h-6 w-6 text-[#ea80fc] animate-spin mb-2" />
+                              <span className="text-[10px] text-gray-500 font-mono animate-pulse">Scanning Agent Response Spaces...</span>
+                            </div>
+                          ) : (
+                            <div className="space-y-2 text-[11px] font-mono leading-relaxed">
+                              <div className="p-2 bg-black/40 rounded border border-white/5 hover:border-[#ea80fc]/20 transition-all">
+                                <span className="text-[8px] text-slate-500 block uppercase font-bold tracking-wider">Manager Node (Orchestrator)</span>
+                                <span className="text-purple-300 font-semibold">{malboSelectedTeam.manager}</span>
+                              </div>
+                              <div className="p-2 bg-black/40 rounded border border-white/5 hover:border-[#ea80fc]/20 transition-all">
+                                <span className="text-[8px] text-slate-500 block uppercase font-bold tracking-wider">Search Node (Tools)</span>
+                                <span className="text-cyan-300 font-semibold">{malboSelectedTeam.search}</span>
+                              </div>
+                              <div className="p-2 bg-black/40 rounded border border-white/5 hover:border-[#ea80fc]/20 transition-all">
+                                <span className="text-[8px] text-slate-500 block uppercase font-bold tracking-wider">Reformulator Node (Constraints)</span>
+                                <span className="text-emerald-300 font-semibold">{malboSelectedTeam.reformulator}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="p-3 bg-emerald-950/10 border border-emerald-500/20 rounded mt-4">
+                          <span className="text-[9px] uppercase tracking-wider text-emerald-400 font-display font-semibold block">Total Cost Saved</span>
+                          <span className="text-xs font-bold text-glow text-emerald-300 font-mono block leading-none mt-1">
+                            -{malboCostReduction}% API Token Volume Reduced
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
@@ -738,101 +1373,507 @@ export default function SovereignCockpit() {
                   exit={{ opacity: 0, y: -10 }}
                   className="space-y-6 border border-[#162035]/80 bg-[#090e1c]/80 rounded-xl p-6 shadow-xl"
                 >
-                  <div className="flex flex-wrap justify-between items-start gap-4">
+                  {/* Title Bar & Control Actions */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#162035]/60 pb-4">
                     <div>
                       <h2 className="font-display font-bold text-lg text-white flex items-center gap-2">
                         <Binary className="h-5 w-5 text-purple-400" />
-                        Quantum Error Correction (Rotating Surface Code)
+                        Hybrid Multi-Decoder QEC Cockpit Node
                       </h2>
-                      <p className="text-xs text-gray-400">
-                        Distance d=9 Surface Code simulator with perfect matching (MWPM) error detection. Click Data qubits to inject physical noise.
+                      <p className="text-xs text-slate-400 max-w-2xl">
+                        A parallel-heterogeneous QEC system executing dual topological and sparse neural decoders synchronously. Filters results through deterministic hardware constraint gates and logs hashes to the corporate registry.
                       </p>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
-                        onClick={solveQecMWPM}
+                        onClick={solveQecParallelSystem}
                         disabled={qecSolving || qecGrid.every((q) => !q.error)}
-                        className="bg-purple-600 hover:bg-purple-500 disabled:bg-purple-950 disabled:text-gray-500 text-white px-4 py-1.5 rounded-lg text-xs font-display font-bold uppercase transition"
+                        className="bg-purple-600 hover:bg-purple-500 disabled:bg-purple-950/40 disabled:text-gray-500 text-white px-4 py-1.5 rounded-lg text-xs font-display font-bold uppercase transition flex items-center gap-1.5"
                       >
-                        Run MWPM Decoder
+                        {qecSolving ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Arbitrating Decoders...
+                          </>
+                        ) : (
+                          <>
+                            <Cpu className="h-3.5 w-3.5" />
+                            Run Parallel Decoders
+                          </>
+                        )}
                       </button>
                       <button
-                        onClick={initQecGrid}
-                        className="bg-[#0f172a] hover:bg-[#1e293b] border border-[#162035] text-gray-300 px-4 py-1.5 rounded-lg text-xs font-display font-bold uppercase transition"
+                        onClick={() => initQecGrid(qecDistance)}
+                        className="bg-[#0f172a] hover:bg-[#1e293b] border border-[#162035] text-slate-300 px-4 py-1.5 rounded-lg text-xs font-display font-medium uppercase transition flex items-center gap-1"
                       >
-                        Reset Qubits
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        Clear Grid
                       </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-black/20 p-4 rounded-xl border border-[#162035]/60">
-                    <div className="md:col-span-8 flex justify-center">
-                      {/* Grid representation of rotated surface code */}
-                      <div className="grid grid-cols-9 gap-1.5 p-3 bg-black/40 rounded-xl border border-purple-500/10 select-none">
-                        {qecGrid.map((qubit, idx) => {
-                          const isData = qubit.type === "data";
-                          const hasError = qubit.error;
-                          const hasSyndrome = qubit.syndrome;
-                          const isMatched = qubit.matched;
+                  {/* Dynamic QEC Topo/Neural parameters */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-1">
+                    
+                    {/* Left Column: Grid and Controls */}
+                    <div className="lg:col-span-4 space-y-4">
+                      <div className="bg-black/30 border border-[#162035]/70 p-4 rounded-xl space-y-4">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block border-b border-[#162035]/55 pb-1.5">
+                          Physical Hardware Model
+                        </span>
+                        
+                        {/* Selector for Distance d */}
+                        <div className="space-y-1.5">
+                          <label className="text-slate-400 text-[11px] block">Code Distance (d)</label>
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {([3, 5, 7, 9] as const).map((dCode) => (
+                              <button
+                                key={dCode}
+                                onClick={() => {
+                                  setQecDistance(dCode);
+                                  initQecGrid(dCode);
+                                }}
+                                className={`py-1 text-xs font-mono rounded font-semibold transition border ${
+                                  qecDistance === dCode
+                                    ? "bg-purple-500/20 border-purple-500 text-purple-200"
+                                    : "bg-black/40 border-[#162035] text-slate-400 hover:border-slate-700"
+                                }`}
+                              >
+                                d={dCode}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
 
-                          return (
-                            <div
-                              key={idx}
-                              onClick={() => isData && toggleQecError(idx)}
-                              className={`relative w-8 h-8 rounded flex items-center justify-center font-mono text-[9px] font-bold transition-all duration-150 cursor-pointer ${
-                                isData
-                                  ? hasError
-                                    ? "bg-red-800 text-red-100 border border-red-500 scale-95 shadow-lg shadow-red-500/20"
-                                    : "bg-slate-800 text-slate-400 border border-slate-700/60 hover:border-slate-500"
-                                  : "bg-black/30 border border-dashed rounded-full"
-                              }`}
-                              title={`${qubit.type} Qubit at (${qubit.x}, ${qubit.y})`}
-                            >
-                              {isData ? (
-                                hasError ? "X" : `${qubit.x},${qubit.y}`
+                        {/* Slider for Depolarizing Noise Rate */}
+                        <div className="space-y-1.5 pt-1.5">
+                          <div className="flex justify-between items-center text-[11px]">
+                            <span className="text-slate-400">Depolarizing Noise Rate</span>
+                            <span className="text-purple-300 font-mono font-semibold">{(qecNoiseRate * 10).toFixed(2)}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0.10"
+                            max="0.50"
+                            step="0.05"
+                            value={qecNoiseRate}
+                            onChange={(e) => {
+                              const v = parseFloat(e.target.value);
+                              setQecNoiseRate(v);
+                              updateDecodersInRealtime(qecGrid, qecDistance, v);
+                            }}
+                            className="w-full accent-purple-500"
+                          />
+                          <div className="flex justify-between text-[8.5px] text-slate-500 font-mono">
+                            <span>0.1% (Low)</span>
+                            <span>0.3% (Threshold)</span>
+                            <span>0.5% (Severe)</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Interactive Grid Surface Representation */}
+                      <div className="bg-black/40 border border-purple-500/10 p-4 rounded-xl flex flex-col items-center justify-center">
+                        <div className="text-[10px] uppercase font-mono text-slate-500 mb-3 tracking-wider text-center">
+                          Lattice Surgery Code Layer (Click to Inject Errors)
+                        </div>
+                        
+                        <div 
+                          className="grid gap-1.5 p-3.5 bg-black/50 border border-[#162035] rounded-xl select-none max-w-full overflow-x-auto justify-center"
+                          style={{ gridTemplateColumns: `repeat(${qecDistance}, minmax(0, 1fr))` }}
+                        >
+                          {qecGrid.map((qubit, idx) => {
+                            const isData = qubit.type === "data";
+                            const hasError = qubit.error;
+                            const hasSyndrome = qubit.syndrome;
+                            const isMatched = qubit.matched;
+
+                            return (
+                              <button
+                                key={idx}
+                                disabled={qecSolving}
+                                onClick={() => isData && toggleQecError(idx)}
+                                className={`relative w-7 h-7 rounded flex items-center justify-center font-mono text-[8px] font-bold transition-all cursor-pointer ${
+                                  isData
+                                    ? hasError
+                                      ? "bg-red-900 border-red-500 text-red-100 shadow-md shadow-red-500/20 scale-95"
+                                      : "bg-[#101726] text-slate-400 border border-slate-700/50 hover:border-slate-500"
+                                    : "bg-black/45 border border-dashed rounded-full border-purple-500/20"
+                                }`}
+                                title={`${qubit.type} Qubit at (${qubit.x}, ${qubit.y})`}
+                              >
+                                {isData ? (
+                                  hasError ? "X" : `${qubit.x},${qubit.y}`
+                                ) : (
+                                  <span className={`w-3 h-3 rounded-full flex items-center justify-center transition-all ${
+                                    hasSyndrome
+                                      ? "bg-amber-500 text-black animate-pulse shadow shadow-amber-500/20"
+                                      : "bg-[#0b0f19]"
+                                  }`} />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <div className="flex gap-4 text-[9px] font-mono text-slate-500 mt-3 pt-2 w-full justify-between border-t border-[#162035]/30">
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-800 border border-slate-700 inline-block"></span> Data Qubit</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500 inline-block animate-pulse"></span> Excited Syndrome</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Middle Column: Concurrent Heterogeneous Decoder Array */}
+                    <div className="lg:col-span-4 space-y-4">
+                      <div className="bg-black/30 border border-[#162035]/70 p-4 rounded-xl h-full flex flex-col justify-between space-y-4">
+                        <div>
+                          <div className="border-b border-[#162035]/55 pb-1.5 mb-3 flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block font-display">
+                              Parallel Decoder Array
+                            </span>
+                            <span className="text-[8px] font-mono bg-cyan-950 text-cyan-300 px-1.5 py-0.5 rounded">CONCURRENT</span>
+                          </div>
+
+                          <span className="text-[10px] text-slate-400 block mb-3 leading-snug">
+                            Check to enable decoders configured in runtime script threads:
+                          </span>
+
+                          <div className="space-y-3.5">
+                            
+                            {/* MWPM */}
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <label className="flex items-center gap-2 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={qecActiveDecoders.includes("mwpm")}
+                                    onChange={(e) => {
+                                      const next = e.target.checked 
+                                        ? [...qecActiveDecoders, "mwpm"]
+                                        : qecActiveDecoders.filter(d => d !== "mwpm");
+                                      setQecActiveDecoders(next);
+                                    }}
+                                    className="accent-purple-500 rounded"
+                                  />
+                                  <span className="text-xs font-mono font-medium text-purple-300">PyMatching MWPM</span>
+                                </label>
+                                <span className="text-[9px] font-mono text-slate-500">Blossom algorithm</span>
+                              </div>
+                              <div className="bg-black/45 p-2.5 rounded border border-[#162035] space-y-1">
+                                <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
+                                  <span>Proposed: {qecDecodersOutput.mwpm.proposal === "No error" ? "None" : "Y Correct"}</span>
+                                  <span className="text-purple-400 font-bold">LLR: {qecDecodersOutput.mwpm.score * 10}</span>
+                                </div>
+                                <div className="h-1.5 w-full bg-slate-900 rounded overflow-hidden">
+                                  <div 
+                                    className="h-full bg-purple-500 transition-all duration-300"
+                                    style={{ width: `${qecActiveDecoders.includes("mwpm") ? qecDecodersOutput.mwpm.score * 100 : 0}%` }}
+                                  />
+                                </div>
+                                <div className="flex justify-between items-center text-[8.5px] font-mono text-slate-500 pt-0.5 leading-none">
+                                  <span>Confidence: {qecActiveDecoders.includes("mwpm") ? (qecDecodersOutput.mwpm.score * 100).toFixed(0) : 0}%</span>
+                                  <span>{qecDecodersOutput.mwpm.latency}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* BP+OSD */}
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <label className="flex items-center gap-2 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={qecActiveDecoders.includes("bposd")}
+                                    onChange={(e) => {
+                                      const next = e.target.checked 
+                                        ? [...qecActiveDecoders, "bposd"]
+                                        : qecActiveDecoders.filter(d => d !== "bposd");
+                                      setQecActiveDecoders(next);
+                                    }}
+                                    className="accent-purple-500 rounded"
+                                  />
+                                  <span className="text-xs font-mono font-medium text-cyan-300">BP+OSD (ldpc)</span>
+                                </label>
+                                <span className="text-[9px] font-mono text-slate-500">Belief Propagation</span>
+                              </div>
+                              <div className="bg-black/45 p-2.5 rounded border border-[#162035] space-y-1">
+                                <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
+                                  <span>Proposed: {qecDecodersOutput.bposd.proposal !== "No error" ? "Z Cluster" : "None"}</span>
+                                  <span className="text-cyan-400 font-bold">LLR: {(qecDecodersOutput.bposd.score * 10).toFixed(1)}</span>
+                                </div>
+                                <div className="h-1.5 w-full bg-slate-900 rounded overflow-hidden">
+                                  <div 
+                                    className="h-full bg-cyan-500 transition-all duration-300"
+                                    style={{ width: `${qecActiveDecoders.includes("bposd") ? qecDecodersOutput.bposd.score * 100 : 0}%` }}
+                                  />
+                                </div>
+                                <div className="flex justify-between items-center text-[8.5px] font-mono text-slate-500 pt-0.5 leading-none">
+                                  <span>Confidence: {qecActiveDecoders.includes("bposd") ? (qecDecodersOutput.bposd.score * 100).toFixed(0) : 0}%</span>
+                                  <span>{qecDecodersOutput.bposd.latency}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Adaptive Mamba */}
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <label className="flex items-center gap-2 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={qecActiveDecoders.includes("neural")}
+                                    onChange={(e) => {
+                                      const next = e.target.checked 
+                                        ? [...qecActiveDecoders, "neural"]
+                                        : qecActiveDecoders.filter(d => d !== "neural");
+                                      setQecActiveDecoders(next);
+                                    }}
+                                    className="accent-purple-500 rounded"
+                                  />
+                                  <span className="text-xs font-mono font-medium text-emerald-300">Adaptive Mamba Neural</span>
+                                </label>
+                                <span className="text-[9px] font-mono text-slate-500">SSM Noise-trained</span>
+                              </div>
+                              <div className="bg-black/45 p-2.5 rounded border border-[#162035] space-y-1">
+                                <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
+                                  <span>Proposed: {qecDecodersOutput.neural.proposal !== "No error" ? "Mamba Map" : "None"}</span>
+                                  <span className="text-emerald-400 font-bold">LLR: {(qecDecodersOutput.neural.score * 10).toFixed(1)}</span>
+                                </div>
+                                <div className="h-1.5 w-full bg-slate-900 rounded overflow-hidden">
+                                  <div 
+                                    className="h-full bg-emerald-500 transition-all duration-300"
+                                    style={{ width: `${qecActiveDecoders.includes("neural") ? qecDecodersOutput.neural.score * 100 : 0}%` }}
+                                  />
+                                </div>
+                                <div className="flex justify-between items-center text-[8.5px] font-mono text-slate-500 pt-0.5 leading-none">
+                                  <span>Confidence: {qecActiveDecoders.includes("neural") ? (qecDecodersOutput.neural.score * 100).toFixed(0) : 0}%</span>
+                                  <span>{qecDecodersOutput.neural.latency}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-slate-900/40 border border-[#162035] rounded font-mono text-[10px] text-slate-400">
+                          - Grid Fidelity: <strong className={qecFidelity === 1.0 ? "text-emerald-400" : "text-amber-400"}>{qecFidelity.toFixed(4)}</strong>
+                          <br />
+                          - Error Density: <strong>{qecGrid.filter(q => q.type === "data" && q.error).length} / {qecGrid.filter(q => q.type === "data").length} nodes</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Column: Arbitration & Operational Rule Guards */}
+                    <div className="lg:col-span-4 space-y-4">
+                      <div className="bg-black/30 border border-[#162035]/70 p-4 rounded-xl flex flex-col justify-between h-full space-y-4">
+                        
+                        <div className="space-y-4">
+                          <div className="border-b border-[#162035]/55 pb-1.5">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block font-display">
+                              Arbitration & Policy-Constrained Gate
+                            </span>
+                          </div>
+
+                          {/* Confidence Weighted Selector Result */}
+                          <div className="space-y-2">
+                            <span className="text-[10px] uppercase font-mono text-slate-500">Live Arbitration Verdict</span>
+                            <div className="p-3 bg-black/60 rounded border border-[#1d273a] min-h-[56px] flex flex-col justify-center">
+                              {qecSelectedDecision ? (
+                                <div className="space-y-1">
+                                  <span className="text-[8px] uppercase font-mono bg-indigo-900/35 text-indigo-300 px-1 py-0.5 rounded border border-indigo-500/20">
+                                    Winning candidate: {qecArbitrationDetails?.selectedName || "Selection"}
+                                  </span>
+                                  <div className="text-[11px] font-mono font-bold text-[#b388ff] leading-none pt-1">
+                                    {qecSelectedDecision === "Calculating concurrent decoders..." ? (
+                                      <span className="text-slate-500 animate-pulse">{qecSelectedDecision}</span>
+                                    ) : (
+                                      qecSelectedDecision
+                                    )}
+                                  </div>
+                                </div>
                               ) : (
-                                <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${
-                                  hasSyndrome
-                                    ? isMatched
-                                      ? "bg-blue-500 animate-ping text-white"
-                                      : "bg-amber-500 text-black animate-pulse"
-                                    : "bg-white/10"
-                                }`} />
+                                <span className="text-[10.5px] font-mono text-slate-500 text-center uppercase tracking-wide py-2">
+                                  Standby - Launch parallel solver
+                                </span>
                               )}
                             </div>
-                          );
-                        })}
+                          </div>
+
+                          {/* Gated rules configuration checklists */}
+                          <div className="space-y-2.5">
+                            <span className="text-[10px] uppercase font-mono text-slate-500 block">Deterministic Constraint Gates</span>
+                            <div className="space-y-2 font-mono text-xs text-slate-300">
+                              
+                              <label className="flex items-start gap-2.5 p-2 bg-black/30 rounded border border-[#162035]/65 hover:bg-black/55 transition select-none cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={qecRuleMaxWeight}
+                                  onChange={(e) => setQecRuleMaxWeight(e.target.checked)}
+                                  className="accent-purple-500 mt-0.5 rounded"
+                                />
+                                <div className="flex-1 text-[10.5px]">
+                                  <div className="flex justify-between items-center leading-none">
+                                    <span>Max Pauli Weight Guard</span>
+                                    {qecArbitrationDetails ? (
+                                      <span className={`text-[9px] font-bold ${qecArbitrationDetails.ruleChecks.weight.status === "PASS" ? "text-emerald-400" : "text-red-400 animate-pulse"}`}>
+                                        {qecArbitrationDetails.ruleChecks.weight.status}
+                                      </span>
+                                    ) : (
+                                      <span className="text-[8px] text-slate-500">READY</span>
+                                    )}
+                                  </div>
+                                  <span className="text-[9px] text-slate-500 block leading-tight mt-0.5">
+                                    Enforce error correction weight w &le; &lfloor;(d-1)/2&rfloor;
+                                  </span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-start gap-2.5 p-2 bg-black/30 rounded border border-[#162035]/65 hover:bg-black/55 transition select-none cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={qecRuleConsistency}
+                                  onChange={(e) => setQecRuleConsistency(e.target.checked)}
+                                  className="accent-purple-500 mt-0.5 rounded"
+                                />
+                                <div className="flex-1 text-[10.5px]">
+                                  <div className="flex justify-between items-center leading-none">
+                                    <span>Noise-Consistent Core Gate</span>
+                                    {qecArbitrationDetails ? (
+                                      <span className={`text-[9px] font-bold ${qecArbitrationDetails.ruleChecks.consistency.status === "PASS" ? "text-emerald-400" : "text-red-400 animate-pulse"}`}>
+                                        {qecArbitrationDetails.ruleChecks.consistency.status}
+                                      </span>
+                                    ) : (
+                                      <span className="text-[8px] text-slate-500">READY</span>
+                                    )}
+                                  </div>
+                                  <span className="text-[9px] text-slate-500 block leading-tight mt-0.5">
+                                    Veto corrections incompatible with standard noise Scaling
+                                  </span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-start gap-2.5 p-2 bg-black/30 rounded border border-[#162035]/65 hover:bg-black/55 transition select-none cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={qecRuleHistory}
+                                  onChange={(e) => setQecRuleHistory(e.target.checked)}
+                                  className="accent-purple-500 mt-0.5 rounded"
+                                />
+                                <div className="flex-1 text-[10.5px]">
+                                  <div className="flex justify-between items-center leading-none">
+                                    <span>Temporal Syndrome Sync</span>
+                                    {qecArbitrationDetails ? (
+                                      <span className={`text-[9px] font-bold ${qecArbitrationDetails.ruleChecks.history.status === "PASS" ? "text-emerald-400" : "text-red-400 animate-pulse"}`}>
+                                        {qecArbitrationDetails.ruleChecks.history.status}
+                                      </span>
+                                    ) : (
+                                      <span className="text-[8px] text-slate-500">READY</span>
+                                    )}
+                                  </div>
+                                  <span className="text-[9px] text-slate-500 block leading-tight mt-0.5">
+                                    Preempt dynamic phase drifts on sequential boundaries
+                                  </span>
+                                </div>
+                              </label>
+
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Passive warning or fallback alerts */}
+                        {qecArbitrationDetails && (
+                          <div className={`p-2.5 rounded border text-[10px] font-mono ${
+                            qecArbitrationDetails.verifiedSecure 
+                              ? "bg-emerald-950/15 border-emerald-500/20 text-emerald-300"
+                              : "bg-red-950/15 border-red-500/20 text-red-300 animate-pulse"
+                          }`}>
+                            <strong>CRITERIA VERDICT:</strong> {qecArbitrationDetails.verifiedSecure 
+                              ? "✔ Passed Gated Operational Rules safely. Signal path stable."
+                              : "✘ REJECTED: Candidate breached policy bounds. Fallback triggered!"}
+                          </div>
+                        )}
+
                       </div>
                     </div>
 
-                    <div className="md:col-span-4 space-y-4">
-                      <div className="border-b border-[#162035]/80 pb-2">
-                        <span className="text-xs uppercase tracking-wider text-purple-400 font-display font-medium">QEC Telemetry</span>
-                      </div>
-
-                      <div className="space-y-4 text-xs font-mono">
-                        <div className="p-3 bg-black/30 rounded border border-[#162035]">
-                          <span className="text-gray-500 block uppercase text-[9px]">Lattice Surgery Mode</span>
-                          <span className="font-bold text-[#ba68c8]">Distance d=9 (Rotated checkerboard)</span>
-                        </div>
-
-                        <div className="p-3 bg-black/30 rounded border border-[#162035]">
-                          <span className="text-gray-500 block uppercase text-[9px]">Calculated Grid Fidelity</span>
-                          <span className={`font-bold text-sm ${qecFidelity === 1.0 ? "text-emerald-400" : "text-amber-400"}`}>
-                            {qecFidelity.toFixed(4)}
-                          </span>
-                        </div>
-
-                        <div className="p-3 bg-black/30 rounded border border-[#162035]">
-                          <span className="text-gray-500 block uppercase text-[9px]">Decoder Status</span>
-                          <span className="font-bold text-gray-300">
-                            {qecSolving ? "RUNNING MWPM MATCHING CRITERIA..." : "IDLE - STANDBY"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
                   </div>
+
+                  {/* Blockchain Signings and Ledgers feed at the bottom */}
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 border-t border-[#162035]/40 pt-5">
+                    
+                    {/* Ledgers seal operations */}
+                    <div className="md:col-span-5">
+                      <div className="bg-black/45 border border-purple-500/10 p-4 rounded-xl flex flex-col justify-between h-full space-y-3">
+                        <div>
+                          <span className="text-[10px] font-bold text-[#b388ff] uppercase tracking-widest block font-display flex items-center gap-1">
+                            <Fingerprint className="h-3.5 w-3.5" />
+                            Ledger Seal Operations
+                          </span>
+                          <p className="text-[11px] text-slate-400 leading-normal mt-1">
+                            Commit verified QEC decisions to the FaithLayer cryptographic chain, generating Ed25519 corporate logs signed with global key <code className="text-purple-300 select-all">TUCKER_AUDIT_KEY</code>.
+                          </p>
+                        </div>
+
+                        {qecUnsignedAuditLog ? (
+                          <div className="p-3 bg-purple-950/20 border border-purple-500/20 rounded space-y-2.5 animate-pulse">
+                            <div className="flex justify-between items-center text-[10px] font-mono">
+                              <span className="text-purple-300 font-bold uppercase">Pending Cryptographic Signature</span>
+                              <span className="text-amber-400 text-[8px] font-bold bg-amber-950/40 px-1 py-0.5 rounded uppercase font-sans">unsigned</span>
+                            </div>
+                            <div className="text-[9.5px] font-mono text-slate-300 space-y-0.5">
+                              <div>• Core Decoder: {qecUnsignedAuditLog.selectedDecoder}</div>
+                              <div className="truncate">• Correction: {qecUnsignedAuditLog.correction}</div>
+                              <div>• Policy Review: <strong className={qecUnsignedAuditLog.rulesStatus === "PASS" ? "text-emerald-400" : "text-amber-400"}>{qecUnsignedAuditLog.rulesStatus}</strong></div>
+                            </div>
+                            <button
+                              onClick={signAndCommitQecLog}
+                              className="w-full bg-indigo-600 hover:bg-indigo-500 font-bold font-display uppercase tracking-wider text-xs py-1.5 rounded transition text-white"
+                            >
+                              Sign & Seal Block Entry
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center p-4 text-center border border-dashed border-[#162035] rounded select-none">
+                            <Lock className="h-6 w-6 text-slate-700 mb-1" />
+                            <span className="text-[10px] text-slate-500 font-mono">No pending syndromes to serialize. Ensure qubit grid errors are processed.</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Historical cryptographic audit trail feed */}
+                    <div className="md:col-span-7">
+                      <div className="bg-black/35 border border-[#162035]/65 p-4 rounded-xl flex flex-col justify-between h-full space-y-3">
+                        <span className="text-[10px] uppercase font-mono tracking-widest text-slate-400 font-bold block border-b border-[#1c2e4f]/40 pb-1.5 flex items-center gap-1">
+                          <Activity className="h-3.5 w-3.5 text-slate-500" />
+                          FAITHLAYER CRYPTOGRAPHIC AUDIT LOG
+                        </span>
+
+                        <div className="space-y-2 max-h-[145px] overflow-y-auto pr-1">
+                          {qecAuditLogs.map((log, index) => (
+                            <div key={index} className="bg-black/45 hover:bg-black/75 p-2 rounded border border-[#162035] flex justify-between items-start text-[9.5px] font-mono leading-relaxed transition-all">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-slate-500">{log.timestamp}</span>
+                                  <span className="text-[#a7ffeb] font-bold font-mono">{log.selectedDecoder}</span>
+                                  <span className={`text-[8px] px-1 rounded ${log.rulesStatus === "PASS" ? "bg-emerald-950 text-emerald-300" : "bg-red-950 text-red-300"}`}>{log.rulesStatus}</span>
+                                </div>
+                                <div className="text-slate-300 text-[10px] font-semibold truncate max-w-[280px] sm:max-w-[420px]">
+                                  Correction: {log.correction}
+                                </div>
+                              </div>
+                              <div className="text-right flex flex-col items-end">
+                                <span className="text-[8px] bg-slate-900 px-1 py-0.5 rounded text-indigo-300 font-mono">Ed25519 Signed</span>
+                                <span className="text-[8px] text-slate-500 font-mono mt-1 select-all">{log.signature}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
                 </motion.div>
               )}
 
@@ -929,7 +1970,7 @@ export default function SovereignCockpit() {
                     </div>
 
                     <div className="md:col-span-7 flex flex-col justify-between">
-                      <div className="p-5 bg-black/40 border border-[#16253c] rounded-xl min-h-[220px] flex flex-col justify-between">
+                      <div className="p-5 bg-black/40 border border-[#16253c] rounded-xl min-h-[350px] flex flex-col justify-between">
                         <div>
                           <div className="flex items-center justify-between border-b border-[#162035] pb-2.5 mb-4">
                             <span className="text-xs uppercase tracking-wider text-emerald-400 font-display font-medium">
@@ -940,6 +1981,84 @@ export default function SovereignCockpit() {
                             }`}>
                               {customPlddt >= 90 ? "VERIFIED ALIGNED" : "UNRESTORED CONFLICT"}
                             </span>
+                          </div>
+
+                          {/* DNA / Protein Helix folding graphics */}
+                          <div className="relative h-44 bg-black/40 border border-[#162035] rounded-xl overflow-hidden flex items-center justify-center p-4 mb-4">
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.06)_0%,transparent_100%)]"></div>
+                            <svg className="w-full h-full" viewBox="0 0 500 150">
+                              {customPlddt >= 90 ? (
+                                <>
+                                  {/* Folded beautiful double helix */}
+                                  <g strokeLinecap="round" strokeWidth="4" fill="none">
+                                    {/* Back strands */}
+                                    <path 
+                                      d="M 50,75 Q 110,25 170,75 T 290,75 T 410,75 T 450,75" 
+                                      stroke="rgba(16,185,129,0.3)" 
+                                      strokeWidth="8"
+                                      className="animate-pulse"
+                                    />
+                                    <path 
+                                      d="M 50,75 Q 110,125 170,75 T 290,75 T 410,75 T 450,75" 
+                                      stroke="rgba(251,191,36,0.3)" 
+                                      strokeWidth="8"
+                                      className="animate-pulse"
+                                    />
+                                    
+                                    {/* Base rungs */}
+                                    {[50, 80, 110, 140, 170, 200, 230, 260, 290, 320, 350, 380, 410, 440].map((x, i) => {
+                                      const h = 25 * Math.sin(x/50);
+                                      return (
+                                        <line 
+                                          key={i} 
+                                          x1={x} 
+                                          y1={75 - h} 
+                                          x2={x} 
+                                          y2={75 + h} 
+                                          stroke={i % 2 === 0 ? "#10b981" : "#fbbf24"} 
+                                          strokeWidth="2"
+                                          opacity="0.8"
+                                        />
+                                      );
+                                    })}
+                                    
+                                    {/* Main forward strands */}
+                                    <path 
+                                      d="M 50,75 Q 110,25 170,75 T 290,75 T 410,75 T 450,75" 
+                                      stroke="#10b981" 
+                                      className="transition-all duration-500"
+                                    />
+                                    <path 
+                                      d="M 50,75 Q 110,125 170,75 T 290,75 T 410,75 T 450,75" 
+                                      stroke="#fbbf24" 
+                                      className="transition-all duration-500"
+                                    />
+                                  </g>
+                                  <text x="250" y="20" fill="#10b981" fontSize="9" fontFamily="monospace" textAnchor="middle" letterSpacing="1" className="font-semibold block">
+                                    [AF3-STABLE COVENANT ENVELOPE: CONFORMATIONAL SYMMETRY LOCKED]
+                                  </text>
+                                </>
+                              ) : (
+                                <>
+                                  {/* Scrambled chaotic layout */}
+                                  <g strokeLinecap="round" fill="none">
+                                    <path 
+                                      d="M 50,50 L 100,120 L 140,40 L 180,110 L 220,30 L 260,130 L 300,60 L 340,110 L 380,40 L 420,120 L 450,55" 
+                                      stroke="#ef4444" 
+                                      strokeWidth="3"
+                                      strokeDasharray="4 2"
+                                      className="animate-pulse"
+                                    />
+                                    {[100, 140, 220, 300, 380].map((cx, i) => (
+                                      <circle key={i} cx={cx} cy="80" r="3" fill="#ef4444" className="animate-ping" style={{ transformOrigin: `${cx}px 80px` }} />
+                                    ))}
+                                  </g>
+                                  <text x="250" y="20" fill="#ef4444" fontSize="9" fontFamily="monospace" textAnchor="middle" letterSpacing="1" className="font-semibold block">
+                                    [WARNING: CONFIDENCE INSUFFICIENT - SLIDE TO &gt;90%]
+                                  </text>
+                                </>
+                              )}
+                            </svg>
                           </div>
 
                           {customPlddt >= 90 ? (
@@ -1094,6 +2213,74 @@ export default function SovereignCockpit() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Interactive Dynamic Topology Map */}
+                  <div className="border-t border-[#1c2d53]/40 pt-5 mt-5">
+                    <h3 className="text-xs uppercase tracking-wider text-[#3b82f6] font-display font-semibold mb-3 flex items-center gap-1.5">
+                      <Network className="h-4 w-4" /> Real-time 6G KDN Optical Routing Topology Mesh
+                    </h3>
+                    <div className="bg-black/50 border border-[#162035] rounded-xl p-4 relative overflow-hidden h-48 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.05)_0%,transparent_100%)] pointer-events-none"></div>
+                      
+                      {/* Interactive optical routing lines */}
+                      <svg className="w-full h-full max-w-lg" viewBox="0 0 500 160">
+                        {/* Dynamic connections */}
+                        <g stroke={isUrlPrioritized ? "#10b981" : "#ef4444"} strokeWidth="1.5" opacity="0.6" strokeDasharray={isUrlPrioritized ? "none" : "5 3"}>
+                          <line x1="50" y1="80" x2="150" y2="40" className="transition-all duration-300" />
+                          <line x1="50" y1="80" x2="150" y2="120" className="transition-all duration-300" />
+                          
+                          <line x1="150" y1="40" x2="280" y2="40" className="transition-all duration-300" />
+                          <line x1="150" y1="120" x2="280" y2="120" className="transition-all duration-300" />
+                          <line x1="150" y1="40" x2="280" y2="120" className="transition-all duration-300" />
+                          <line x1="150" y1="120" x2="280" y2="40" className="transition-all duration-300" />
+                          
+                          <line x1="280" y1="40" x2="430" y2="80" className="transition-all duration-300" strokeWidth={isUrlPrioritized ? "3" : "1.5"} />
+                          <line x1="280" y1="120" x2="430" y2="80" className="transition-all duration-300" strokeWidth={isUrlPrioritized ? "3" : "1.5"} />
+                        </g>
+
+                        {/* Node status indicators */}
+                        <g className="cursor-pointer">
+                          {/* Ingress Gateway Node */}
+                          <circle cx="50" cy="80" r="8" fill="#1e293b" stroke="#3b82f6" strokeWidth="2" />
+                          <circle cx="50" cy="80" r="3" fill="#3b82f6" className="animate-ping" style={{ transformOrigin: "50px 80px" }} />
+                          <text x="50" y="100" fill="#94a3b8" fontSize="8" fontFamily="monospace" textAnchor="middle">IN-GW</text>
+
+                          {/* Optical Switch Left Alpha */}
+                          <circle cx="150" cy="40" r="8" fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5" />
+                          <circle cx="150" cy="40" r="3" fill={isUrlPrioritized ? "#10b981" : "#f59e0b"} />
+                          <text x="150" y="25" fill="#94a3b8" fontSize="8" fontFamily="monospace" textAnchor="middle">SW-A</text>
+
+                          {/* Optical Switch Left Beta */}
+                          <circle cx="150" cy="120" r="8" fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5" />
+                          <circle cx="150" cy="120" r="3" fill={isUrlPrioritized ? "#10b981" : "#f59e0b"} />
+                          <text x="150" y="140" fill="#94a3b8" fontSize="8" fontFamily="monospace" textAnchor="middle">SW-B</text>
+
+                          {/* Edge Routing Center Gamma */}
+                          <circle cx="280" cy="40" r="8" fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5" />
+                          <circle cx="280" cy="40" r="3" fill={isUrlPrioritized ? "#10b981" : "#f59e0b"} />
+                          <text x="280" y="25" fill="#94a3b8" fontSize="8" fontFamily="monospace" textAnchor="middle">EDGE-C</text>
+
+                          {/* Edge Routing Center Delta */}
+                          <circle cx="280" cy="120" r="8" fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5" />
+                          <circle cx="280" cy="120" r="3" fill={isUrlPrioritized ? "#10b981" : "#f59e0b"} />
+                          <text x="280" y="140" fill="#94a3b8" fontSize="8" fontFamily="monospace" textAnchor="middle">EDGE-D</text>
+
+                          {/* Core egress endpoint node */}
+                          <circle cx="430" cy="80" r="10" fill="#1e293b" stroke={isUrlPrioritized ? "#10b981" : "#ef4444"} strokeWidth="2" />
+                          <circle cx="430" cy="80" r="4" fill={isUrlPrioritized ? "#10b981" : "#ef4444"} className={isUrlPrioritized ? "" : "animate-pulse"} style={{ transformOrigin: "430px 80px" }} />
+                          <text x="430" y="102" fill="#94a3b8" fontSize="8" fontFamily="monospace" textAnchor="middle">EG-CORE</text>
+                        </g>
+
+                        {/* Interactive dynamic throughput data tag */}
+                        <g transform="translate(200, 72)">
+                          <rect width="90" height="18" rx="4" fill="rgba(15,23,42,0.85)" stroke="#1e293b" strokeWidth="1" />
+                          <text x="45" y="12" fill={isUrlPrioritized ? "#a7f3d0" : "#fca5a5"} fontSize="8" fontFamily="monospace" textAnchor="middle" className="font-semibold block font-mono">
+                            {isUrlPrioritized ? "BW: 99.4 Gbps" : "BW CONGESTION"}
+                          </text>
+                        </g>
+                      </svg>
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
@@ -1180,6 +2367,219 @@ export default function SovereignCockpit() {
                         <pre className="p-4 overflow-x-auto text-[11px] font-mono text-cyan-100/90 leading-relaxed max-h-[350px] overflow-y-auto bg-black/20">
                           <code>{activeFileObject.content}</code>
                         </pre>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* 100-Layer Pantheon Tab Panel */}
+              {activeTab === "pantheon" && (
+                <motion.div
+                  key="pantheon"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6 border border-[#162035]/80 bg-[#090e1c]/80 rounded-xl p-6 shadow-xl"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#162035] pb-4">
+                    <div>
+                      <h2 className="font-display font-bold text-lg text-white flex items-center gap-2">
+                        <Layers className="h-5 w-5 text-indigo-400 animate-pulse" />
+                        100-Layer Sovereign Pantheon Explorer
+                      </h2>
+                      <p className="text-xs text-gray-400">
+                        Divided into 10 key architectural Arcs representing multi-lingual, self-evolving monorepo layers compiled with absolute fidelity.
+                      </p>
+                    </div>
+                    
+                    <div className="bg-indigo-950/20 border border-indigo-500/20 px-4 py-2 rounded-xl text-xs font-mono text-[#c5b5ff]">
+                      <span>Active Arc: </span>
+                      <strong className="text-white">
+                        {PANTHEON_ARCS.find(a => a.id === selectedArcId)?.name || "N/A"}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {/* 10 Arcs Selection Ribbon */}
+                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                    {PANTHEON_ARCS.map((arc) => {
+                      const isSelected = selectedArcId === arc.id;
+                      return (
+                        <button
+                          key={arc.id}
+                          onClick={() => {
+                            setSelectedArcId(arc.id);
+                            setActiveLayerNo(null);
+                            setDiagnosticLog(null);
+                          }}
+                          className={`whitespace-nowrap px-3 py-2 rounded-lg text-xs font-display font-semibold transition-all duration-150 ${
+                            isSelected 
+                              ? "bg-indigo-600/25 text-indigo-300 border border-indigo-400/30 shadow-md shadow-indigo-500/5 col-span-1" 
+                              : "text-gray-400 hover:text-gray-200 hover:bg-[#0c1224] border border-transparent col-span-1"
+                          }`}
+                        >
+                          <div className="text-[10px] uppercase font-bold tracking-wider opacity-60 leading-none">{arc.range}</div>
+                          <div className="mt-1 leading-none">{arc.name}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Arc info & Layers Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch pt-2">
+                    {/* Left side: selected Arc description & Layer Rows */}
+                    <div className="lg:col-span-8 space-y-4">
+                      {/* Arc Overview Card */}
+                      {(() => {
+                        const activeArc = PANTHEON_ARCS.find(a => a.id === selectedArcId);
+                        if (!activeArc) return null;
+                        return (
+                          <div className="p-4 bg-indigo-950/10 border border-indigo-500/10 rounded-xl space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-[10px] tracking-wider uppercase font-mono text-indigo-400 font-bold">
+                                {activeArc.range} - Dynamic Alignment Target
+                              </span>
+                              <span className="font-mono text-[10px] text-emerald-400">
+                                COMPILER FIDELITY: {activeArc.efficiency}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                              {activeArc.description}
+                            </p>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Interactive Layer Rows inside selected Arc */}
+                      <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+                        {(PANTHEON_ARCS.find(a => a.id === selectedArcId)?.layers || []).map((layer) => {
+                          const isLayerActive = activeLayerNo === layer.no;
+                          const isDiagnosing = diagnosingLayer === layer.no;
+                          return (
+                            <div 
+                              key={layer.no} 
+                              onClick={() => {
+                                setActiveLayerNo(layer.no);
+                                setDiagnosticLog(null);
+                              }}
+                              className={`p-3 rounded-lg border transition-all cursor-pointer select-none ${
+                                isLayerActive 
+                                  ? "bg-indigo-950/30 border-indigo-500/40" 
+                                  : "bg-black/35 border-[#162035] hover:border-indigo-500/20"
+                              }`}
+                            >
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div className="flex items-center gap-2.5">
+                                  <span className="w-6 h-6 rounded bg-black/40 border border-indigo-500/20 text-[10px] font-mono font-bold text-indigo-300 flex items-center justify-center">
+                                    L{layer.no}
+                                  </span>
+                                  <div>
+                                    <h4 className="font-display font-semibold text-xs text-white leading-none">
+                                      {layer.name}
+                                    </h4>
+                                    <span className="text-[10px] text-gray-500 font-mono mt-1 block">
+                                      {layer.role}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-2 py-0.5 rounded text-[8px] font-mono uppercase font-semibold border ${
+                                    layer.status === "active" 
+                                      ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/20" 
+                                      : "bg-slate-900/60 text-slate-500 border-slate-800"
+                                  }`}>
+                                    {layer.status}
+                                  </span>
+
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      speakText(`Layer ${layer.no} is designated as ${layer.name}. Its primary system role in the sovereign cockpit is ${layer.role}. Current status code: ${layer.status}.`);
+                                    }}
+                                    className="p-1 px-2 bg-indigo-900/20 hover:bg-indigo-900/40 border border-indigo-500/20 rounded text-slate-400 hover:text-indigo-300 transition"
+                                    title="Listen to Layer Details"
+                                  >
+                                    <Volume2 className="h-3 w-3" />
+                                  </button>
+
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      runLayerDiagnostic(layer.no, layer.name);
+                                    }}
+                                    disabled={diagnosingLayer !== null}
+                                    className="p-1 px-2 bg-[#ea80fc]/10 hover:bg-[#ea80fc]/20 border border-[#ea80fc]/20 rounded text-purple-300 hover:text-purple-200 transition text-[9px] font-mono leading-none"
+                                  >
+                                    {isDiagnosing ? "RUNNING..." : "DIAG"}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Right side: layer metadata & diagnostics */}
+                    <div className="lg:col-span-4 flex flex-col justify-between">
+                      <div className="p-5 bg-black/40 border border-[#162035] rounded-xl h-full flex flex-col justify-between space-y-4">
+                        <div>
+                          <div className="border-b border-[#162035] pb-2 mb-3">
+                            <span className="text-xs uppercase tracking-wider text-indigo-400 font-display font-semibold block">
+                              Layer LCOD Registry
+                            </span>
+                          </div>
+
+                          {activeLayerNo !== null ? (
+                            (() => {
+                              const activeLayer = PANTHEON_ARCS
+                                .find(a => a.id === selectedArcId)
+                                ?.layers.find(l => l.no === activeLayerNo);
+                              if (!activeLayer) return null;
+                              return (
+                                <div className="space-y-3 text-xs font-mono text-slate-300 leading-relaxed">
+                                  <div>
+                                    <span className="text-[9px] text-gray-500 uppercase block font-mono">Active Register No</span>
+                                    <span className="text-indigo-300 font-bold block">LCOD_REG_0x{activeLayer.no.toString(16).toUpperCase()}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-[9px] text-gray-500 uppercase block font-normal font-sans">Semantic Name</span>
+                                    <span className="text-white font-semibold font-mono block">{activeLayer.name}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-[9px] text-gray-500 uppercase block leading-none font-sans">Security Flag Hashing</span>
+                                    <span className="text-emerald-400 text-[10px] break-all leading-tight block font-mono">
+                                      SHA256_L{activeLayer.no}_CURE_ALIGN_OK_{activeLayer.status.toUpperCase()}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })()
+                          ) : (
+                            <div className="text-center py-8">
+                              <HelpCircle className="h-7 w-7 text-indigo-950 mx-auto mb-2" />
+                              <p className="text-xs text-gray-500 font-mono italic">
+                                Click any layer on the left list to parse its LCOD metadata registry.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Interactive dynamic diagnostic feedback space */}
+                        <div className="p-3 bg-black/60 rounded border border-[#162035]/95">
+                          <span className="text-[10px] uppercase font-display text-slate-500 block">Swarm Diagnostics Result</span>
+                          {diagnosticLog ? (
+                            <pre className="font-mono text-[9.5px] leading-relaxed text-indigo-300 mt-1.5 whitespace-pre-wrap break-words max-h-36 overflow-y-auto bg-indigo-950/15 p-2 rounded border border-indigo-500/15">
+                              {diagnosticLog}
+                            </pre>
+                          ) : (
+                            <span className="font-mono text-xs text-slate-500 block italic mt-1 leading-snug">
+                              Awaiting trigger command from Layer "DIAG" switch.
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
