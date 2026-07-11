@@ -1,20 +1,9 @@
-import * as THREE from 'three';
+import re
 
-export interface GeoJSONFeature {
-  type: string;
-  properties: Record<string, any>;
-  geometry: {
-    type: string;
-    coordinates: any;
-  };
-}
+with open('src/services/gisService.ts', 'r') as f:
+    content = f.read()
 
-export interface GeoJSONFeatureCollection {
-  type: "FeatureCollection";
-  features: GeoJSONFeature[];
-}
-
-export async function fetchFemaFloodZones(bbox: [number, number, number, number]): Promise<GeoJSONFeatureCollection> {
+new_fema = """export async function fetchFemaFloodZones(bbox: [number, number, number, number]): Promise<GeoJSONFeatureCollection> {
   const url = `/api/fema-flood-zones`;
   const params = new URLSearchParams({
     bbox: bbox.join(',')
@@ -28,9 +17,13 @@ export async function fetchFemaFloodZones(bbox: [number, number, number, number]
     console.error("FEMA API Error:", error);
     return { type: "FeatureCollection", features: [] };
   }
-}
+}"""
 
-export async function fetchIndianaHistoricSites(bbox: [number, number, number, number]): Promise<GeoJSONFeatureCollection> {
+old_fema_regex = r'export async function fetchFemaFloodZones\([\s\S]*?^}'
+
+content = re.sub(old_fema_regex, new_fema, content, flags=re.MULTILINE | re.M)
+
+new_inmap = """export async function fetchIndianaHistoricSites(bbox: [number, number, number, number]): Promise<GeoJSONFeatureCollection> {
   const url = `/api/historic-sites`;
   const params = new URLSearchParams({
     bbox: bbox.join(',')
@@ -44,4 +37,10 @@ export async function fetchIndianaHistoricSites(bbox: [number, number, number, n
     console.error("INMap API Error:", error);
     return { type: "FeatureCollection", features: [] };
   }
-}
+}"""
+
+old_inmap_regex = r'export async function fetchIndianaHistoricSites\([\s\S]*?^}'
+content = re.sub(old_inmap_regex, new_inmap, content, flags=re.MULTILINE | re.M)
+
+with open('src/services/gisService.ts', 'w') as f:
+    f.write(content)
