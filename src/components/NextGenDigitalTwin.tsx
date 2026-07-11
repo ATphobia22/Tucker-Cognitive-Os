@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { Layers, Map, ShieldAlert, Navigation, Settings2, Waves, Building2, Trees, Ship } from "lucide-react";
+import { fetchFemaFloodZones, fetchIndianaHistoricSites } from "../services/gisService";
+import { parseGeoJSONToGroup } from "../services/geoJsonParser";
 
 export default function NextGenDigitalTwin() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -102,19 +104,32 @@ export default function NextGenDigitalTwin() {
     water.position.set(0, -2, 0);
     layerGroup.add(water);
 
-    // FEMA NFHL Zones Overlay (Red/Orange zones)
-    const floodZoneGeo = new THREE.PlaneGeometry(800, 400);
-    floodZoneGeo.rotateX(-Math.PI / 2);
-    const floodZoneMat = new THREE.MeshBasicMaterial({
-      color: 0xef4444,
-      transparent: true,
-      opacity: 0.3,
-      depthWrite: false
-    });
-    const floodZone = new THREE.Mesh(floodZoneGeo, floodZoneMat);
-    floodZone.position.set(50, 1, -100);
+    // FEMA NFHL Zones Overlay
+    const floodZone = new THREE.Group();
     floodZone.visible = activeLayers.femaNfhl;
     layerGroup.add(floodZone);
+    
+    // Fetch FEMA data for a specific bounding box
+    fetchFemaFloodZones([-88.1, 37.8, -87.9, 38.0]).then(data => {
+      const group = parseGeoJSONToGroup(data, (feature) => {
+        // Red for AE zones, Orange for others
+        const zone = feature.properties.FLD_ZONE || '';
+        if (zone.includes('A')) return 0xef4444; // Red
+        return 0xf97316; // Orange
+      }, 1); // slightly above terrain
+      floodZone.add(group);
+    });
+
+    // Historic Sites
+    const historicSites = new THREE.Group();
+    historicSites.visible = activeLayers.historicSites;
+    layerGroup.add(historicSites);
+    
+    fetchIndianaHistoricSites([-88.1, 37.8, -87.9, 38.0]).then(data => {
+       const group = parseGeoJSONToGroup(data, () => 0xeab308, 0); // Yellow
+       historicSites.add(group);
+    });
+
 
     // XSoft Parcels
     const parcelGroup = new THREE.Group();
@@ -184,7 +199,8 @@ export default function NextGenDigitalTwin() {
       water,
       femaNfhl: floodZone,
       parcelsXSoft: parcelGroup,
-      portOfIndiana: portGroup
+      portOfIndiana: portGroup,
+      historicSites: historicSites
     };
     (window as any).layerRefs = layerRefs;
 
@@ -215,6 +231,7 @@ export default function NextGenDigitalTwin() {
       if (refs.water) refs.water.visible = activeLayers.waterLevels;
       if (refs.femaNfhl) refs.femaNfhl.visible = activeLayers.femaNfhl;
       if (refs.parcelsXSoft) refs.parcelsXSoft.visible = activeLayers.parcelsXSoft;
+      if (refs.historicSites) refs.historicSites.visible = activeLayers.historicSites;
       if (refs.portOfIndiana) refs.portOfIndiana.visible = activeLayers.portOfIndiana;
     }
   }, [activeLayers]);
@@ -288,6 +305,12 @@ export default function NextGenDigitalTwin() {
                 onClick={() => toggleLayer('femaNfhl')} 
                 icon={<ShieldAlert />} 
                 label="FEMA NFHL Zones" 
+              />
+              <LayerToggle 
+                active={activeLayers.historicSites} 
+                onClick={() => toggleLayer('historicSites')} 
+                icon={<Building2 />} 
+                label="Indiana Historic Sites" 
               />
               <LayerToggle 
                 active={activeLayers.parcelsXSoft} 
