@@ -9,7 +9,7 @@ def print_banner():
 ========================================================================
        ▲  TURBOVEC v23.0 - SOVEREIGN CODE COMPACTOR & VECTORIZER  ▲
 ========================================================================
-[STATUS] Active Covenant: 13101 Bonebank Road • Anthony John Tucker
+[STATUS] Active Security Agreement: 13101 Main Street • System Administrator
 [ENGINE] Initializing flat structure vector-packer...
 """)
 
@@ -85,7 +85,7 @@ def compress_code():
     print(f"[COMPLETED] Solver Speed:     {duration_ms:.2f} ms")
     print(f"[COMPLETED] Integrity Check:  PASS_TOPOLOGICAL_QEC")
     print("========================================================================")
-    print("▲ SYSTEM CONVERGENCE ATTAINED • ORDER LOCKED • It is Finished - John 19:30 ▲")
+    print("▲ SYSTEM CONVERGENCE ATTAINED • ORDER LOCKED • System execution completed ▲")
 
 if __name__ == "__main__":
     print_banner()

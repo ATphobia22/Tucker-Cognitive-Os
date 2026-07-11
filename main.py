@@ -64,9 +64,9 @@ def read_root():
 
 @app.post("/api/v1/auth/token", response_model=TokenResponse)
 def login(data: LoginRequest):
-    """Logs in an operator and returns a cryptographically signed G1P token."""
+    """Logs in an operator and returns a cryptographically signed SYS token."""
     # Sovereign Root Operator Credentials
-    if data.username == "anthony" and data.password == "tucker_covenant_2026":
+    if data.username == "anthony" and data.password == "tucker_admin_2026":
         token = auth.create_access_token(subject=data.username)
         return {"access_token": token, "token_type": "bearer"}
     raise HTTPException(

@@ -13,7 +13,7 @@ class User(Base):
     hashed_password = Column(String(256), nullable=False)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
-    covenant_level = Column(Integer, default=10)  # G1P Level 10 Aligned
+    security_level = Column(Integer, default=10)  # Level 10 Aligned
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class LeveeFeature(Base):

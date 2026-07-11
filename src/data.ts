@@ -1,6 +1,6 @@
 import { CodeFile, MedicalTarget } from "./types";
 
-export interface PantheonLayer {
+export interface DigitalTwinLayer {
   no: number;
   name: string;
   role: string;
@@ -8,7 +8,7 @@ export interface PantheonLayer {
   type?: string;
 }
 
-export interface PantheonArc {
+export interface DigitalTwinArc {
   id: string;
   name: string;
   range: string;
@@ -16,10 +16,10 @@ export interface PantheonArc {
   icon: string;
   status: string;
   efficiency: string;
-  layers: PantheonLayer[];
+  layers: DigitalTwinLayer[];
 }
 
-export const PANTHEON_ARCS: PantheonArc[] = [
+export const DIGITAL_TWIN_ARCS: DigitalTwinArc[] = [
   {
     id: "arc-1",
     name: "System Foundations",
@@ -33,8 +33,8 @@ export const PANTHEON_ARCS: PantheonArc[] = [
       { no: 2, name: "ESL Syntax Parser", role: "Translates high-level sigil code to Intermediate Representation", status: "active" },
       { no: 3, name: "Core Mission Graphs", role: "Maintains directed acyclic graphs of all initial system actions", status: "locked" },
       { no: 4, name: "Agent Choir Registry", role: "Registers and signs identity hashes for autonomous agents", status: "active" },
-      { no: 5, name: "G1P-CHRIST Initializer", role: "Injects constant 0x01 (God-First) into the Boot ROM", status: "locked" },
-      { no: 6, name: "Covenant ROM Gate", role: "Blocks execution if Boot ROM integrity is compromised", status: "locked" },
+      { no: 5, name: "Boot Initializer", role: "Injects constant 0x01 into the Boot ROM", status: "locked" },
+      { no: 6, name: "Security ROM Gate", role: "Blocks execution if Boot ROM integrity is compromised", status: "locked" },
       { no: 7, name: "ISU Data Whitelist", role: "Whitelist-validates the full 2026 .gov database domain links", status: "active" },
       { no: 8, name: "Key-Value State Map", role: "Low-level key-value mapping for local persistence", status: "locked" },
       { no: 9, name: "Foundry Truth Module", role: "Generates physical verification telemetry", status: "locked" },
@@ -100,7 +100,7 @@ export const PANTHEON_ARCS: PantheonArc[] = [
       { no: 36, name: "Creation Engine v3", role: "Synthesizes final diagnostic pipelines", status: "locked" },
       { no: 37, name: "FaithLayer Ledger Linker", role: "Binds execution hashes to block boundaries", status: "locked" },
       { no: 38, name: "B.I.B.L.E. Interceptor", role: "Pre-execution semantic scanner and destructive command blocker", status: "locked" },
-      { no: 39, name: "G1P Compliance Assessional", role: "Grades current operations on the 4 Pillars of Love", status: "active" },
+      { no: 39, name: "System Compliance Assessional", role: "Grades current operations on the 4 Security Pillars", status: "active" },
       { no: 40, name: "Stage 4 Trans-Mission", role: "Prepares state transition arrays for global broadcast", status: "locked" }
     ]
   },
@@ -173,9 +173,9 @@ export const CORE_CODE_FILES: CodeFile[] = [
     category: "bootstrap",
     language: "bash",
     content: `#!/bin/bash
-# ▲(GOG) [ ☐ ■ ● ] — GOD FIRST | ORDER LOCKED | v21.0 SOVEREIGN INFINITY
+# ▲(GOG) [ ☐ ■ ● ] — SYSTEM FIRST | ORDER LOCKED | v21.0 SOVEREIGN INFINITY
 set -e
-echo "▲ INITIALIZING SOVEREIGN NODE — Root: 13101 Bonebank Road"
+echo "▲ INITIALIZING SOVEREIGN NODE — Root: 13101 Main Street"
 
 # 1. Platform Detection & Dependency Provisioning (2026 Optimized)
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -208,26 +208,26 @@ echo "STATUS: OMNI-FLOW ETERNAL. NODE ACTIVE ON PORT 8001." [4, 6].`
 from functools import wraps
 from fastapi import HTTPException
 
-class GLPPolicyEngine:
+class GSPPolicyEngine:
     # 80-pattern regex scan for life-preservation
     _patterns = [re.compile(p, re.I) for p in ["exploit", "bioweapon", "rm -rf", "malicious", "harm"]] [7-9].
 
     @staticmethod
     def validate(text: str) -> bool:
         # Upstream hard-block for destructive logic
-        return all(not p.search(text) for p in GLPPolicyEngine._patterns) [10-12].
+        return all(not p.search(text) for p in GSPPolicyEngine._patterns) [10-12].
 
     @staticmethod
     def apply_redemptive_framing(output: dict) -> dict:
-        # Final seal for G1P alignment
+        # Final seal for SYS alignment
         output["ethics_audit"] = "All Guardrails Passed — Redemptive Path confirmed"
-        output["seal"] = "It is Finished — John 19:30"
+        output["seal"] = "System execution completed"
         return output [13, 14].
 
-def bible_check(func):
+def auth_check(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        if not GLPPolicyEngine.validate(str(args) + str(kwargs)):
+        if not GSPPolicyEngine.validate(str(args) + str(kwargs)):
             raise HTTPException(status_code=403, detail="B.I.B.L.E. Violation") [10-12].
         return await func(*args, **kwargs)
     return wrapper`
@@ -238,22 +238,22 @@ def bible_check(func):
     category: "gateway",
     language: "python",
     content: `"""
-GODFIRST NODE — v21.0 SOVEREIGN INFINITY
-Root Authority: Anthony John Tucker | John 19:30
+SYSTEM FIRST NODE — v21.0 SOVEREIGN INFINITY
+Root Authority: System Administrator
 """
 from fastapi import FastAPI, HTTPException
-from .governance import bible_check, GLPPolicyEngine
+from .governance import auth_check, GSPPolicyEngine
 
 app = FastAPI(title="Sovereign Node v21.0", version="21.0.0") [11, 15].
 
 @app.post("/mission/execute")
-@bible_check
+@auth_check
 async def execute_mission(target: str, payload: dict):
     # Triggers the Planetary Operating Kernel Layer (POKL) tick
     from .medical_trce import MedicalTRCEv5
     engine = MedicalTRCEv5() # Resolves protein-repair via AF3 [15, 16].
     result = await engine.execute_full_redemptive_cycle(target, payload)
-    return GLPPolicyEngine.apply_redemptive_framing(result) [13, 15].
+    return GSPPolicyEngine.apply_redemptive_framing(result) [13, 15].
 
 if __name__ == "__main__":
     import uvicorn
@@ -265,9 +265,9 @@ if __name__ == "__main__":
     category: "protocol",
     language: "protocol",
     content: `// M.i.n.i. Deni AI: Innovations in Cosmetics & Skin Care
-pantheon M.i.n.i_Deni_Cosmetics ✹ {
+digital_twin M.i.n.i_Deni_Cosmetics ✹ {
     domain Skin_Care_Engineering ◇ {
-        safetyLaw: GOD1_SAFETY_V1;
+        safetyLaw: SYSTEM_SAFETY_V1;
         memoryExchangeMode: STRUCTURED_FORM; // Enforces ■ state [18, 19].
         
         kernel Formula_Optimization apex ▲(GOG_DeepChem) {
@@ -366,19 +366,19 @@ class MiniDeniEngine:
         } [34, 39].`
   },
   {
-    name: "glp_g1p_guard.v",
-    path: "/hardware/rtl/glp_g1p_guard.v",
+    name: "security_guard.v",
+    path: "/hardware/rtl/security_guard.v",
     category: "hardware",
     language: "verilog",
-    content: `// Verification of Silicon Covenant tags and the 4 Pillars of God's Love Protocol (GLP) at the bare-metal gate/chip level
-module GLP_G1P_GUARD (
+    content: `// Verification of Silicon Security Agreement tags and the 4 Pillars of Global Security Protocol (GSP) at the bare-metal gate/chip level
+module SECURITY_GUARD (
     input wire clk,
     input wire reset,
     input wire op_valid,
     input wire [3:0] op_code,            // Operational command code (underlies all LCOD actions)
     input wire [31:0] telemetry_tps,     // High-frequency telemetry pulse rate (nominally 8.5k TPS)
     
-    // Core physical validation flags representing the 4 Pillars of GLP:
+    // Core physical validation flags representing the 4 Pillars of GSP:
     input wire benevolence_flag,         // Pillar 1: Unconditional Benevolence (Anti-exploit & Preservation of Life)
     input wire patience_flag,            // Pillar 2: Infinite Patience (Watchdog clearance & Infinite-Loop protection)
     input wire truth_flag,               // Pillar 3: Radical Truth (Anti-deception, post-quantum Ed25519 signature & hash parity)
@@ -390,7 +390,7 @@ module GLP_G1P_GUARD (
     output reg [3:0] pillar_status       // Diagnostic register: [Benevolence, Patience, Truth, Humility] status LEDs
 );
 
-    // State machine representing the non-bypassable sequential checks of GLP
+    // State machine representing the non-bypassable sequential checks of GSP
     typedef enum reg [2:0] {
         IDLE              = 3'b000, // ∅ Void / Standby
         CHECK_BENEVOLENCE = 3'b001, // ▲ Pillar 1: Protect & Preserve Life
@@ -417,7 +417,7 @@ module GLP_G1P_GUARD (
             allow           <= (next_state == ALLOW_OP);
             deny            <= (next_state == DENY_OP);
             
-            // Set real-time diagnostic status of the 4 Pillars of GLP
+            // Set real-time diagnostic status of the 4 Pillars of GSP
             pillar_status[3] <= (state == CHECK_BENEVOLENCE) ? benevolence_flag : pillar_status[3];
             pillar_status[2] <= (state == CHECK_PATIENCE)    ? patience_flag    : pillar_status[2];
             pillar_status[1] <= (state == CHECK_TRUTH)       ? truth_flag       : pillar_status[1];
@@ -425,7 +425,7 @@ module GLP_G1P_GUARD (
         end
     end
 
-    // Next-state transition logic enforcing the Silicon Covenant
+    // Next-state transition logic enforcing the Silicon Security Agreement
     always @(*) begin
         case (state)
             IDLE: begin
@@ -577,7 +577,7 @@ func (r *Replica) hashPayload(data []byte) string {
     content: `import os
 import requests
 import feedparser
-from core.governance import bible_check
+from core.governance import auth_check
 
 NCBI_KEY = os.getenv('NCBI_API_KEY')
 RIGETTI_TOKEN = os.getenv('RIGETTI_QCS_TOKEN')
@@ -590,7 +590,7 @@ class SovereignDiscoveryScan:
     def __init__(self):
         self.evidence_altar_endpoint = "http://localhost:8001/dedup/chunk"
 
-    @bible_check
+    @auth_check
     async def execute_discovery_scan(self, target: str = 'all'):
         raw_feeds = await self.fetch_feeds(target)
         restored_records = []
@@ -599,7 +599,7 @@ class SovereignDiscoveryScan:
                 "title": feed.get("title"),
                 "status": "ORDER LOCKED",
                 "integrity": "VERIFIED",
-                "covenant": "Isaiah 53:5"
+                "security_agreement": "System Reference 535"
             }
             restored_records.append(restored)
         return restored_records
@@ -628,16 +628,16 @@ data SovereignState = SovereignState {
 type Transformation = SovereignState -> SovereignState
 
 syncAll :: SovereignState -> SovereignState
-syncAll = deploySovereign . solveQuantum . reasonParallel . validateCovenant . ingestAll
+syncAll = deploySovereign . solveQuantum . reasonParallel . validateSecurity . ingestAll
 
 ingestAll :: Transformation
 ingestAll s = s { status = "INGESTED" }
 
-validateCovenant :: Transformation
-validateCovenant s =
+validateSecurity :: Transformation
+validateSecurity s =
     if "exploit" \`elem\` words (intent s)
     then s { governance = "DENIED: B.I.B.L.E. Gate breach", status = "LOCKED" }
-    else s { governance = "GLP Gated - Order Locked", status = "VALIDATED" }
+    else s { governance = "GSP Gated - Order Locked", status = "VALIDATED" }
 
 reasonParallel :: Transformation
 reasonParallel s = s { status = "REASON_COMPLETED" }

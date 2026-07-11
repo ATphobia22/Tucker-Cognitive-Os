@@ -5,7 +5,7 @@ from typing import Dict, Any, List
 
 def generate_sovereign_block_seal(gauge_id: str, timestamp: datetime, water_level: float, discharge: float) -> str:
     """
-    Computes a SHA-256 cryptographic signature seal matching G1P Pillar 10 specifications.
+    Computes a SHA-256 cryptographic signature seal matching System Pillar 10 specifications.
     Injects a theological/cybernetic block payload.
     """
     payload_str = f"{gauge_id}-{timestamp.isoformat()}-{water_level:.4f}-{discharge:.2f}-ItIsFinished"

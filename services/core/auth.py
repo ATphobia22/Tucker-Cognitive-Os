@@ -18,7 +18,7 @@ def get_password_hash(password: str) -> str:
 def create_access_token(
     subject: Union[str, Any], expires_delta: Optional[timedelta] = None
 ) -> str:
-    """Create a cryptographically signed access token under the G1P Security guidelines."""
+    """Create a cryptographically signed access token under the System Security guidelines."""
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:

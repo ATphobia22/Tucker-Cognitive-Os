@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import SovereignCockpit from "./components/SovereignCockpit";
+import NextGenDigitalTwin from "./components/NextGenDigitalTwin";
 
 export default function App() {
-  return <SovereignCockpit />;
+  return <NextGenDigitalTwin />;
 }
-
