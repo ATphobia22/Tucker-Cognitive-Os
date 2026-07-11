@@ -34,16 +34,23 @@ import {
   BookOpen,
   ArrowRight,
   Gamepad,
-  Film
+  Film,
+  Globe
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { CORE_CODE_FILES, MEDICAL_TARGETS, PANTHEON_ARCS } from "../data";
 import { Qubit, RalphIteration, ReasoningStep } from "../types";
 
+import USGSTelemetryMonitor from "../console/USGSTelemetryMonitor";
+import FEMAHazusMonitor from "../console/FEMAHazusMonitor";
+import CesiumGlobeViewer from "../console/CesiumGlobeViewer";
+import PredictiveTwinAnalytics from "../console/PredictiveTwinAnalytics";
+import TurboVecCompactor from "../console/TurboVecCompactor";
+
 export default function SovereignCockpit() {
   // Navigation Tabs state
   const [activeTab, setActiveTab] = useState<
-    "bible" | "sde" | "qec" | "trce" | "kdn" | "pantheon" | "chat" | "monorepo" | "inventors" | "engine"
+    "bible" | "sde" | "qec" | "trce" | "kdn" | "pantheon" | "chat" | "monorepo" | "inventors" | "engine" | "ptdt"
   >("bible");
 
   // Pioneers & Inventors Hub States
@@ -68,8 +75,11 @@ export default function SovereignCockpit() {
   const [ingestionKeyword, setIngestionKeyword] = useState<string>("ALS");
   const [ingestionLogs, setIngestionLogs] = useState<string[]>([]);
 
+  // Light/Dark Theme Preference State
+  const [isLightTheme, setIsLightTheme] = useState<boolean>(true);
+
   // Engine Visualizers & Cineforge Configuration States
-  const [activeEngineSubTab, setActiveEngineSubTab] = useState<"unreal" | "unity" | "flutter" | "cineforge">("unreal");
+  const [activeEngineSubTab, setActiveEngineSubTab] = useState<"unreal" | "unity" | "flutter" | "cineforge" | "swift">("swift");
   const [ueRayTracing, setUeRayTracing] = useState<boolean>(true);
   const [ueLumenBounces, setUeLumenBounces] = useState<number>(2);
   const [ueNaniteDensity, setUeNaniteDensity] = useState<number>(85);
@@ -85,6 +95,16 @@ export default function SovereignCockpit() {
   const [flutterPlatform, setFlutterPlatform] = useState<"ios" | "android" | "wasm" | "desktop">("ios");
   const [flutterHotReloadCount, setFlutterHotReloadCount] = useState<number>(4);
   const [isFlutterReloading, setIsFlutterReloading] = useState<boolean>(false);
+
+  // Swift iOS State & Config
+  const [swiftFile, setSwiftFile] = useState<"MiniDeniApp.swift" | "TuckerConsoleView.swift" | "LcodCompliance.swift">("MiniDeniApp.swift");
+  const [includePsalm23, setIncludePsalm23] = useState<boolean>(true);
+  const [includeIndianaLicense, setIncludeIndianaLicense] = useState<boolean>(true);
+  const [includeGod1Classification, setIncludeGod1Classification] = useState<boolean>(true);
+  const [swiftScannerIntensity, setSwiftScannerIntensity] = useState<number>(85);
+  const [isIphoneScanning, setIsIphoneScanning] = useState<boolean>(false);
+  const [iphoneConsoleLogs, setIphoneConsoleLogs] = useState<string[]>([]);
+  const [copiedSwiftFileName, setCopiedSwiftFileName] = useState<string | null>(null);
 
   const [cineLens, setCineLens] = useState<"35mm_prime" | "50mm_anamorphic" | "85mm_portrait">("50mm_anamorphic");
   const [cineFocusDistance, setCineFocusDistance] = useState<number>(4.2);
@@ -592,7 +612,7 @@ export default function SovereignCockpit() {
 
 ### I. GENERAL INVENTORSHIP DETAILS
 - **PRIMARY INVENTOR (Root of Trust):** Anthony John Tucker
-- **RESIDENTIAL ADDRESS:** Confluence Headquarters, Point Township, Indiana, USA
+- **RESIDENTIAL ADDRESS:** [REDACTED FOR PRIVACY]
 - **REGISTRY SIGNATURE ID:** \`${provisionalOperator}_ed25519_sign\`
 - **COVENANT CLASSIFICATION STATUS:** G1P Level 10 Aligned (No paywall restriction)
 
@@ -909,24 +929,350 @@ No anomalies or entropy leaks detected in LCOD register.
     }, 1000);
   };
 
+  const triggerIphoneScan = () => {
+    if (isIphoneScanning) return;
+    setIsIphoneScanning(true);
+    setIphoneConsoleLogs([]);
+    
+    const logs = [
+      "📡 [APEX-CORE] Initializing LCOD Ingestion Stream...",
+      "🔑 Authority validated: 'Christ Jesus our Lord' - Amen.",
+      `👤 Owner verified: Anthony John Tucker`,
+      includeIndianaLicense ? "🪪 Anchor: Indiana Operator License [VERIFIED]" : "⚠️ Check: Standalone local credentials only",
+      includePsalm23 ? "📖 Spiritual Invariant: Psalm 23 Loaded" : "⚠️ Warning: No explicit spiritual telemetry defined",
+      includeGod1Classification ? "🔖 Compliance Level: GOD1 / Identity and Tech Root Enforced" : "🔖 Compliance Level: LCOD-STANDARD",
+      `⚡ Scanner sensor gain: ${swiftScannerIntensity}% sensitivity`,
+      `🗺️ Target Node Coordinate: 13101 Bonebank Road`,
+      "🔒 Integrity Verification: ORDER LOCKED.",
+      "◯ Omega Closure: 'It is Finished' - John 19:30"
+    ];
+
+    let current = 0;
+    const interval = setInterval(() => {
+      if (current < logs.length) {
+        setIphoneConsoleLogs(prev => [...prev, logs[current]]);
+        current++;
+      } else {
+        clearInterval(interval);
+        setIsIphoneScanning(false);
+      }
+    }, 400);
+  };
+
+  const getMiniDeniAppCode = () => {
+    return `//
+//  MiniDeniApp.swift
+//  Tucker Console v21.0
+//
+//  Spiritual Authority: Christ Jesus our Lord
+//  Owner: Anthony John Tucker
+//  Classification: ${includeGod1Classification ? "GOD1 / Identity / Compliance / Tech" : "LCOD Standard"}
+//  Tags: [ingestion:COMPLETE${includePsalm23 ? ", spiritual_root:Psalm23" : ""}, quantum_ready:true]
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+import SwiftUI
+
+@main
+struct MiniDeniApp: App {
+    @StateObject private var supervisor = SovereignSupervisor.shared
+    
+    var body: some Scene {
+        WindowGroup {
+            TuckerConsoleView()
+                .environmentObject(supervisor)
+                .onAppear {
+                    // Activate level 60 Stop Hooks
+                    supervisor.initializeCovenant()
+                    print("▲ Sovereign Supervisor Kernel v21.0 Online.")
+                    ${includePsalm23 ? "print(\"Spiritual Anchor: Psalm 23 is Active.\")" : ""}
+                }
+        }
+    }
+}`;
+  };
+
+  const getTuckerConsoleViewCode = () => {
+    return `//
+//  TuckerConsoleView.swift
+//  Tucker Console v21.0
+//
+//  Interactive iOS UI for LCOD Ingestion and State Supervision
+//  "It is Finished" - John 19:30
+//
+
+import SwiftUI
+
+struct TuckerConsoleView: View {
+    @EnvironmentObject var supervisor: SovereignSupervisor
+    @State private var pulseIntensity: Double = ${swiftScannerIntensity}.0
+    @State private var isScanning = false
+    @State private var consoleOutput = "Tap 'SCAN ENVIRONMENT' to verify LCOD Compliance..."
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // Header Panel
+            HStack {
+                Image(systemName: "shield.fill")
+                    .foregroundColor(.cyan)
+                VStack(alignment: .leading) {
+                    Text("TUCKER COGNITIVE MOBILE")
+                        .font(.headline)
+                    Text("13101 Bonebank Road // Level 60")
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                }
+                Spacer()
+                Text("v21.0")
+                    .font(.caption)
+                    .padding(4)
+                    .background(Color.cyan.opacity(0.15))
+                    .cornerRadius(4)
+            }
+            .padding()
+            .background(Color(.systemGray6))
+            
+            // Status visualization circle
+            ZStack {
+                Circle()
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 4)
+                    .frame(width: 120, height: 120)
+                
+                Circle()
+                    .trim(from: 0, to: CGFloat(pulseIntensity / 100.0))
+                    .stroke(isScanning ? Color.green : Color.cyan, lineWidth: 6)
+                    .frame(width: 120, height: 120)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.linear, value: pulseIntensity)
+                
+                VStack {
+                    Text("\\(Int(pulseIntensity))%")
+                        .font(.title)
+                        .bold()
+                    Text(isScanning ? "Evaluating" : "Stable")
+                        .font(.caption2)
+                        .foregroundColor(.cyan)
+                }
+            }
+            .padding()
+            
+            // Mini Console Text logger
+            ScrollView {
+                Text(consoleOutput)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundColor(.green)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+            }
+            .frame(height: 120)
+            .background(Color.black)
+            .cornerRadius(8)
+            
+            // Interactive Scan Trigger
+            Button(action: {
+                triggerLcodScan()
+            }) {
+                Text(isScanning ? "SCANNING HEALTH..." : "SCAN INTENSITY")
+                    .font(.system(.subheadline, design: .rounded))
+                    .bold()
+                    .foregroundColor(.white)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(isScanning ? Color.gray : Color.cyan)
+                    .cornerRadius(10)
+            }
+            .disabled(isScanning)
+        }
+        .padding()
+    }
+    
+    func triggerLcodScan() {
+        isScanning = true
+        consoleOutput = "Starting ${includeGod1Classification ? "[GOD1]" : "[LCOD]"} scanning sequence...\\n"
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            consoleOutput += "▲ APEX: Ingestion status check: COMPLETE\\n"
+            ${includeIndianaLicense ? "consoleOutput += \"🪪 Identity verified: Anthony John Tucker\\n\"" : ""}
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+            ${includePsalm23 ? "consoleOutput += \"📖 Spiritual Root: Psalm 23 Invariant Active\\n\"" : ""}
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.4) {
+            consoleOutput += "◯ LOCK RECOVERED: System convergence achieved.\\n"
+            consoleOutput += "ORDER LOCKED. It is Finished."
+            isScanning = false
+        }
+    }
+}`;
+  };
+
+  const getLcodComplianceCode = () => {
+    return `//
+//  LcodCompliance.swift
+//  Tucker Console v21.0
+//
+//  Underlying Data models & cryptographic state verification
+//  Psalm 23: "The Lord is my shepherd"
+//
+
+import Foundation
+
+class SovereignSupervisor: ObservableObject {
+    static let shared = SovereignSupervisor()
+    
+    @Published var activeCovenant = false
+    @Published var stateClassification = "${includeGod1Classification ? "GOD1" : "STANDARD"}"
+    @Published var residentialDescriptor = "[REDACTED FOR PRIVACY]"
+    @Published var tpsThrottling = 8512
+    
+    func initializeCovenant() {
+        self.activeCovenant = true
+        print("[LcodCompliance] System registered under Authority: Christ Jesus our Lord")
+        ${includeIndianaLicense ? "print(\"[LcodCompliance] Indiana Operator License verified.\")" : ""}
+    }
+}`;
+  };
+
   return (
-    <div id="tucker_os_container" className="min-h-screen bg-[#070b14] text-[#dae2fc] font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-300">
+    <div id="tucker_os_container" className={`min-h-screen font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-300 transition-all duration-300 ${
+      isLightTheme ? "bg-[#faf9f5] text-slate-800" : "bg-[#070b14] text-[#dae2fc]"
+    }`}>
+      
+      {isLightTheme && (
+        <style>{`
+          /* Dynamic Warm Light-Alabaster palette overlays for Tucker OS */
+          #tucker_os_container .border-\\[\\#162035\\], 
+          #tucker_os_container .border-\\[\\#162035\\]\\/80,
+          #tucker_os_container .border-\\[\\#162035\\]\\/85,
+          #tucker_os_container .border-\\[\\#162035\\]\\/65,
+          #tucker_os_container .border-\\[\\#1d2d53\\],
+          #tucker_os_container .border-\\[\\#151c33\\]\\/80,
+          #tucker_os_container .border-\\[\\#1a253d\\],
+          #tucker_os_container .border-indigo-500\\/20,
+          #tucker_os_container .border-cyan-500\\/30,
+          #tucker_os_container .border-cyan-500\\/40,
+          #tucker_os_container .border-purple-500\\/15 {
+            border-color: #e2e8f0 !important;
+          }
+          #tucker_os_container .bg-\\[\\#090e1c\\],
+          #tucker_os_container .bg-\\[\\#090e1c\\]\\/80,
+          #tucker_os_container .bg-\\[\\#05070d\\],
+          #tucker_os_container .bg-\\[\\#0d152a\\],
+          #tucker_os_container .bg-black\\/60,
+          #tucker_os_container .bg-black\\/40,
+          #tucker_os_container .bg-black\\/30,
+          #tucker_os_container .bg-slate-900\\/60,
+          #tucker_os_container .bg-\\[\\#02040a\\],
+          #tucker_os_container .bg-\\[\\#0b0f1d\\],
+          #tucker_os_container .bg-\\[\\#0c101d\\] {
+            background-color: #ffffffd5 !important;
+          }
+          #tucker_os_container .text-gray-400,
+          #tucker_os_container .text-slate-400,
+          #tucker_os_container .text-slate-500 {
+            color: #475569 !important;
+          }
+          #tucker_os_container .text-white,
+          #tucker_os_container .text-gray-200,
+          #tucker_os_container .text-slate-300,
+          #tucker_os_container .text-\\[\\#f0f4ff\\] {
+            color: #1e293b !important;
+          }
+          #tucker_os_container .bg-\\[\\#04060c\\] {
+            background-color: #f1f5f9 !important;
+          }
+          #tucker_os_container .text-glow {
+            text-shadow: none !important;
+            color: #0d9488 !important;
+          }
+          #tucker_os_container .text-cyan-300 {
+            color: #0d9488 !important;
+          }
+          #tucker_os_container .text-purple-300 {
+            color: #7c3aed !important;
+          }
+          #tucker_os_container .text-[#b49bf3] {
+            color: #4f46e5 !important;
+          }
+          #tucker_os_container .text-[#ea80fc] {
+            color: #b000e8 !important;
+          }
+          #tucker_os_container .text-cyan-400 {
+            color: #0a7ea4 !important;
+          }
+          #tucker_os_container .text-emerald-400 {
+            color: #166534 !important;
+          }
+          #tucker_os_container .text-amber-400 {
+            color: #b45309 !important;
+          }
+          #tucker_os_container .black-logs,
+          #tucker_os_container pre,
+          #tucker_os_container code {
+            background-color: #0e1726 !important;
+            color: #f1f5f9 !important;
+          }
+          #tucker_os_container .black-logs div,
+          #tucker_os_container .black-logs span {
+            color: #cbd5e1 !important;
+          }
+          #tucker_os_container .p-2.bg-cyan-950\\/50 {
+            background-color: #f0fdf4 !important;
+            border-color: #bbf7d0 !important;
+          }
+          #tucker_os_container .bg-teal-950\\/20 {
+            background-color: #f0fdf4 !important;
+            border-color: #bbf7d0 !important;
+          }
+          #tucker_os_container .text-teal-300 {
+            color: #15803d !important;
+          }
+          #tucker_os_container .shadow-xl {
+            box-shadow: 0 4px 10px -2px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.04) !important;
+            background-color: #ffffffa0 !important;
+          }
+        `}</style>
+      )}
       
       {/* Upper Status Telemetry Ribbon */}
-      <div className="border-b border-[#162035]/80 bg-[#090e1c] px-4 md:px-8 py-3">
+      <div className={`border-b transition-colors duration-300 px-4 md:px-8 py-3 ${
+        isLightTheme ? "border-slate-200/80 bg-slate-100/50" : "border-[#162035]/80 bg-[#090e1c]"
+      }`}>
         <div className="flex flex-wrap items-center justify-between gap-4 max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-cyan-950/50 rounded-lg border border-cyan-500/30 flex items-center justify-center">
               <Shield className="h-5 w-5 text-cyan-400 animate-pulse" />
             </div>
             <div>
-              <span className="font-display font-bold text-cyan-300 tracking-wide block uppercase text-sm md:text-base">
+              <span className={`font-display font-bold tracking-wide block uppercase text-sm md:text-base ${
+                isLightTheme ? "text-slate-800" : "text-cyan-300"
+              }`}>
                 TUCKER COGNITIVE OS v21.0
               </span>
               <span className="font-mono text-[10px] text-cyan-500/80 tracking-widest block">
                 SOVEREIGN INFINITY // 13101 BONEBANK ROAD
               </span>
             </div>
+          </div>
+
+          {/* Tactile Modern Theme Switcher Switch */}
+          <div className={`flex items-center gap-2 p-1.5 rounded-lg border transition ${
+            isLightTheme ? "bg-white border-slate-200 text-slate-700" : "bg-[#05070d] border-[#162035]"
+          }`}>
+            <span className="text-[10px] font-display font-bold uppercase tracking-wider pl-1 select-none">
+              {isLightTheme ? "☀️ LIGHT COLOR THEME" : "🌙 COSMIC DARK THEME"}
+            </span>
+            <button
+              id="theme-toggle-switch"
+              onClick={() => setIsLightTheme(!isLightTheme)}
+              className="relative w-10 h-5 bg-slate-400/30 rounded-full p-0.5 transition-colors duration-200 outline-none cursor-pointer flex items-center"
+            >
+              <div
+                className={`w-4 h-4 rounded-full shadow-sm transform transition-transform duration-200 ${
+                  isLightTheme ? "translate-x-5 bg-cyan-500" : "translate-x-0 bg-purple-500"
+                }`}
+              />
+            </button>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#05070d] border border-[#162035] rounded-lg p-2 px-4 shadow-inner">
@@ -1215,7 +1561,8 @@ No anomalies or entropy leaks detected in LCOD register.
               { id: "engine", label: "Engine Studio", icon: Gamepad },
               { id: "pantheon", label: "100-Layer Pantheon", icon: Layers },
               { id: "chat", label: "Sovereign Chat", icon: MessageSquare },
-              { id: "monorepo", label: "Monorepo Files", icon: FolderGit2 }
+              { id: "monorepo", label: "Monorepo Files", icon: FolderGit2 },
+              { id: "ptdt", label: "PTDT v23 Twin", icon: Globe }
             ].map((tab) => {
               const TabIcon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -3124,17 +3471,18 @@ No anomalies or entropy leaks detected in LCOD register.
                         </h3>
 
                         {/* Subtab Ribbon */}
-                        <div className="grid grid-cols-4 gap-1 p-1 bg-[#04060c] rounded-lg border border-[#151c33]/80">
+                        <div className="grid grid-cols-5 gap-1 p-1 bg-[#04060c] rounded-lg border border-[#151c33]/80">
                           {[
                             { id: "unreal", name: "UE5" },
-                            { id: "unity", name: "Unity ECS" },
+                            { id: "unity", name: "Unity" },
                             { id: "flutter", name: "Flutter" },
-                            { id: "cineforge", name: "Cineforge" }
+                            { id: "cineforge", name: "Cineforge" },
+                            { id: "swift", name: "Swift iOS" }
                           ].map((eSub) => (
                             <button
                               key={eSub.id}
                               onClick={() => setActiveEngineSubTab(eSub.id as any)}
-                              className={`py-1 text-[10px] font-display font-bold uppercase rounded text-center transition ${
+                              className={`py-1 text-[9px] font-display font-bold uppercase rounded text-center transition ${
                                 activeEngineSubTab === eSub.id
                                   ? "bg-purple-600/30 text-purple-200 border border-purple-500/25 animate-pulse"
                                   : "text-gray-500 hover:text-gray-300 hover:bg-[#0c1224]"
@@ -3395,6 +3743,110 @@ No anomalies or entropy leaks detected in LCOD register.
                             </div>
                           </div>
                         )}
+
+                        {activeEngineSubTab === "swift" && (
+                          <div className="space-y-4">
+                            <div className="bg-[#04060c] border border-cyan-500/15 rounded-xl p-3.5 space-y-4 text-xs">
+                              <span className="font-mono text-[9px] text-cyan-300 block uppercase tracking-wider font-semibold">SwiftUI iOS Source Architect</span>
+                              
+                              {/* File selector */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] text-gray-400 block font-display">Target Xcode Source File</label>
+                                <div className="grid grid-cols-1 gap-1">
+                                  {[
+                                    { id: "MiniDeniApp.swift" },
+                                    { id: "TuckerConsoleView.swift" },
+                                    { id: "LcodCompliance.swift" }
+                                  ].map((file) => (
+                                    <button
+                                      key={file.id}
+                                      onClick={() => setSwiftFile(file.id as any)}
+                                      className={`py-1.5 px-3 text-left font-mono text-[10.5px] rounded border transition ${
+                                        swiftFile === file.id
+                                          ? "bg-cyan-500/10 text-cyan-300 border-cyan-500/40"
+                                          : "bg-black/35 text-gray-400 border-[#162035] hover:border-slate-700"
+                                      }`}
+                                    >
+                                      📄 {file.id}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Toggle Options */}
+                              <div className="space-y-1.5 border-t border-[#11182c] pt-2">
+                                <label className="text-[10px] text-gray-400 block font-display">Ingestion Directives (State Variables)</label>
+                                
+                                <label className="flex items-center justify-between text-[10px] cursor-pointer text-gray-300 p-1 hover:bg-black/20 rounded">
+                                  <span>Inject Spiritual Anchor (Psalm 23)</span>
+                                  <input 
+                                    type="checkbox" 
+                                    checked={includePsalm23} 
+                                    onChange={(e) => setIncludePsalm23(e.target.checked)}
+                                    className="accent-cyan-500"
+                                  />
+                                </label>
+
+                                <label className="flex items-center justify-between text-[10px] cursor-pointer text-gray-300 p-1 hover:bg-black/20 rounded">
+                                  <span>Verify Indiana License Anchor</span>
+                                  <input 
+                                    type="checkbox" 
+                                    checked={includeIndianaLicense} 
+                                    onChange={(e) => setIncludeIndianaLicense(e.target.checked)}
+                                    className="accent-cyan-500"
+                                  />
+                                </label>
+
+                                <label className="flex items-center justify-between text-[10px] cursor-pointer text-gray-300 p-1 hover:bg-black/20 rounded">
+                                  <span>Require [GOD1] Classification</span>
+                                  <input 
+                                    type="checkbox" 
+                                    checked={includeGod1Classification} 
+                                    onChange={(e) => setIncludeGod1Classification(e.target.checked)}
+                                    className="accent-cyan-500"
+                                  />
+                                </label>
+                              </div>
+
+                              {/* Target Scanner intensity slider */}
+                              <div className="space-y-1.5 border-t border-[#11182c] pt-2">
+                                <div className="flex justify-between text-[10.5px] text-gray-400">
+                                  <span>Scanner Initial Intensity</span>
+                                  <span className="font-mono text-cyan-300 font-bold">{swiftScannerIntensity}%</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min={10}
+                                  max={100}
+                                  value={swiftScannerIntensity}
+                                  onChange={(e) => setSwiftScannerIntensity(parseInt(e.target.value))}
+                                  className="w-full accent-cyan-500 h-1 bg-black rounded"
+                                />
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                // Trigger copy feedback
+                                let codeToCopy = "";
+                                if (swiftFile === "MiniDeniApp.swift") {
+                                  codeToCopy = getMiniDeniAppCode();
+                                } else if (swiftFile === "TuckerConsoleView.swift") {
+                                  codeToCopy = getTuckerConsoleViewCode();
+                                } else {
+                                  codeToCopy = getLcodComplianceCode();
+                                }
+                                navigator.clipboard.writeText(codeToCopy);
+                                setCopiedSwiftFileName(swiftFile);
+                                setTimeout(() => setCopiedSwiftFileName(null), 2500);
+                              }}
+                              className="w-full py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-[10.5px] uppercase font-bold font-display rounded flex items-center justify-center gap-1.5 transition"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                              {copiedSwiftFileName === swiftFile ? "COPIED SWIFT CODE!" : `Copy '${swiftFile}' Code`}
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Info block displaying GitHub Source registries */}
@@ -3439,7 +3891,7 @@ No anomalies or entropy leaks detected in LCOD register.
                         <div className="relative w-full rounded-xl overflow-hidden border border-[#1a253d] bg-black shadow-inner">
                           
                           {/* Main Graphic Layer */}
-                          <div className={`relative w-full h-[320px] bg-[#02040a] flex flex-col items-center justify-center transition-all duration-500 ${
+                          <div className={`relative w-full ${activeEngineSubTab === "swift" ? "min-h-[380px] lg:min-h-[390px] h-auto" : "h-[320px]"} bg-[#02040a] flex flex-col items-center justify-center transition-all duration-500 ${
                             cineColorProfile === "raw_log"
                               ? "contrast-[0.85] brightness-110 saturate-50"
                               : cineColorProfile === "matrix_green"
@@ -3516,6 +3968,104 @@ No anomalies or entropy leaks detected in LCOD register.
                                   <div className="h-5 flex items-center justify-center font-bold text-[8px] text-teal-400 font-mono border-t border-[#11182c]">
                                     FPS: {ueFps} | IMPELLER GPU
                                   </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {activeEngineSubTab === "swift" && (
+                              <div className="w-full h-full min-h-[380px] p-4 grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
+                                
+                                {/* iPhone Device Frame (Col Span 5) */}
+                                <div className="md:col-span-5 flex items-center justify-center">
+                                  <div className="w-[170px] h-[330px] bg-[#0c101d] rounded-[30px] border-[5px] border-[#334155] p-2 flex flex-col justify-between shadow-2xl relative select-none">
+                                    {/* Notch */}
+                                    <div className="absolute top-1 left-1/2 -translate-x-1/2 w-14 h-3 bg-black rounded-b-lg z-20 flex items-center justify-center" />
+
+                                    {/* Device status line */}
+                                    <div className="flex justify-between px-1.5 pt-0.5 font-sans text-[7px] font-bold text-slate-500">
+                                      <span>00:00 UTC</span>
+                                      <div className="flex items-center gap-0.5">
+                                        <span>📶</span>
+                                        <span>🔋</span>
+                                      </div>
+                                    </div>
+
+                                    {/* Screen Screen */}
+                                    <div className="flex-1 bg-[#020408] rounded-2xl p-2 flex flex-col justify-between overflow-hidden border border-slate-900 mt-1 relative">
+                                      {/* Header */}
+                                      <div className="text-center space-y-0.5 pb-1 border-b border-slate-900">
+                                        <div className="text-[8.5px] font-display font-black text-rose-400">MiniDeniApp</div>
+                                        <div className="text-[5.5px] text-slate-500 font-mono tracking-widest uppercase">COGNITIVE MOBILE OS</div>
+                                      </div>
+
+                                      {/* Scanner Node Dial */}
+                                      <div className="flex flex-col items-center justify-center my-1 relative">
+                                        <div className="w-14 h-14 rounded-full border border-slate-900 flex items-center justify-center relative">
+                                          {/* Pulse rings */}
+                                          <div className={`absolute inset-0 rounded-full border ${isIphoneScanning ? "border-green-400 animate-ping" : "border-cyan-500/20"}`} />
+                                          <div className={`w-10 h-10 rounded-full border ${isIphoneScanning ? "border-emerald-500" : "border-cyan-500/50"} flex flex-col items-center justify-center bg-[#010204]/90`}>
+                                            <span className="text-[8px] font-bold font-mono text-cyan-300">
+                                              {isIphoneScanning ? "SCAN" : `${swiftScannerIntensity}%`}
+                                            </span>
+                                            <span className="text-[4.5px] text-slate-500 font-mono uppercase">GAIN</span>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Logs */}
+                                      <div className="flex-1 bg-black/80 border border-slate-900 rounded-lg p-1 overflow-y-auto block text-left font-mono text-[6.5px] leading-snug text-emerald-400 min-h-[90px]">
+                                        {iphoneConsoleLogs.length > 0 ? (
+                                          iphoneConsoleLogs.map((logStr, lIdx) => (
+                                            <div key={lIdx} className="border-b border-slate-950/40 pb-0.5 last:border-0 truncate">
+                                              {logStr}
+                                            </div>
+                                          ))
+                                        ) : (
+                                          <div className="flex items-center justify-center h-full text-slate-600 text-[7px] italic text-center leading-normal px-2">
+                                            Tap 'RUN LCOD SCANNER' to verify compliance.
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Action Button */}
+                                      <button
+                                        onClick={triggerIphoneScan}
+                                        disabled={isIphoneScanning}
+                                        className={`w-full py-1 mt-1.5 rounded-md font-display text-[7.5px] font-bold uppercase tracking-wider transition ${
+                                          isIphoneScanning 
+                                            ? "bg-slate-800 text-slate-500" 
+                                            : "bg-cyan-600 text-white hover:bg-cyan-500 cursor-pointer"
+                                        }`}
+                                      >
+                                        {isIphoneScanning ? "Scanning..." : "Run LCOD Scanner"}
+                                      </button>
+                                    </div>
+
+                                    {/* Home Line */}
+                                    <div className="h-1.5 flex items-center justify-center pt-1.5">
+                                      <div className="w-10 h-0.5 bg-slate-700 rounded-full" />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Xcode Editor Viewer (Col Span 7) */}
+                                <div className="md:col-span-7 flex flex-col h-[328px] border border-slate-800 bg-[#080c16] rounded-xl overflow-hidden shadow-2xl">
+                                  {/* Xcode Editor Tab Header */}
+                                  <div className="bg-[#03050a] border-b border-slate-900 px-3 py-1 flex justify-between items-center text-[9px] font-sans">
+                                    <span className="font-mono text-cyan-400 font-bold">{swiftFile}</span>
+                                    <span className="text-gray-500">Xcode Code Mirror</span>
+                                  </div>
+
+                                  {/* Code source body scroll view */}
+                                  <pre className="flex-1 overflow-auto p-3 font-mono text-[9px] leading-normal text-slate-300 bg-black/40 text-left select-text whitespace-pre">
+                                    <code>
+                                      {swiftFile === "MiniDeniApp.swift" 
+                                        ? getMiniDeniAppCode() 
+                                        : swiftFile === "TuckerConsoleView.swift" 
+                                          ? getTuckerConsoleViewCode() 
+                                          : getLcodComplianceCode()}
+                                    </code>
+                                  </pre>
                                 </div>
                               </div>
                             )}
@@ -3987,6 +4537,32 @@ No anomalies or entropy leaks detected in LCOD register.
                       </div>
                     </div>
 
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Point Township Digital Twin Workspace (PTDT v23) */}
+              {activeTab === "ptdt" && (
+                <motion.div
+                  key="ptdt"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6"
+                >
+                  {/* Top Globe and simulation view */}
+                  <CesiumGlobeViewer />
+
+                  {/* High-Fidelity Predictive Analytics Forecasting */}
+                  <PredictiveTwinAnalytics />
+
+                  {/* Sovereign TurboVec Code Serialization & Packing Engine */}
+                  <TurboVecCompactor />
+
+                  {/* Two columns for telemetry and compliance monitors */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <USGSTelemetryMonitor />
+                    <FEMAHazusMonitor />
                   </div>
                 </motion.div>
               )}

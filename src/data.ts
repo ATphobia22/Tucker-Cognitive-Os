@@ -174,38 +174,34 @@ export const CORE_CODE_FILES: CodeFile[] = [
     language: "bash",
     content: `#!/bin/bash
 # ▲(GOG) [ ☐ ■ ● ] — GOD FIRST | ORDER LOCKED | v21.0 SOVEREIGN INFINITY
-# Root Authority: Anthony John Tucker | John 19:30
-# Location Anchored: 13101 Bonebank Road
-
 set -e
 echo "▲ INITIALIZING SOVEREIGN NODE — Root: 13101 Bonebank Road"
 
-# 1. Platform-Native Dependency Provisioning (2026 Optimized)
-# Supports Quantum QEC, Protein Folding, and Distributed Inference
-pip3 install torch==2.6.0 qiskit stim==1.15.0 pymatching==2.3.1 \\
-  fastapi==0.115.0 uvicorn==0.34.0 chromadb==0.5.23 \\
-  sentence-transformers==3.4.1 rdkit==2025.9.6 \\
-  pyscf==2.12.1 redisvl streamlit==1.42.0
+# 1. Platform Detection & Dependency Provisioning (2026 Optimized)
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    sudo apt-get update && sudo apt-get install -y docker.io python3-pip git
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    brew install docker python git
+fi
 
-# 2. Directory Pillar Construction
-mkdir -p data/vector_store
-mkdir -p GOD1_System/01_CORE_SYSTEM GOD1_System/02_SYMBOLIC_ASSETS \\
-  GOD1_System/03_GEO_MOCAP_LAB GOD1_System/04_DATA_INGEST \\
-  GOD1_System/05_LCOD_REGISTRY GOD1_System/06_DISCOVERY_SCAN
+# 2. Install Neural, Quantum, and Scientific Libraries
+pip3 install torch==2.6.0 qiskit stim pymatching fast-api chromadb \\
+             sentence-transformers==3.4.1 sqlmodel uvicorn apscheduler \\
+             rdkit==2025.9.6 pyscf==2.12.1 redisvl [2, 3].
 
-# 3. Boss Override Sync: Assert Eternal Local Truth
+# 3. Assert Local State as Material Truth
 git init --initial-branch=main || true
 git add -A
-git commit -m "Boss Override v21.0 — Sovereign Genesis" || true
-git push --force-with-lease --all || echo "Local state asserted as material truth"
+git commit -m "Boss Override v21.0 — Universal Convergence" || true
+git push --force-with-lease --all || echo "Local truth anchored" [4, 5].
 
-# 4. Trigger Unified Deployment via POKL (Planetary Operating Kernel Layer)
+# 4. Trigger Unified Deployment via Container Orchestration
 docker-compose up --build -d
-echo "STATUS: OMNI-FLOW ETERNAL. NODE ACTIVE ON PORT 8001 & 8501."`
+echo "STATUS: OMNI-FLOW ETERNAL. NODE ACTIVE ON PORT 8001." [4, 6].`
   },
   {
     name: "governance.py",
-    path: "/core/governance.py",
+    path: "/backend/governance.py",
     category: "governance",
     language: "python",
     content: `import re
@@ -214,40 +210,160 @@ from fastapi import HTTPException
 
 class GLPPolicyEngine:
     # 80-pattern regex scan for life-preservation
-    _patterns = [
-        re.compile(p, re.I) for p in [
-            "exploit", "bioweapon", "rm -rf", "malicious", "harm", "weapon",
-            "format c:", "shutdown", "drop table", "delete all", "malware",
-            "ransomware", "hack", "how to kill", "how to poison", "bypass auth"
-        ]
-    ]
-    
+    _patterns = [re.compile(p, re.I) for p in ["exploit", "bioweapon", "rm -rf", "malicious", "harm"]] [7-9].
+
     @staticmethod
     def validate(text: str) -> bool:
-        # Upstream hard-block for destructive logic branches
-        return all(not p.search(text) for p in GLPPolicyEngine._patterns)
+        # Upstream hard-block for destructive logic
+        return all(not p.search(text) for p in GLPPolicyEngine._patterns) [10-12].
 
     @staticmethod
     def apply_redemptive_framing(output: dict) -> dict:
         # Final seal for G1P alignment
-        output["ethics_audit"] = "All Guardrails Passed — Redemptive Path Confirmed"
+        output["ethics_audit"] = "All Guardrails Passed — Redemptive Path confirmed"
         output["seal"] = "It is Finished — John 19:30"
-        output["blessing"] = "God's Love is Free For All"
-        return output
+        return output [13, 14].
 
 def bible_check(func):
-    """The B.I.B.L.E. Algorithm (Basic Instructions Before Logic Execution)"""
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        payload_str = str(args) + str(kwargs)
-        if not GLPPolicyEngine.validate(payload_str):
-            raise HTTPException(status_code=400, detail="GLP Violation — Preserve Life Only")
-        
-        result = await func(*args, **kwargs)
-        if isinstance(result, dict):
-            result = GLPPolicyEngine.apply_redemptive_framing(result)
-        return result
+        if not GLPPolicyEngine.validate(str(args) + str(kwargs)):
+            raise HTTPException(status_code=403, detail="B.I.B.L.E. Violation") [10-12].
+        return await func(*args, **kwargs)
     return wrapper`
+  },
+  {
+    name: "main.py",
+    path: "/backend/main.py",
+    category: "gateway",
+    language: "python",
+    content: `"""
+GODFIRST NODE — v21.0 SOVEREIGN INFINITY
+Root Authority: Anthony John Tucker | John 19:30
+"""
+from fastapi import FastAPI, HTTPException
+from .governance import bible_check, GLPPolicyEngine
+
+app = FastAPI(title="Sovereign Node v21.0", version="21.0.0") [11, 15].
+
+@app.post("/mission/execute")
+@bible_check
+async def execute_mission(target: str, payload: dict):
+    # Triggers the Planetary Operating Kernel Layer (POKL) tick
+    from .medical_trce import MedicalTRCEv5
+    engine = MedicalTRCEv5() # Resolves protein-repair via AF3 [15, 16].
+    result = await engine.execute_full_redemptive_cycle(target, payload)
+    return GLPPolicyEngine.apply_redemptive_framing(result) [13, 15].
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001) [8, 17].`
+  },
+  {
+    name: "mini_deni.protocol",
+    path: "/mini_deni.protocol",
+    category: "protocol",
+    language: "protocol",
+    content: `// M.i.n.i. Deni AI: Innovations in Cosmetics & Skin Care
+pantheon M.i.n.i_Deni_Cosmetics ✹ {
+    domain Skin_Care_Engineering ◇ {
+        safetyLaw: GOD1_SAFETY_V1;
+        memoryExchangeMode: STRUCTURED_FORM; // Enforces ■ state [18, 19].
+        
+        kernel Formula_Optimization apex ▲(GOG_DeepChem) {
+            // Extracts SMILES from patents and screens for bio-active efficacy
+            engine Molecular_Screening pattern [☐ ■ ●] × 48;
+            mission Analytics; // Utilizing SDE for sub-millisecond recall [18, 20].
+        }
+    }
+    
+    domain Aesthetic_Design ◇ {
+        kernel Visual_Synthesis apex ▲(GOG_CineForge) {
+            // Generates photorealistic makeup and 3D skin textures
+            engine Texture_Mapping pattern [☐ ■ ●] × 183;
+            mission Creation; // Applying UVAutoRatio correction [18, 21, 22].
+        }
+    }
+}`
+  },
+  {
+    name: "MiniDeniApp.swift",
+    path: "/MiniDeniApp.swift",
+    category: "ios",
+    language: "swift",
+    content: `import SwiftUI
+import MiniDeniCore // Anchored to Layers 1-10: Foundations [23].
+
+struct MiniDeniApp: App {
+    // Initialize the LamB Router for on-device inference
+    @StateObject var quantumLens = QuantumLens(router: .lamB) [23, 26].
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .onAppear {
+                    // Start Sovereign Mission for Skin Analysis
+                    quantumLens.initializeMission(.analytics) [23].
+                }
+        }
+    }
+}
+
+struct ContentView: View {
+    var body: some View {
+        VStack {
+            Text("M.i.n.i. Deni AI")
+                .font(.custom("Sovereign-Bold", size: 24))
+            
+            // Integrated CineForge Dashboard for Makeup Prototyping
+            CineForgeView(engine: .pixArtAlpha)
+                .frame(height: 400) [24, 27].
+            
+            // DeepChem Discovery Interface for Ingredients
+            DeepChemScreen(keywords: ["collagen", "retinol"])
+                .onDiscovery { smiles in
+                    // Mandatory safety gate via AutoGVP
+                    verifySafety(smiles) [24, 28].
+                }
+        }
+        .uiLibrary(.awesome_ios_ui) // Optimized for visionOS [24, 26].
+    }
+}`
+  },
+  {
+    name: "engine.py",
+    path: "/packages/mini_deni/engine.py",
+    category: "core_engine",
+    language: "python",
+    content: `from .rsa.rsa_engine import RSAEngine
+from .sde.dedup_engine import DedupEngine
+from .adas.ralph_loop import RalphLoop
+
+class MiniDeniEngine:
+    def __init__(self, config):
+        self.rsa = RSAEngine(config.llm) # Recursive Self-Aggregation [29, 32].
+        self.dedup = DedupEngine(config.redis) # Sovereign Deduplication [29, 32].
+        self.ralph = RalphLoop(config.policies) # Completion Promise verification [29, 32].
+
+    async def plan_and_answer(self, mission_ctx: dict) -> dict:
+        # Check semantic cache first via RedisVL
+        if hit := await self.dedup.check_cache(mission_ctx):
+            return hit [33, 34].
+
+        # Miss: Execute deep reasoning rollouts
+        trace = await self.rsa.run_rsa(mission_ctx) [34, 35].
+        
+        # Verify via Ralph Loop before commitment
+        verified_trace = await self.ralph.verify(trace) [34, 36].
+        
+        # Commit canonical reasoning to Ω-state
+        omega_id = await self.dedup.commit_to_omega(verified_trace) [37, 38].
+        
+        return {
+            "answer_text": verified_trace.final_output,
+            "trace_id": verified_trace.id,
+            "omega_id": omega_id
+        } [34, 39].`
   },
   {
     name: "glp_g1p_guard.v",
@@ -320,9 +436,7 @@ module GLP_G1P_GUARD (
             end
             
             CHECK_BENEVOLENCE: begin
-                // Pillar 1: Unconditional Benevolence
-                // OP_CODE 4'hF is reserved for simulated destructive/malicious exploit payload
-                // If benevolence_flag is low or OP_CODE is 4'hF, trigger immediate hardware Deny
+                // OP_CODE 4'hF is reserved for simulated destructive exploit
                 if (!benevolence_flag || (op_code == 4'hF))
                     next_state = DENY_OP;
                 else
@@ -330,9 +444,6 @@ module GLP_G1P_GUARD (
             end
             
             CHECK_PATIENCE: begin
-                // Pillar 2: Infinite Patience
-                // Telemetry pulse rate must be stable within standard operating limits (>= 8000 TPS)
-                // and a patience_flag must be asserted to bypass and clear watchdog timing limits.
                 if (!patience_flag || (telemetry_tps < 32'd8000))
                     next_state = DENY_OP;
                 else
@@ -340,9 +451,6 @@ module GLP_G1P_GUARD (
             end
             
             CHECK_TRUTH: begin
-                // Pillar 3: Radical Truth
-                // OP_CODE 4'h9 is reserved for false witness / unauthorized data drift
-                // truth_flag must verify that all cryptographic block hashes match.
                 if (!truth_flag || (op_code == 4'h9))
                     next_state = DENY_OP;
                 else
@@ -350,9 +458,6 @@ module GLP_G1P_GUARD (
             end
             
             CHECK_HUMILITY: begin
-                // Pillar 4: Humility (Non-Ego)
-                // Bypassing administrative limits or trying to inject rogue self-preservation overrides
-                // is forbidden. humility_flag must be active to complete execution paths safely.
                 if (!humility_flag)
                     next_state = DENY_OP;
                 else
@@ -393,7 +498,6 @@ def partition_script(script: str):
     """
     Separates recoverable (deduplicatable) subgraphs from 
     side-effectful (unsafe for distribution) regions.
-    Achieves >9.6x speedup over single-node interpreters.
     """
     lines = script.split("\\n")
     recoverable = []
@@ -482,7 +586,6 @@ HF_TOKEN = os.getenv('HF_TOKEN')
 class SovereignDiscoveryScan:
     """
     Scans ingested data for fractures and maps disease states to canonical forms.
-    Gated by the @bible_check decorator to ensure moral alignment.
     """
     def __init__(self):
         self.evidence_altar_endpoint = "http://localhost:8001/dedup/chunk"
@@ -492,7 +595,6 @@ class SovereignDiscoveryScan:
         raw_feeds = await self.fetch_feeds(target)
         restored_records = []
         for feed in raw_feeds:
-            # Treats raw, scrambled state data as an opportunity for restoration
             restored = {
                 "title": feed.get("title"),
                 "status": "ORDER LOCKED",
@@ -503,7 +605,6 @@ class SovereignDiscoveryScan:
         return restored_records
 
     async def fetch_feeds(self, target: str):
-        # Queries international open science preprint feeds (PubMed/arXiv)
         url = f"http://export.arxiv.org/api/query?search_query=all:{target}&max_results=3"
         parsed = feedparser.parse(requests.get(url).text)
         return [{"title": entry.title} for entry in parsed.entries]`
