@@ -110,17 +110,17 @@ export function ExecutionGraph() {
   };
 
   return (
-    <div className="w-full h-full relative bg-[#020617]">
+    <div className="w-full h-full relative dark:bg-[#020617] bg-slate-50">
       <div className="absolute top-6 left-6 z-10 flex flex-col gap-2">
-        <h2 className="text-xl font-bold text-slate-100 tracking-tight">PTDT v32 Execution Graph</h2>
-        <p className="text-sm text-slate-400 font-mono">Prefect / Temporal Orchestration</p>
+        <h2 className="text-xl font-bold dark:text-slate-100 text-slate-900 tracking-tight">PTDT v32 Execution Graph</h2>
+        <p className="text-sm dark:text-slate-400 text-slate-500 font-mono">Prefect / Temporal Orchestration</p>
       </div>
 
       <div className="absolute top-6 right-6 z-10 flex gap-3">
         <button
           onClick={resetSimulation}
           disabled={isPlaying}
-          className="flex items-center gap-2 px-4 py-2 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 rounded-md dark:bg-slate-800 bg-white hover:dark:bg-slate-700 hover:bg-slate-200 dark:text-slate-300 text-slate-700 font-medium text-sm transition-colors disabled:opacity-50"
         >
           <RotateCcw size={16} />
           Reset
@@ -143,10 +143,10 @@ export function ExecutionGraph() {
         onEdgesChange={onEdgesChange}
         fitView
         fitViewOptions={{ padding: 0.2 }}
-        className="bg-[#020617]"
+        className="dark:bg-[#020617] bg-slate-50"
       >
         <Background color="#1e293b" gap={24} size={2} />
-        <Controls className="!bg-slate-900 !border-slate-800 !fill-slate-400" />
+        <Controls className="dark:!bg-slate-900 bg-slate-100 dark:!border-slate-800 border-slate-200 !fill-slate-400" />
       </ReactFlow>
     </div>
   );

@@ -18,17 +18,17 @@ export function SolverNode({ data }: any) {
 
   return (
     <div className={cn(
-      "px-4 py-3 rounded-xl border bg-[#0F172A] shadow-lg min-w-[220px] flex items-center gap-3 transition-all duration-500",
-      status === 'pending' && "border-slate-800 text-slate-400",
-      status === 'running' && "border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)] text-slate-100",
-      status === 'success' && "border-emerald-500/30 bg-[#064E3B]/10 text-slate-100",
-      status === 'failed' && "border-red-500/50 bg-[#7F1D1D]/10 text-slate-100"
+      "px-4 py-3 rounded-xl border dark:bg-[#0F172A] bg-white shadow-lg min-w-[220px] flex items-center gap-3 transition-all duration-500",
+      status === 'pending' && "dark:border-slate-800 border-slate-200 dark:text-slate-400 text-slate-500",
+      status === 'running' && "border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)] dark:text-slate-100 text-slate-900",
+      status === 'success' && "border-emerald-500/30 dark:bg-[#064E3B]/10 bg-emerald-50 dark:text-slate-100 text-slate-900",
+      status === 'failed' && "border-red-500/50 dark:bg-[#7F1D1D]/10 bg-red-50 dark:text-slate-100 text-slate-900"
     )}>
       <Handle type="target" position={Position.Top} className="!w-1.5 !h-1.5 !bg-slate-600 !border-none" />
       
       <div className={cn(
         "p-2 rounded-lg transition-colors duration-500",
-        status === 'pending' && "bg-slate-800/50 text-slate-500",
+        status === 'pending' && "dark:bg-slate-800 bg-white/50 dark:text-slate-500 text-slate-400",
         status === 'running' && "bg-amber-500/20 text-amber-400",
         status === 'success' && "bg-emerald-500/20 text-emerald-400",
         status === 'failed' && "bg-red-500/20 text-red-400"

@@ -211,6 +211,35 @@ export function DigitalTwinView() {
         raycaster.setFromCamera(mouse, camera);
       };
 
+      let isDraggingBerm = false;
+
+      const placeBermAtPoint = (point: THREE.Vector3, intensity: number = 1.0) => {
+        const radius = 6;
+        const raiseAmount = 4 * intensity;
+        const maxHeight = 12; // cap height to prevent infinite spikes during drag
+        
+        const pos = geometry.attributes.position;
+        let changed = false;
+        for (let i = 0; i < pos.count; i++) {
+          const vx = pos.getX(i);
+          const vy = pos.getY(i);
+          const vz = pos.getZ(i);
+          const dist = Math.sqrt((vx - point.x)**2 + (vz - point.z)**2);
+          if (dist < radius) {
+              const falloff = 1 - (dist / radius);
+              const newY = vy + raiseAmount * falloff;
+              if (newY < maxHeight) {
+                pos.setY(i, newY);
+                changed = true;
+              }
+          }
+        }
+        if (changed) {
+          pos.needsUpdate = true;
+          geometry.computeVertexNormals();
+        }
+      };
+
       const onPointerMove = (event: PointerEvent) => {
         updateRaycaster(event);
 
@@ -248,6 +277,10 @@ export function DigitalTwinView() {
             brushMesh.visible = true;
             brushMesh.position.copy(terrainIntersects[0].point);
             brushMesh.position.y += 0.2; 
+            
+            if (isDraggingBerm) {
+              placeBermAtPoint(terrainIntersects[0].point, 0.3); // Apply smaller raise while dragging
+            }
           } else {
             brushMesh.visible = false;
           }
@@ -270,35 +303,23 @@ export function DigitalTwinView() {
 
         // If placing a berm, check terrain intersection
         if (isPlacingBermRef.current) {
+          isDraggingBerm = true;
           const intersects = raycaster.intersectObject(terrainMesh);
           if (intersects.length > 0) {
-            const intersect = intersects[0];
-            const point = intersect.point;
-            
-            const radius = 6;
-            const raiseAmount = 4;
-            
-            const pos = geometry.attributes.position;
-            for (let i = 0; i < pos.count; i++) {
-              const vx = pos.getX(i);
-              const vy = pos.getY(i);
-              const vz = pos.getZ(i);
-              const dist = Math.sqrt((vx - point.x)**2 + (vz - point.z)**2);
-              if (dist < radius) {
-                  const falloff = 1 - (dist / radius);
-                  pos.setY(i, vy + raiseAmount * falloff);
-              }
-            }
-            pos.needsUpdate = true;
-            geometry.computeVertexNormals();
+            placeBermAtPoint(intersects[0].point, 1.0); // Full raise on initial click
           }
         } else {
           setSelectedParcel(null);
         }
       };
       
+      const onPointerUp = () => {
+        isDraggingBerm = false;
+      };
+      
       container.addEventListener('pointermove', onPointerMove);
       container.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('pointerup', onPointerUp);
 
       // Wait for renderer initialization
       await renderer.init();
@@ -327,6 +348,7 @@ export function DigitalTwinView() {
       window.addEventListener('resize', handleResize);
       return () => {
         window.removeEventListener('resize', handleResize);
+        window.removeEventListener('pointerup', onPointerUp);
         container.removeEventListener('pointermove', onPointerMove);
         container.removeEventListener('pointerdown', onPointerDown);
       };
@@ -366,11 +388,11 @@ export function DigitalTwinView() {
   }, [isSimulating]);
 
   return (
-    <div ref={viewWrapperRef} className="w-full h-full relative bg-[#020617] text-slate-100 flex overflow-hidden">
+    <div ref={viewWrapperRef} className="w-full h-full relative dark:bg-[#020617] bg-slate-50 dark:text-slate-100 text-slate-900 flex overflow-hidden">
       {/* 3D Canvas Area */}
       <div className="flex-1 relative">
         {!(navigator as any).gpu && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#020617]/80 backdrop-blur-sm">
+          <div className="absolute inset-0 flex items-center justify-center z-10 dark:bg-[#020617] bg-slate-50/80 backdrop-blur-sm">
             <div className="p-6 rounded-xl border border-red-500/30 bg-red-500/10 max-w-md text-center">
               <ShieldAlert className="w-12 h-12 text-red-400 mx-auto mb-4" />
               <h3 className="text-lg font-bold text-red-100 mb-2">WebGPU Not Supported</h3>
@@ -384,29 +406,29 @@ export function DigitalTwinView() {
         
         {/* Overlays */}
         <div className="absolute top-6 left-6 z-10 pointer-events-none">
-          <div className="bg-[#0F172A]/80 backdrop-blur-md border border-slate-800 rounded-xl p-4 min-w-[280px]">
+          <div className="dark:bg-[#0F172A] bg-white/80 backdrop-blur-md border dark:border-slate-800 border-slate-200 rounded-xl p-4 min-w-[280px]">
             <h2 className="text-lg font-bold tracking-tight mb-1 flex items-center gap-2">
               <Waves className="w-5 h-5 text-indigo-400" />
               WebGPU Twin Engine
             </h2>
-            <p className="text-xs text-slate-400 font-mono mb-4">Wabash-Ohio Confluence Model</p>
+            <p className="text-xs dark:text-slate-400 text-slate-500 font-mono mb-4">Wabash-Ohio Confluence Model</p>
             
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-400">Simulation Status</span>
+                <span className="text-sm dark:text-slate-400 text-slate-500">Simulation Status</span>
                 <span className={cn("text-xs font-mono px-2 py-0.5 rounded", isSimulating ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400")}>
                   {isSimulating ? "ACTIVE" : "STANDBY"}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-400">Water Depth</span>
+                <span className="text-sm dark:text-slate-400 text-slate-500">Water Depth</span>
                 <span className={cn("text-sm font-mono font-bold", waterDepth > 2.25 ? "text-red-400" : "text-indigo-400")}>
                   {waterDepth.toFixed(2)}m
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-400">Risk Threshold</span>
-                <span className="text-sm font-mono text-slate-300">2.25m</span>
+                <span className="text-sm dark:text-slate-400 text-slate-500">Risk Threshold</span>
+                <span className="text-sm font-mono dark:text-slate-300 text-slate-700">2.25m</span>
               </div>
             </div>
           </div>
@@ -415,7 +437,7 @@ export function DigitalTwinView() {
         {/* Fullscreen Toggle */}
         <button 
           onClick={toggleFullscreen}
-          className="absolute top-6 right-6 z-10 p-2.5 rounded-lg bg-[#0F172A]/80 backdrop-blur-md border border-slate-800 text-slate-400 hover:text-white transition-colors"
+          className="absolute top-6 right-6 z-10 p-2.5 rounded-lg dark:bg-[#0F172A] bg-white/80 backdrop-blur-md border dark:border-slate-800 border-slate-200 dark:text-slate-400 text-slate-500 hover:text-white transition-colors"
           title="Toggle Fullscreen"
         >
           {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
@@ -423,7 +445,7 @@ export function DigitalTwinView() {
 
         {/* Parcel Lineage Popup */}
         {selectedParcel && !showDossier && (
-          <div className="absolute top-20 right-6 z-20 w-80 bg-[#0F172A]/95 backdrop-blur-xl border border-teal-500/30 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200">
+          <div className="absolute top-20 right-6 z-20 w-80 dark:bg-[#0F172A] bg-white/95 backdrop-blur-xl border border-teal-500/30 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200">
             <div className="relative p-5">
               <button 
                 onClick={() => setSelectedParcel(null)}
@@ -440,23 +462,23 @@ export function DigitalTwinView() {
               <h3 className="text-xl font-bold tracking-tight text-white mb-0.5">
                 {selectedParcel.tractName}
               </h3>
-              <p className="text-xs text-slate-400 font-mono mb-5">{selectedParcel.id}</p>
+              <p className="text-xs dark:text-slate-400 text-slate-500 font-mono mb-5">{selectedParcel.id}</p>
 
               <div className="grid grid-cols-2 gap-3 mb-5">
-                <div className="bg-slate-900/50 rounded-lg p-2.5 border border-slate-800">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Lineage Group</div>
-                  <div className="font-medium text-slate-200">{selectedParcel.lineageGroup}</div>
+                <div className="dark:bg-slate-900 bg-slate-100/50 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200">
+                  <div className="text-[10px] dark:text-slate-500 text-slate-400 uppercase tracking-wider mb-1">Lineage Group</div>
+                  <div className="font-medium dark:text-slate-200 text-slate-800">{selectedParcel.lineageGroup}</div>
                 </div>
                 
-                <div className="bg-slate-900/50 rounded-lg p-2.5 border border-slate-800">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Threat Score</div>
+                <div className="dark:bg-slate-900 bg-slate-100/50 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200">
+                  <div className="text-[10px] dark:text-slate-500 text-slate-400 uppercase tracking-wider mb-1">Threat Score</div>
                   <div className={cn("font-bold font-mono", selectedParcel.threatScore > 70 ? 'text-red-500' : 'text-emerald-400')}>
                     {selectedParcel.threatScore.toFixed(1)}
                   </div>
                 </div>
                 
-                <div className="bg-slate-900/50 rounded-lg p-2.5 border border-slate-800 col-span-2">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Current Status</div>
+                <div className="dark:bg-slate-900 bg-slate-100/50 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 col-span-2">
+                  <div className="text-[10px] dark:text-slate-500 text-slate-400 uppercase tracking-wider mb-1">Current Status</div>
                   <div className="flex items-center gap-2">
                     <div className={cn("w-2 h-2 rounded-full", selectedParcel.isInundated ? "bg-red-500" : "bg-emerald-500")} />
                     <span className={cn("font-medium text-sm", selectedParcel.isInundated ? "text-red-400" : "text-emerald-400")}>
@@ -468,13 +490,13 @@ export function DigitalTwinView() {
 
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Historical Context</h4>
-                  <p className="text-sm text-slate-300 leading-relaxed bg-slate-900/30 p-3 rounded-lg border border-slate-800/50">
+                  <h4 className="text-[10px] dark:text-slate-500 text-slate-400 uppercase tracking-wider mb-1">Historical Context</h4>
+                  <p className="text-sm dark:text-slate-300 text-slate-700 leading-relaxed dark:bg-slate-900 bg-slate-100/30 p-3 rounded-lg border dark:border-slate-800 border-slate-200/50">
                     {selectedParcel.historicalNote}
                   </p>
                 </div>
                 <div>
-                  <h4 className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Grant Eligibility Assessment</h4>
+                  <h4 className="text-[10px] dark:text-slate-500 text-slate-400 uppercase tracking-wider mb-1">Grant Eligibility Assessment</h4>
                   <div className="text-sm text-indigo-300 font-mono bg-indigo-900/20 p-3 rounded-lg border border-indigo-500/20 space-y-2">
                     <div className="flex justify-between border-b border-indigo-500/20 pb-1">
                       <span className="text-indigo-400/70">Calculated Threat Index:</span>
@@ -494,7 +516,7 @@ export function DigitalTwinView() {
                         "px-2 py-0.5 rounded text-xs font-bold",
                         selectedParcel.threatScore > 75 ? "bg-emerald-500/20 text-emerald-400" :
                         selectedParcel.threatScore > 50 ? "bg-amber-500/20 text-amber-400" :
-                        "bg-slate-800 text-slate-400"
+                        "dark:bg-slate-800 bg-white dark:text-slate-400 text-slate-500"
                       )}>
                         {selectedParcel.threatScore > 75 ? "IN_DNR_MIG_2026 High Priority" :
                          selectedParcel.threatScore > 50 ? "FEMA_BRIC_2026 Eligible" :
@@ -519,33 +541,33 @@ export function DigitalTwinView() {
         )}
 
         {/* Controls */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex gap-4 bg-[#0F172A]/80 backdrop-blur-md border border-slate-800 p-2 rounded-xl">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex gap-4 dark:bg-[#0F172A] bg-white/80 backdrop-blur-md border dark:border-slate-800 border-slate-200 p-2 rounded-xl">
           <button 
             onClick={() => setIsSimulating(!isSimulating)}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all",
               isSimulating 
-                ? "bg-slate-800 hover:bg-slate-700 text-white" 
+                ? "dark:bg-slate-800 bg-white hover:dark:bg-slate-700 hover:bg-slate-200 text-white" 
                 : "bg-indigo-600 hover:bg-indigo-500 text-white"
             )}
           >
             {isSimulating ? <Pause size={16} /> : <Play size={16} />}
             {isSimulating ? "Halt Simulation" : "Run Inundation"}
           </button>
-          <div className="w-px bg-slate-800 mx-1" />
+          <div className="w-px dark:bg-slate-800 bg-white mx-1" />
           <button 
             onClick={() => {
               setIsPlacingBerm(!isPlacingBerm);
               if (!isPlacingBerm) setSelectedParcel(null); // deselect when placing berms
             }}
-            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset]", isPlacingBerm && "bg-indigo-600 text-white hover:bg-indigo-500 border-indigo-400 shadow-[0_0_15px_rgba(79,70,229,0.3)]")}
+            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg dark:bg-slate-800 bg-white hover:dark:bg-slate-700 hover:bg-slate-200 dark:text-slate-300 text-slate-700 font-medium text-sm transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset]", isPlacingBerm && "bg-indigo-600 text-white hover:bg-indigo-500 border-indigo-400 shadow-[0_0_15px_rgba(79,70,229,0.3)]")}
           >
             <Plus size={16} />
             {isPlacingBerm ? "Stop Placing" : "Place Berm"}
           </button>
           <button 
             onClick={() => setShowHeatmap(!showHeatmap)}
-            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset]", showHeatmap && "bg-emerald-600 text-white hover:bg-emerald-500 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]")}
+            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg dark:bg-slate-800 bg-white hover:dark:bg-slate-700 hover:bg-slate-200 dark:text-slate-300 text-slate-700 font-medium text-sm transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset]", showHeatmap && "bg-emerald-600 text-white hover:bg-emerald-500 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]")}
           >
             <Thermometer size={16} />
             Heatmap
@@ -555,46 +577,46 @@ export function DigitalTwinView() {
       
       {/* Right Sidebar - Analytics */}
       {!isFullscreen && (
-        <div className="w-80 border-l border-slate-800 bg-[#0F172A] flex flex-col shrink-0 z-10">
-          <div className="p-4 border-b border-slate-800">
+        <div className="w-80 border-l dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col shrink-0 z-10">
+          <div className="p-4 border-b dark:border-slate-800 border-slate-200">
             <h3 className="font-bold">Real-Time Metrics</h3>
           </div>
           <div className="p-4 space-y-6 overflow-y-auto flex-1">
             <div className="space-y-2">
-              <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Hydrology Node (PT-001)</div>
-              <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
+              <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Hydrology Node (PT-001)</div>
+              <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200">
                 <div className="text-2xl font-light font-mono text-emerald-400">
-                  {(3500 + waterDepth * 2000).toFixed(0)} <span className="text-sm text-slate-500">cfs</span>
+                  {(3500 + waterDepth * 2000).toFixed(0)} <span className="text-sm dark:text-slate-500 text-slate-400">cfs</span>
                 </div>
-                <div className="text-xs text-slate-400 mt-1">Discharge Rate</div>
+                <div className="text-xs dark:text-slate-400 text-slate-500 mt-1">Discharge Rate</div>
               </div>
             </div>
             
             <div className="space-y-2">
-              <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Geotechnical Status</div>
-              <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
+              <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Geotechnical Status</div>
+              <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200">
                 <div className={cn("text-2xl font-light font-mono", waterDepth > 2.25 ? "text-red-400" : "text-emerald-400")}>
                   {Math.max(1.0, 3.5 - waterDepth * 0.5).toFixed(2)}
                 </div>
-                <div className="text-xs text-slate-400 mt-1">Factor of Safety (FoS)</div>
+                <div className="text-xs dark:text-slate-400 text-slate-500 mt-1">Factor of Safety (FoS)</div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Compliance Engine</div>
-              <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
+              <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Compliance Engine</div>
+              <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200">
                 <div className={cn("text-sm font-bold", waterDepth > 2.25 ? "text-red-400" : "text-emerald-400")}>
                   {waterDepth > 2.25 ? "VIOLATION DETECTED" : "COMPLIANT_NO_RISE"}
                 </div>
-                <div className="text-xs text-slate-400 mt-2">
+                <div className="text-xs dark:text-slate-400 text-slate-500 mt-2">
                   {waterDepth > 2.25 ? "Depth exceeds FEMA maximum allowance (2.25m)." : "All state No-Rise limits currently satisfied."}
                 </div>
               </div>
             </div>
             
             <div className="space-y-2">
-              <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Event Log</div>
-              <div className="bg-slate-900 rounded-lg p-3 border border-slate-800 h-40 overflow-y-auto space-y-2 font-mono text-[10px]">
+              <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Event Log</div>
+              <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200 h-40 overflow-y-auto space-y-2 font-mono text-[10px]">
                 <div className="text-emerald-400">[{new Date().toISOString().split('T')[1].slice(0, 8)}] Engine initialized.</div>
                 {waterDepth > 2.25 && (
                   <div className="text-red-400">[{new Date().toISOString().split('T')[1].slice(0, 8)}] CRITICAL_HAZARD: Breach detected in Wabash Confluence.</div>
@@ -608,49 +630,49 @@ export function DigitalTwinView() {
       {/* Full Dossier Modal */}
       {showDossier && selectedParcel && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-6 animate-in fade-in duration-200">
-          <div className="bg-[#0F172A] border border-indigo-500/30 rounded-xl w-full max-w-3xl flex flex-col max-h-full shadow-2xl">
+          <div className="dark:bg-[#0F172A] bg-white border border-indigo-500/30 rounded-xl w-full max-w-3xl flex flex-col max-h-full shadow-2xl">
             
-            <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/50 rounded-t-xl">
+            <div className="flex items-center justify-between p-4 border-b dark:border-slate-800 border-slate-200 dark:bg-slate-900 bg-slate-100/50 rounded-t-xl">
               <div>
-                <h3 className="font-bold text-lg text-slate-100 flex items-center gap-2">
+                <h3 className="font-bold text-lg dark:text-slate-100 text-slate-900 flex items-center gap-2">
                   <FileText className="text-indigo-400" size={20} />
                   DLT Infrastructure Asset Verification Pack
                 </h3>
-                <p className="text-xs text-slate-400 font-mono mt-1">Target Zone: {selectedParcel.tractName} | ID: {selectedParcel.id}</p>
+                <p className="text-xs dark:text-slate-400 text-slate-500 font-mono mt-1">Target Zone: {selectedParcel.tractName} | ID: {selectedParcel.id}</p>
               </div>
               <button 
                 onClick={() => setShowDossier(false)}
-                className="p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                className="p-2 rounded hover:dark:bg-slate-800 bg-white dark:text-slate-400 text-slate-500 hover:text-white transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
             
-            <div className="p-6 overflow-y-auto flex-1 font-mono text-sm leading-relaxed text-slate-300 space-y-6">
+            <div className="p-6 overflow-y-auto flex-1 font-mono text-sm leading-relaxed dark:text-slate-300 text-slate-700 space-y-6">
               
               <div>
                 <h4 className="text-indigo-400 font-bold mb-2 uppercase tracking-widest text-xs border-b border-indigo-900/50 pb-2">Executive Framework Summary</h4>
                 <p>
-                  The infrastructure properties matching the target zone <strong className="text-slate-100">{selectedParcel.tractName}</strong> have been computed against multi-physics hazard layers. This package enforces compliance constraints regulated under checking authority rules.
+                  The infrastructure properties matching the target zone <strong className="dark:text-slate-100 text-slate-900">{selectedParcel.tractName}</strong> have been computed against multi-physics hazard layers. This package enforces compliance constraints regulated under checking authority rules.
                 </p>
               </div>
 
               <div>
                 <h4 className="text-indigo-400 font-bold mb-2 uppercase tracking-widest text-xs border-b border-indigo-900/50 pb-2">Financial Apportionment Matrix</h4>
-                <div className="bg-[#020617] border border-slate-800 rounded p-4">
-                  <div className="flex justify-between border-b border-slate-800 pb-2 mb-2 font-bold text-slate-200">
+                <div className="dark:bg-[#020617] bg-slate-50 border dark:border-slate-800 border-slate-200 rounded p-4">
+                  <div className="flex justify-between border-b dark:border-slate-800 border-slate-200 pb-2 mb-2 font-bold dark:text-slate-200 text-slate-800">
                     <span>Parameter Key</span>
                     <span>Calculated Metric Value</span>
                   </div>
                   <div className="flex justify-between py-1">
-                    <span className="text-slate-400">Federal Contribution Percentage</span>
+                    <span className="dark:text-slate-400 text-slate-500">Federal Contribution Percentage</span>
                     <span>75.0%</span>
                   </div>
                   <div className="flex justify-between py-1">
-                    <span className="text-slate-400">Local Matching Responsibility</span>
+                    <span className="dark:text-slate-400 text-slate-500">Local Matching Responsibility</span>
                     <span>25.0%</span>
                   </div>
-                  <div className="flex justify-between py-1 font-bold text-emerald-400 mt-2 pt-2 border-t border-slate-800/50">
+                  <div className="flex justify-between py-1 font-bold text-emerald-400 mt-2 pt-2 border-t dark:border-slate-800 border-slate-200/50">
                     <span>Evaluated Benefit-Cost Ratio (BCR)</span>
                     <span>BCR = 2.45</span>
                   </div>
@@ -677,14 +699,14 @@ export function DigitalTwinView() {
                 </ul>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-slate-800">
-                <h4 className="text-slate-100 font-bold mb-1">Civil Engineering Certification Sign-Off</h4>
-                <p className="text-xs text-slate-400 mb-6">
+              <div className="mt-8 pt-6 border-t dark:border-slate-800 border-slate-200">
+                <h4 className="dark:text-slate-100 text-slate-900 font-bold mb-1">Civil Engineering Certification Sign-Off</h4>
+                <p className="text-xs dark:text-slate-400 text-slate-500 mb-6">
                   The undersigned processing system certifies that the simulated structural upgrade yields a net-zero displacement profile across the adjacent cross-border properties.
                 </p>
                 <div className="w-64 border-b border-slate-600 mb-2"></div>
-                <p className="text-xs font-bold text-slate-300">Lead Automated Systems Engineer</p>
-                <p className="text-[10px] text-slate-500">DLT Multi-Physics Twin Platform Workspace</p>
+                <p className="text-xs font-bold dark:text-slate-300 text-slate-700">Lead Automated Systems Engineer</p>
+                <p className="text-[10px] dark:text-slate-500 text-slate-400">DLT Multi-Physics Twin Platform Workspace</p>
               </div>
 
             </div>
