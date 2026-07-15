@@ -32,7 +32,7 @@ export function AssimilationView() {
             <Target size={14} /> Mean Innovation Error
           </div>
           <div className="text-3xl font-light">0.02 ft</div>
-          <div className="text-xs text-slate-500">Observation vs Forecast ($\mathbf{y} - \mathcal{H}\mathbf{x}$)</div>
+          <div className="text-xs text-slate-500">Observation vs Forecast ({"$\\mathbf{y} - \\mathcal{H}\\mathbf{x}$"})</div>
         </div>
       </div>
 
@@ -85,7 +85,7 @@ export function AssimilationView() {
               <span className="text-emerald-400">Healthy (1.2e3)</span>
             </div>
             <div className="mt-4 p-3 bg-slate-900 rounded border border-slate-800 overflow-hidden relative">
-              <div className="text-slate-500 mb-2">Kalman Gain Matrix ($\mathbf{K}$) Heatmap Snapshot</div>
+              <div className="text-slate-500 mb-2">Kalman Gain Matrix ({"$\\mathbf{K}$"}) Heatmap Snapshot</div>
               <div className="grid grid-cols-12 gap-px bg-slate-800 p-px rounded opacity-70">
                 {Array.from({length: 144}).map((_, i) => (
                   <div key={i} className="aspect-square bg-indigo-500" style={{ opacity: Math.random() * 0.8 + 0.1 }}></div>
