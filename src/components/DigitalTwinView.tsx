@@ -2,8 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { WebGPURenderer, MeshBasicNodeMaterial } from 'three/webgpu';
 import { color, positionLocal, vec3, uniform, mix, select, greaterThan, time, sin } from 'three/tsl';
-import { ShieldAlert, Plus, Play, Pause, Thermometer, Waves } from 'lucide-react';
+import { ShieldAlert, Plus, Play, Pause, Thermometer, Waves, X, Info } from 'lucide-react';
 import { cn } from '../lib/utils';
+
+export interface ParcelInfo {
+  id: string;
+  tractName: string;
+  lineageGroup: string;
+  threatScore: number;
+  isInundated: boolean;
+  historicalNote: string;
+  historicalEvents: string;
+  grantEligibility: string;
+}
 
 export function DigitalTwinView() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -12,6 +23,8 @@ export function DigitalTwinView() {
   const [isPlacingBerm, setIsPlacingBerm] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
   
+  const [selectedParcel, setSelectedParcel] = useState<ParcelInfo | null>(null);
+
   const isPlacingBermRef = useRef(false);
   const showHeatmapRef = useRef(false);
   const [waterDepth, setWaterDepth] = useState(0.1);
@@ -100,44 +113,110 @@ export function DigitalTwinView() {
       }
       geometry.computeVertexNormals();
 
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.y = 5; // Raise slightly above grid
-      scene.add(mesh);
+      const terrainMesh = new THREE.Mesh(geometry, material);
+      terrainMesh.position.y = 5; // Raise slightly above grid
+      scene.add(terrainMesh);
 
-      // Berm Placement Raycaster
+      // Create interactive parcels
+      const parcelMeshes: THREE.Mesh[] = [];
+      const parcelDataMap = new Map<THREE.Mesh, ParcelInfo>();
+      
+      const parcelGeo = new THREE.BoxGeometry(2, 2, 2);
+      const parcelMat = new THREE.MeshBasicMaterial({ color: 0x4ade80, transparent: true, opacity: 0.9 });
+      const parcelMatDanger = new THREE.MeshBasicMaterial({ color: 0xf87171, transparent: true, opacity: 0.9 });
+
+      const addParcel = (x: number, z: number, info: ParcelInfo) => {
+        const mesh = new THREE.Mesh(parcelGeo, info.threatScore > 65 ? parcelMatDanger : parcelMat);
+        // compute approx Y on the terrain
+        const valley = Math.abs(x) < 20 ? (Math.cos(x * Math.PI / 40) * -10) : 0;
+        const noise = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 2;
+        mesh.position.set(x, 5 + valley + noise + 1, z);
+        scene.add(mesh);
+        parcelMeshes.push(mesh);
+        parcelDataMap.set(mesh, info);
+      };
+
+      addParcel(-15, 10, {
+        id: "PRCL_TUCKER_01",
+        tractName: "Tucker Homestead",
+        lineageGroup: "Tucker",
+        threatScore: 25.5,
+        isInundated: false,
+        historicalNote: "Original 1820s settlement boundaries.",
+        historicalEvents: "Survived 1937 Great Ohio River Flood",
+        grantEligibility: "FEMA_BRIC_2026 Eligible"
+      });
+      addParcel(5, -5, {
+        id: "PRCL_YEIDA_01",
+        tractName: "Yeida North Fork",
+        lineageGroup: "Yeida",
+        threatScore: 82.1,
+        isInundated: true,
+        historicalNote: "German immigrant era land grant.",
+        historicalEvents: "Severe damage during 1991 flash floods",
+        grantEligibility: "IN_DNR_MIG_2026 High Priority"
+      });
+      addParcel(-22, -15, {
+        id: "PRCL_SMITH_04",
+        tractName: "Smith Elevation",
+        lineageGroup: "Smith",
+        threatScore: 12.0,
+        isInundated: false,
+        historicalNote: "Elevated plot acquired in 1950.",
+        historicalEvents: "No major inundations recorded",
+        grantEligibility: "Standard Relief Tier 3"
+      });
+
+
+      // Berm Placement / Parcel Selection Raycaster
       const raycaster = new THREE.Raycaster();
       const mouse = new THREE.Vector2();
 
       const onPointerDown = (event: PointerEvent) => {
-        if (!isPlacingBermRef.current) return;
-        
         const rect = container.getBoundingClientRect();
         mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
         raycaster.setFromCamera(mouse, camera);
-        const intersects = raycaster.intersectObject(mesh);
 
-        if (intersects.length > 0) {
-          const intersect = intersects[0];
-          const point = intersect.point;
-          
-          const radius = 6;
-          const raiseAmount = 4;
-          
-          const pos = geometry.attributes.position;
-          for (let i = 0; i < pos.count; i++) {
-            const vx = pos.getX(i);
-            const vy = pos.getY(i);
-            const vz = pos.getZ(i);
-            const dist = Math.sqrt((vx - point.x)**2 + (vz - point.z)**2);
-            if (dist < radius) {
-                const falloff = 1 - (dist / radius);
-                pos.setY(i, vy + raiseAmount * falloff);
-            }
+        // First check if we clicked a parcel
+        const parcelIntersects = raycaster.intersectObjects(parcelMeshes);
+        if (parcelIntersects.length > 0) {
+          const pMesh = parcelIntersects[0].object as THREE.Mesh;
+          const info = parcelDataMap.get(pMesh);
+          if (info) {
+            setSelectedParcel(info);
           }
-          pos.needsUpdate = true;
-          geometry.computeVertexNormals();
+          return; // Stop if we hit a parcel
+        }
+
+        // If placing a berm, check terrain intersection
+        if (isPlacingBermRef.current) {
+          const intersects = raycaster.intersectObject(terrainMesh);
+          if (intersects.length > 0) {
+            const intersect = intersects[0];
+            const point = intersect.point;
+            
+            const radius = 6;
+            const raiseAmount = 4;
+            
+            const pos = geometry.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+              const vx = pos.getX(i);
+              const vy = pos.getY(i);
+              const vz = pos.getZ(i);
+              const dist = Math.sqrt((vx - point.x)**2 + (vz - point.z)**2);
+              if (dist < radius) {
+                  const falloff = 1 - (dist / radius);
+                  pos.setY(i, vy + raiseAmount * falloff);
+              }
+            }
+            pos.needsUpdate = true;
+            geometry.computeVertexNormals();
+          }
+        } else {
+          // Deselect parcel if we clicked empty space
+          setSelectedParcel(null);
         }
       };
       
@@ -150,7 +229,15 @@ export function DigitalTwinView() {
 
       renderer.setAnimationLoop(() => {
         if (!isPlacingBermRef.current) {
-          mesh.rotation.y += 0.001;
+          terrainMesh.rotation.y += 0.001;
+          // Rotate parcels with terrain
+          const rotMatrix = new THREE.Matrix4().makeRotationY(0.001);
+          for (const mesh of parcelMeshes) {
+            mesh.position.applyMatrix4(rotMatrix);
+            // also rotate the box itself slightly for effect
+            mesh.rotation.x += 0.01;
+            mesh.rotation.y += 0.01;
+          }
         }
         renderer.render(scene, camera);
       });
@@ -217,7 +304,7 @@ export function DigitalTwinView() {
             </div>
           </div>
         )}
-        <div ref={containerRef} className="absolute inset-0" />
+        <div ref={containerRef} className="absolute inset-0 cursor-crosshair" />
         
         {/* Overlays */}
         <div className="absolute top-6 left-6 z-10 pointer-events-none">
@@ -249,6 +336,82 @@ export function DigitalTwinView() {
           </div>
         </div>
 
+        {/* Parcel Lineage Popup */}
+        {selectedParcel && (
+          <div className="absolute top-6 right-6 z-20 w-80 bg-[#0F172A]/90 backdrop-blur-xl border border-teal-500/30 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200">
+            <div className="relative p-5">
+              <button 
+                onClick={() => setSelectedParcel(null)}
+                className="absolute top-4 right-4 text-teal-400 hover:text-white transition-colors"
+              >
+                <X size={16} />
+              </button>
+              
+              <div className="text-[10px] text-teal-400/80 font-mono tracking-widest mb-1 flex items-center gap-1.5">
+                <Info size={12} />
+                ANCESTRAL PARCEL
+              </div>
+              
+              <h3 className="text-xl font-bold tracking-tight text-white mb-0.5">
+                {selectedParcel.tractName}
+              </h3>
+              <p className="text-xs text-slate-400 font-mono mb-5">{selectedParcel.id}</p>
+
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                <div className="bg-slate-900/50 rounded-lg p-2.5 border border-slate-800">
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Lineage Group</div>
+                  <div className="font-medium text-slate-200">{selectedParcel.lineageGroup}</div>
+                </div>
+                
+                <div className="bg-slate-900/50 rounded-lg p-2.5 border border-slate-800">
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Threat Score</div>
+                  <div className={cn("font-bold font-mono", selectedParcel.threatScore > 70 ? 'text-red-500' : 'text-emerald-400')}>
+                    {selectedParcel.threatScore.toFixed(1)}
+                  </div>
+                </div>
+                
+                <div className="bg-slate-900/50 rounded-lg p-2.5 border border-slate-800 col-span-2">
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Current Status</div>
+                  <div className="flex items-center gap-2">
+                    <div className={cn("w-2 h-2 rounded-full", selectedParcel.isInundated ? "bg-red-500" : "bg-emerald-500")} />
+                    <span className={cn("font-medium text-sm", selectedParcel.isInundated ? "text-red-400" : "text-emerald-400")}>
+                      {selectedParcel.isInundated ? 'INUNDATED' : 'DRY'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Historical Context</h4>
+                  <p className="text-sm text-slate-300 leading-relaxed bg-slate-900/30 p-3 rounded-lg border border-slate-800/50">
+                    {selectedParcel.historicalNote}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Flood Events</h4>
+                  <p className="text-sm text-slate-300 leading-relaxed bg-slate-900/30 p-3 rounded-lg border border-slate-800/50">
+                    {selectedParcel.historicalEvents}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Grant Eligibility</h4>
+                  <div className="text-sm text-indigo-300 font-mono bg-indigo-900/20 p-2.5 rounded-lg border border-indigo-500/20">
+                    {selectedParcel.grantEligibility}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-teal-950/30 border-t border-teal-500/20 p-3 flex justify-between items-center text-xs">
+              <span className="text-teal-400/60 font-mono">NODE_LINK_ACTIVE</span>
+              <button className="text-teal-400 hover:text-teal-300 font-medium">
+                View Full Dossier →
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Controls */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex gap-4 bg-[#0F172A]/80 backdrop-blur-md border border-slate-800 p-2 rounded-xl">
           <button 
@@ -265,7 +428,10 @@ export function DigitalTwinView() {
           </button>
           <div className="w-px bg-slate-800 mx-1" />
           <button 
-            onClick={() => setIsPlacingBerm(!isPlacingBerm)}
+            onClick={() => {
+              setIsPlacingBerm(!isPlacingBerm);
+              if (!isPlacingBerm) setSelectedParcel(null); // deselect when placing berms
+            }}
             className={cn("flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all", isPlacingBerm && "bg-indigo-600 text-white hover:bg-indigo-500")}
           >
             <Plus size={16} />
