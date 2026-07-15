@@ -9,9 +9,26 @@ export function DigitalTwinView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<any>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isPlacingBerm, setIsPlacingBerm] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  
+  const isPlacingBermRef = useRef(false);
+  const showHeatmapRef = useRef(false);
   const [waterDepth, setWaterDepth] = useState(0.1);
   const waterDepthUniformRef = useRef<any>(null);
+  const heatmapUniformRef = useRef<any>(null);
   
+  useEffect(() => {
+    isPlacingBermRef.current = isPlacingBerm;
+  }, [isPlacingBerm]);
+
+  useEffect(() => {
+    showHeatmapRef.current = showHeatmap;
+    if (heatmapUniformRef.current) {
+      heatmapUniformRef.current.value = showHeatmap ? 1.0 : 0.0;
+    }
+  }, [showHeatmap]);
+
   useEffect(() => {
     const nav = navigator as any;
     if (!containerRef.current || !nav.gpu) return;
@@ -40,17 +57,29 @@ export function DigitalTwinView() {
       const waterDepthUniform = uniform(waterDepth);
       waterDepthUniformRef.current = waterDepthUniform;
       
+      const heatmapUniform = uniform(showHeatmapRef.current ? 1.0 : 0.0);
+      heatmapUniformRef.current = heatmapUniform;
+      
       const lineatTractColorUniform = uniform(vec3(0.0, 0.45, 0.85));
 
       const localCoords = positionLocal;
       const flowDisplacement = sin(localCoords.x.mul(0.1).add(time.mul(0.8)));
 
-      const dynamicColorNode = select(
+      const depthColor = select(
           greaterThan(waterDepthUniform, 2.25),
           mix(vec3(1.0, 0.1, 0.1), vec3(1.0, 1.0, 1.0), flowDisplacement.mul(0.2)),
           mix(lineatTractColorUniform, vec3(0.0, 1.0, 0.5), localCoords.y.mul(0.02))
       );
+      
+      const heatColor = mix(vec3(0.0, 0.0, 1.0), vec3(1.0, 0.0, 0.0), localCoords.y.add(10).mul(0.05));
 
+      const dynamicColorNode = select(
+          greaterThan(heatmapUniform, 0.5),
+          heatColor,
+          depthColor
+      );
+
+      // @ts-ignore
       const material = new MeshBasicNodeMaterial();
       material.colorNode = dynamicColorNode;
       material.wireframe = true;
@@ -75,13 +104,54 @@ export function DigitalTwinView() {
       mesh.position.y = 5; // Raise slightly above grid
       scene.add(mesh);
 
+      // Berm Placement Raycaster
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+
+      const onPointerDown = (event: PointerEvent) => {
+        if (!isPlacingBermRef.current) return;
+        
+        const rect = container.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObject(mesh);
+
+        if (intersects.length > 0) {
+          const intersect = intersects[0];
+          const point = intersect.point;
+          
+          const radius = 6;
+          const raiseAmount = 4;
+          
+          const pos = geometry.attributes.position;
+          for (let i = 0; i < pos.count; i++) {
+            const vx = pos.getX(i);
+            const vy = pos.getY(i);
+            const vz = pos.getZ(i);
+            const dist = Math.sqrt((vx - point.x)**2 + (vz - point.z)**2);
+            if (dist < radius) {
+                const falloff = 1 - (dist / radius);
+                pos.setY(i, vy + raiseAmount * falloff);
+            }
+          }
+          pos.needsUpdate = true;
+          geometry.computeVertexNormals();
+        }
+      };
+      
+      container.addEventListener('pointerdown', onPointerDown);
+
       // Wait for renderer initialization
       await renderer.init();
       
       if (!isMounted) return;
 
       renderer.setAnimationLoop(() => {
-        mesh.rotation.y += 0.001;
+        if (!isPlacingBermRef.current) {
+          mesh.rotation.y += 0.001;
+        }
         renderer.render(scene, camera);
       });
       
@@ -93,7 +163,10 @@ export function DigitalTwinView() {
       };
       
       window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        container.removeEventListener('pointerdown', onPointerDown);
+      };
     }
     
     initWebGPU().catch(e => console.error("WebGPU initialization failed:", e));
@@ -191,11 +264,17 @@ export function DigitalTwinView() {
             {isSimulating ? "Halt Simulation" : "Run Inundation"}
           </button>
           <div className="w-px bg-slate-800 mx-1" />
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all">
+          <button 
+            onClick={() => setIsPlacingBerm(!isPlacingBerm)}
+            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all", isPlacingBerm && "bg-indigo-600 text-white hover:bg-indigo-500")}
+          >
             <Plus size={16} />
-            Place Berm
+            {isPlacingBerm ? "Stop Placing" : "Place Berm"}
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all">
+          <button 
+            onClick={() => setShowHeatmap(!showHeatmap)}
+            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all", showHeatmap && "bg-emerald-600 text-white hover:bg-emerald-500")}
+          >
             <Thermometer size={16} />
             Heatmap
           </button>
