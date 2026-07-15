@@ -1298,31 +1298,43 @@ export function DigitalTwinView() {
 
                 {/* Additional repositories links */}
                 <div className="dark:bg-[#020617]/40 bg-slate-50 border dark:border-slate-800/50 border-slate-200 rounded p-2.5 space-y-2">
-                  <div className="text-[9px] dark:text-slate-500 text-slate-400 uppercase tracking-wider font-bold">Additional Software Packages</div>
+                  <div className="text-[9px] dark:text-slate-500 text-slate-400 uppercase tracking-wider font-bold">Hydrological & AI Software Integrations</div>
                   <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+                    <a href="https://github.com/ATphobia22/mcp-openfema" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                      <Database size={10} /> mcp-openfema
+                    </a>
+                    <a href="https://github.com/ATphobia22/h2oai-flood-intelligence-agent" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                      <Cpu size={10} /> flood-intelligence
+                    </a>
+                    <a href="https://github.com/ATphobia22/ras-commander" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                      <Sliders size={10} /> ras-commander
+                    </a>
+                    <a href="https://github.com/ATphobia22/ras2fim" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                      <Layers size={10} /> ras2fim
+                    </a>
+                    <a href="https://github.com/ATphobia22/mcat-ras" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                      <Activity size={10} /> mcat-ras
+                    </a>
+                    <a href="https://github.com/ATphobia22/modflow-setup" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                      <Database size={10} /> modflow-setup
+                    </a>
+                    <a href="https://github.com/ATphobia22/rgis" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                      <Globe size={10} /> RiverGIS (rgis)
+                    </a>
                     <a href="https://github.com/ATphobia22/cwms-database" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
                       <Database size={10} /> cwms-database
                     </a>
                     <a href="https://github.com/ATphobia22/cwms-cli" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
                       <Settings size={10} /> cwms-cli
                     </a>
-                    <a href="https://github.com/ATphobia22/matlab-agentic-toolkit" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
-                      <Cpu size={10} /> matlab-toolkit
+                    <a href="https://github.com/ATphobia22/FAULT" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                      <Globe size={10} /> FAULT (Landsat)
                     </a>
-                    <a href="https://github.com/ATphobia22/matlab-mcp-server" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
-                      <Sliders size={10} /> matlab-mcp
-                    </a>
-                    <a href="https://github.com/ATphobia22/martin" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
-                      <Layers size={10} /> martin MVT
-                    </a>
-                    <a href="https://github.com/ATphobia22/QGIS" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
-                      <Globe size={10} /> QGIS plugin
+                    <a href="https://github.com/ATphobia22/nfie-floodmap" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors col-span-2">
+                      <Layers size={10} /> nfie-floodmap
                     </a>
                     <a href="https://github.com/ATphobia22/federal-emergency-management-agency" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors col-span-2">
                       <AlertTriangle size={10} /> FEMA regulatory-sync
-                    </a>
-                    <a href="https://github.com/ATphobia22/natural-resources-conservation-service" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors col-span-2">
-                      <Layers size={10} /> USDA NRCS soils-mapper
                     </a>
                   </div>
                 </div>
