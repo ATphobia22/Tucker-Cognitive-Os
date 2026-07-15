@@ -152,25 +152,70 @@ export function DigitalTwinView() {
       const parcelDataMap = new Map<THREE.Mesh, ParcelInfo>();
       const originalColors = new Map<THREE.Mesh, THREE.Color>();
       
-      const parcelGeo = new THREE.BoxGeometry(2, 2, 2);
-      const parcelMat = new THREE.MeshBasicMaterial({ color: 0x4ade80, transparent: true, opacity: 0.9 });
-      const parcelMatDanger = new THREE.MeshBasicMaterial({ color: 0xf87171, transparent: true, opacity: 0.9 });
+      const getMarkerGeometryAndMaterial = (lineageGroup: string) => {
+        let geo: THREE.BufferGeometry;
+        let colorHex: number;
+        
+        switch (lineageGroup.toLowerCase()) {
+          case 'tucker':
+            // Cone pointing down (Classic pin marker)
+            geo = new THREE.ConeGeometry(1.5, 4, 8).rotateX(Math.PI);
+            colorHex = 0x3b82f6; // Electric Blue
+            break;
+          case 'yeida':
+            // Octahedron (Floating Diamond)
+            geo = new THREE.OctahedronGeometry(1.8);
+            colorHex = 0xf59e0b; // Vibrant Amber
+            break;
+          case 'church':
+            // Cylinder/Pillar (Historical sanctuary)
+            geo = new THREE.CylinderGeometry(1.2, 1.2, 4, 8);
+            colorHex = 0xd946ef; // Magenta/Purple
+            break;
+          default:
+            // Standard Box fallback
+            geo = new THREE.BoxGeometry(2, 2, 2);
+            colorHex = 0x10b981; // Emerald/Teal
+            break;
+        }
+        
+        const mat = new THREE.MeshBasicMaterial({
+          color: colorHex,
+          transparent: true,
+          opacity: 0.95
+        });
+        
+        return { geo, mat, colorHex };
+      };
 
       const addParcel = (x: number, z: number, info: ParcelInfo) => {
-        const mesh = new THREE.Mesh(parcelGeo, info.threatScore > 65 ? parcelMatDanger.clone() : parcelMat.clone());
+        const { geo, mat, colorHex } = getMarkerGeometryAndMaterial(info.lineageGroup);
+        const mesh = new THREE.Mesh(geo, mat);
+        
         // compute approx Y on the terrain
         const valley = Math.abs(x) < 20 ? (Math.cos(x * Math.PI / 40) * -10) : 0;
         const noise = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 2;
-        mesh.position.set(x, 5 + valley + noise + 1, z);
+        
+        // Position offset based on marker shape
+        let offset = 1;
+        if (info.lineageGroup.toLowerCase() === 'tucker') {
+          offset = 2; // cone height/2
+        } else if (info.lineageGroup.toLowerCase() === 'yeida') {
+          offset = 1.8; // octahedron radius
+        } else if (info.lineageGroup.toLowerCase() === 'church') {
+          offset = 2; // cylinder height/2
+        }
+        
+        mesh.position.set(x, 5 + valley + noise + offset, z);
         scene.add(mesh);
         parcelMeshes.push(mesh);
         parcelDataMap.set(mesh, info);
-        originalColors.set(mesh, (mesh.material as THREE.MeshBasicMaterial).color.clone());
+        originalColors.set(mesh, new THREE.Color(colorHex));
       };
 
       addParcel(-15, 10, {
         id: "PRCL_TUCKER_01",
-        tractName: "Tucker Homestead",
+        tractName: "Tucker Homestead (13101 Bonebank Rd)",
         lineageGroup: "Tucker",
         threatScore: 25.5,
         isInundated: false,
@@ -180,23 +225,23 @@ export function DigitalTwinView() {
       });
       addParcel(5, -5, {
         id: "PRCL_YEIDA_01",
-        tractName: "Yeida North Fork",
+        tractName: "Weiss Cemetery Ground",
         lineageGroup: "Yeida",
         threatScore: 82.1,
         isInundated: true,
-        historicalNote: "German immigrant era land grant. Highly vulnerable lowland area.",
+        historicalNote: "German immigrant era land grant. Highly vulnerable lowland area near local stream channels.",
         historicalEvents: "Severe damage during 1991 flash floods",
         grantEligibility: "IN_DNR_MIG_2026 High Priority"
       });
       addParcel(-22, -15, {
-        id: "PRCL_SMITH_04",
-        tractName: "Smith Elevation",
-        lineageGroup: "Smith",
-        threatScore: 12.0,
+        id: "PRCL_CHURCH_01",
+        tractName: "Point Township Nazarene Church",
+        lineageGroup: "Church",
+        threatScore: 68.4,
         isInundated: false,
-        historicalNote: "Elevated plot acquired in 1950. Requires no immediate action.",
-        historicalEvents: "No major inundations recorded",
-        grantEligibility: "Standard Relief Tier 3"
+        historicalNote: "Wabash-Ohio confluence boundary property, functioning as community emergency point.",
+        historicalEvents: "Constructed on stable compacted earthen fill",
+        grantEligibility: "Community Relief Match Tier 2"
       });
 
       // Brush Cursor for Berm Placement
@@ -341,6 +386,7 @@ export function DigitalTwinView() {
           const rotMatrix = new THREE.Matrix4().makeRotationY(0.001);
           for (const mesh of parcelMeshes) {
             mesh.position.applyMatrix4(rotMatrix);
+            mesh.rotation.y += 0.015; // Gentle spin animation for a responsive, premium visual style
           }
         }
         renderer.render(scene, camera);
@@ -439,6 +485,25 @@ export function DigitalTwinView() {
                 <span className="text-sm font-mono dark:text-slate-300 text-slate-700">2.25m</span>
               </div>
             </div>
+
+            {/* Ancestral Protected Lineage Groups Legend */}
+            <div className="mt-4 pt-4 border-t dark:border-slate-800 border-slate-200/60 pointer-events-auto">
+              <div className="text-[10px] dark:text-slate-500 text-slate-400 uppercase tracking-wider font-semibold mb-2">Protected Lineages</div>
+              <div className="flex flex-col gap-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.5)] block shrink-0" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', transform: 'rotate(180deg)' }} />
+                  <span className="dark:text-slate-300 text-slate-700">Tucker family (Blue Cone Pin)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 bg-[#f59e0b] shadow-[0_0_8px_rgba(245,158,11,0.5)] rotate-45 block shrink-0" />
+                  <span className="dark:text-slate-300 text-slate-700">Yeida family (Amber Diamond)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 bg-[#d946ef] shadow-[0_0_8px_rgba(217,70,239,0.5)] block shrink-0" style={{ borderRadius: '2px' }} />
+                  <span className="dark:text-slate-300 text-slate-700">Nazarene Church (Pink Pillar)</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -475,7 +540,15 @@ export function DigitalTwinView() {
               <div className="grid grid-cols-2 gap-3 mb-5">
                 <div className="dark:bg-slate-900 bg-slate-100/50 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200">
                   <div className="text-[10px] dark:text-slate-500 text-slate-400 uppercase tracking-wider mb-1">Lineage Group</div>
-                  <div className="font-medium dark:text-slate-200 text-slate-800">{selectedParcel.lineageGroup}</div>
+                  <div className={cn(
+                    "font-bold text-sm",
+                    selectedParcel.lineageGroup.toLowerCase() === 'tucker' ? "text-[#3b82f6]" :
+                    selectedParcel.lineageGroup.toLowerCase() === 'yeida' ? "text-[#f59e0b]" :
+                    selectedParcel.lineageGroup.toLowerCase() === 'church' ? "text-[#d946ef]" :
+                    "dark:text-slate-200 text-slate-800"
+                  )}>
+                    {selectedParcel.lineageGroup}
+                  </div>
                 </div>
                 
                 <div className="dark:bg-slate-900 bg-slate-100/50 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200">
