@@ -91,6 +91,35 @@ execution_schema = StructType([
     StructField("execution_latency_sec", DoubleType(), True)
 ])
 
+def send_chat_alert_with_telemetry(status: str, model_id: str, details: str, latency: float = None):
+    """Dispatches a structured operational notification with embedded dl-benchmark telemetry."""
+    webhook_url = os.environ.get("NOTIFICATION_WEBHOOK_URL")
+    if not webhook_url:
+        return
+        
+    emoji = "✅" if status == "SUCCESS" else "🚨"
+    title = f"{emoji} ATphobia22 Pipeline Run: {status}"
+    
+    telemetry_block = ""
+    if latency:
+        telemetry_block = (
+            f"\n*📊 DL-Benchmark Metrics:*\n"
+            f"• Processing Time: `{latency:.3f} seconds`\n"
+        )
+        
+    payload = {
+        "text": f"*{title}*\n"
+                f"*Model Identifier:* `{model_id}`\n"
+                f"*Timestamp:* `{pd.Timestamp.now().isoformat()}`{telemetry_block}\n"
+                f"*Log Excerpt:* ```{details[:300]}```"
+    }
+    
+    try:
+        requests.post(webhook_url, data=json.dumps(payload), headers={"Content-Type": "application/json"}, timeout=5)
+    except Exception as e:
+        logger.error(f"Failed to transmit pipeline telemetry notification: {str(e)}")
+
+
 @pandas_udf(execution_schema)
 def run_twin_simulation_pipeline(iterator: Iterator[pd.Series]) -> Iterator[pd.DataFrame]:
     """
@@ -126,20 +155,31 @@ def run_twin_simulation_pipeline(iterator: Iterator[pd.Series]) -> Iterator[pd.D
                     intersect_count = len(impact_report.get_impacted_structures())
                     
                     tracer.stop()
+                    latency = float(tracer.get_latency_seconds())
+                    
+                    send_chat_alert_with_telemetry(
+                        "SUCCESS", model_id, 
+                        f"Depth grid written successfully to destination bucket path: {raster_path}",
+                        latency=latency
+                    )
                     
                     results.append({
                         "status": "SUCCESS",
                         "raster_destination": raster_path,
                         "township_intersect_count": str(intersect_count),
-                        "execution_latency_sec": float(tracer.get_latency_seconds())
+                        "execution_latency_sec": latency
                     })
                 except Exception as ex:
                     tracer.stop()
+                    latency = float(tracer.get_latency_seconds())
+                    
+                    send_chat_alert_with_telemetry("CRITICAL_FAILURE", model_id, str(ex), latency=latency)
+                    
                     results.append({
                         "status": "TWIN_SIMULATION_ERROR",
                         "raster_destination": None,
                         "township_intersect_count": "0",
-                        "execution_latency_sec": float(tracer.get_latency_seconds())
+                        "execution_latency_sec": latency
                     })
         yield pd.DataFrame(results)
 
