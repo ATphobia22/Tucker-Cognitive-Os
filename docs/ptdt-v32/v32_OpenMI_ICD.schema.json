@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PTDT OpenMI v32 Exchange Item",
+  "type": "object",
+  "properties": {
+    "model_id": {
+      "type": "string",
+      "description": "Unique identifier for the model instance."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The simulation time of this data exchange."
+    },
+    "quantity_id": {
+      "type": "string",
+      "description": "The physical quantity being exchanged (e.g., 'WaterLevel', 'FlowRate')."
+    },
+    "element_set_id": {
+      "type": "string",
+      "description": "Identifier for the spatial elements (e.g., nodes, cells, segments)."
+    },
+    "values": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "The array of values corresponding to the element set."
+    }
+  },
+  "required": ["model_id", "timestamp", "quantity_id", "element_set_id", "values"]
+}

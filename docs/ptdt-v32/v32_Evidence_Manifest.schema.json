@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PTDT v32 Evidence Manifest",
+  "type": "object",
+  "properties": {
+    "manifest_id": { "type": "string", "format": "uuid" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "solvers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "version": { "type": "string" },
+          "hash": { "type": "string" }
+        },
+        "required": ["name", "version", "hash"]
+      }
+    },
+    "mesh_metadata": {
+      "type": "object",
+      "properties": {
+        "resolution": { "type": "string" },
+        "projection": { "type": "string" },
+        "node_count": { "type": "integer" }
+      }
+    },
+    "convergence_results": {
+      "type": "object",
+      "properties": {
+        "hydraulic_error": { "type": "number", "maximum": 0.01 },
+        "groundwater_error": { "type": "number", "maximum": 0.02 },
+        "fos_error": { "type": "number", "maximum": 0.05 }
+      }
+    },
+    "signatures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "signer": { "type": "string" },
+          "jws": { "type": "string" }
+        }
+      }
+    }
+  },
+  "required": ["manifest_id", "timestamp", "solvers", "convergence_results", "signatures"]
+}

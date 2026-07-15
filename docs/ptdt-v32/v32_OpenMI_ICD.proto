@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package ptdt.openmi.v32;
+
+import "google/protobuf/timestamp.proto";
+
+service ModelIntegration {
+  rpc Initialize(InitializeRequest) returns (InitializeResponse);
+  rpc PerformTimeStep(TimeStepRequest) returns (TimeStepResponse);
+  rpc GetValues(GetValuesRequest) returns (GetValuesResponse);
+  rpc SetValues(SetValuesRequest) returns (SetValuesResponse);
+  rpc Finish(FinishRequest) returns (FinishResponse);
+}
+
+message InitializeRequest {
+  string model_id = 1;
+  string config_path = 2;
+  google.protobuf.Timestamp start_time = 3;
+}
+
+message InitializeResponse {
+  bool success = 1;
+  string status_message = 2;
+}
+
+message TimeStepRequest {
+  string model_id = 1;
+  double dt_seconds = 2;
+}
+
+message TimeStepResponse {
+  bool success = 1;
+  google.protobuf.Timestamp current_time = 2;
+}
+
+message GetValuesRequest {
+  string model_id = 1;
+  string quantity_id = 2;
+  string element_set_id = 3;
+}
+
+message GetValuesResponse {
+  repeated double values = 1;
+  bool success = 2;
+}
+
+message SetValuesRequest {
+  string model_id = 1;
+  string quantity_id = 2;
+  string element_set_id = 3;
+  repeated double values = 4;
+}
+
+message SetValuesResponse {
+  bool success = 1;
+}
+
+message FinishRequest {
+  string model_id = 1;
+}
+
+message FinishResponse {
+  bool success = 1;
+}
