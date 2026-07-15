@@ -18,25 +18,25 @@ def spark_session():
     yield spark
     spark.stop()
 
-def mock_run_lineage_protection_pipeline(iterator):
-    """Simulates local python validation parameters for the lineage safety outputs."""
+def mock_run_sovereign_simulation_engine(iterator):
+    """Simulates local python validation parameters for multi-model spatial and tile outputs."""
     for parameters_series in iterator:
         results = []
         for params in parameters_series:
             model_id = params.get("model_id")
             if not model_id:
                 results.append({
-                    "status": "LINEAGE_PIPELINE_ERROR",
+                    "status": "SIMULATION_ENGINE_ERROR",
                     "raster_destination": None,
-                    "lineage_alert_level": "UNKNOWN",
-                    "execution_latency_sec": 0.0
+                    "vector_tile_status": "FAILED",
+                    "groundwater_drawdown_m": 0.0
                 })
             else:
                 results.append({
                     "status": "SUCCESS",
                     "raster_destination": f"/tmp/rasters/{model_id}/",
-                    "lineage_alert_level": "CRITICAL_LINEAGE_FLOOD_WARNING",
-                    "execution_latency_sec": 0.312
+                    "vector_tile_status": f"ACTIVE: ptdt_v25_{model_id}",
+                    "groundwater_drawdown_m": 0.145
                 })
         yield pd.DataFrame(results)
 
@@ -64,8 +64,9 @@ def test_gold_layer_analytical_join_and_benchmarking(spark_session):
     packed_df = joined_df.withColumn("test_payload", struct(col("model_id"), col("geometry_file_path"), col("projection_epsg")))
     pdf_series = [packed_df.select("test_payload").toPandas()["test_payload"]]
     
-    final_output_df = next(mock_run_lineage_protection_pipeline(pdf_series))
+    final_output_df = next(mock_run_sovereign_simulation_engine(pdf_series))
     
     assert final_output_df.loc[0, "status"] == "SUCCESS"
-    assert final_output_df.loc[0, "execution_latency_sec"] == 0.312
-    assert final_output_df.loc[0, "lineage_alert_level"] == "CRITICAL_LINEAGE_FLOOD_WARNING"
+    assert final_output_df.loc[0, "raster_destination"] == "/tmp/rasters/GAUGE_01/"
+    assert final_output_df.loc[0, "vector_tile_status"] == "ACTIVE: ptdt_v25_GAUGE_01"
+    assert final_output_df.loc[0, "groundwater_drawdown_m"] == 0.145
