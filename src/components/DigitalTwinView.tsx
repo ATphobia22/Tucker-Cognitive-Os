@@ -2,8 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { WebGPURenderer, MeshBasicNodeMaterial } from 'three/webgpu';
 import { color, positionLocal, vec3, uniform, mix, select, greaterThan, time, sin } from 'three/tsl';
-import { ShieldAlert, Plus, Play, Pause, Thermometer, Waves, X, Info, Maximize, Minimize, FileText } from 'lucide-react';
+import { 
+  ShieldAlert, Plus, Play, Pause, Thermometer, Waves, X, Info, Maximize, Minimize, FileText,
+  Link, Globe, Sliders, Database, Cpu, Layers, Activity, Eye, Settings, AlertTriangle, RefreshCw
+} from 'lucide-react';
 import { cn } from '../lib/utils';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export interface ParcelInfo {
   id: string;
@@ -34,6 +38,73 @@ export function DigitalTwinView() {
   const [waterDepth, setWaterDepth] = useState(0.1);
   const waterDepthUniformRef = useRef<any>(null);
   const heatmapUniformRef = useRef<any>(null);
+
+  // Sovereign Integrations Hub States & Data
+  const [sidebarTab, setSidebarTab] = useState<'metrics' | 'registry'>('metrics');
+  const [rasDischarge, setRasDischarge] = useState(3500);
+  const [modflowActive, setModflowActive] = useState(false);
+  const [platOverlayActive, setPlatOverlayActive] = useState(false);
+  const [mcpStatus, setMcpStatus] = useState<'idle' | 'connected' | 'busy'>('idle');
+  const [selectedMatterport, setSelectedMatterport] = useState<string | null>(null);
+  const [isSyncingXSoft, setIsSyncingXSoft] = useState(false);
+  const [xsoftRecord, setXsoftRecord] = useState<{ owner: string; appraisedValue: string; taxId: string } | null>(null);
+
+  const handleRasDischargeChange = (val: number) => {
+    setRasDischarge(val);
+    // Bind HEC-RAS boundary flow directly to water depth:
+    // 2000 cfs -> 0.1m, 12000 cfs -> 5.0m
+    const depth = 0.1 + ((val - 2000) / 10000) * 4.9;
+    setWaterDepth(depth);
+  };
+
+  const handleXSoftSync = () => {
+    setIsSyncingXSoft(true);
+    setXsoftRecord(null);
+    setTimeout(() => {
+      setIsSyncingXSoft(false);
+      if (selectedParcel) {
+        if (selectedParcel.lineageGroup.toLowerCase() === 'tucker') {
+          setXsoftRecord({
+            owner: "John Tucker Revocable Trust",
+            appraisedValue: "$285,400",
+            taxId: "116-013-002-00"
+          });
+        } else if (selectedParcel.lineageGroup.toLowerCase() === 'yeida') {
+          setXsoftRecord({
+            owner: "Posey Historical Cemetery Association",
+            appraisedValue: "$1.00 (Tax Exempt)",
+            taxId: "116-015-099-00"
+          });
+        } else if (selectedParcel.lineageGroup.toLowerCase() === 'church') {
+          setXsoftRecord({
+            owner: "Point Township Nazarene Church Corp",
+            appraisedValue: "$412,000 (Religious Exempt)",
+            taxId: "116-018-011-00"
+          });
+        }
+      } else {
+        setXsoftRecord({
+          owner: "Unspecified Posey Township Tract",
+          appraisedValue: "$175,000",
+          taxId: "116-000-001-00"
+        });
+      }
+    }, 800);
+  };
+
+  useEffect(() => {
+    if (selectedParcel) {
+      setXsoftRecord(null);
+    }
+  }, [selectedParcel]);
+
+  const bayesianCurveData = [
+    { returnPeriod: 5, lower: 2500, mode: 3500, upper: 4800 },
+    { returnPeriod: 10, lower: 3200, mode: 4800, upper: 6500 },
+    { returnPeriod: 50, lower: 5500, mode: 8500, upper: 11000 },
+    { returnPeriod: 100, lower: 7200, mode: 11200, upper: 14500 },
+    { returnPeriod: 500, lower: 11500, mode: 17800, upper: 23000 }
+  ];
   
   useEffect(() => {
     isPlacingBermRef.current = isPlacingBerm;
@@ -433,7 +504,12 @@ export function DigitalTwinView() {
       interval = setInterval(() => {
         setWaterDepth(prev => {
           const newDepth = prev + 0.1;
-          if (newDepth > 5) return 0.1; // reset
+          if (newDepth > 5) {
+            setRasDischarge(2000);
+            return 0.1; // reset
+          }
+          const computedDischarge = 2000 + ((newDepth - 0.1) / 4.9) * 10000;
+          setRasDischarge(computedDischarge);
           return newDepth;
         });
       }, 100);
@@ -457,6 +533,69 @@ export function DigitalTwinView() {
           </div>
         )}
         <div ref={containerRef} className="absolute inset-0 transition-cursor" />
+        
+        {/* Matterport Lidar Scan Walkthrough overlay */}
+        {selectedMatterport && (
+          <div className="absolute inset-4 z-20 rounded-xl dark:bg-slate-950/95 bg-white/95 border border-purple-500/40 shadow-[0_0_30px_rgba(168,85,247,0.3)] p-4 flex flex-col justify-between backdrop-blur-md animate-in zoom-in-95 duration-200 pointer-events-auto">
+            <div className="flex justify-between items-center border-b dark:border-purple-500/20 border-purple-200 pb-2">
+              <div className="flex items-center gap-2 text-purple-400 font-bold font-mono text-xs sm:text-sm">
+                <Eye size={18} className="animate-pulse text-purple-500" />
+                <span>MATTERPORT 3D POINT-CLOUD WALKER v23</span>
+              </div>
+              <button 
+                onClick={() => setSelectedMatterport(null)}
+                className="p-1 hover:bg-purple-500/10 rounded transition-colors text-slate-400 hover:text-purple-300 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            {/* Simulation Scan Grid */}
+            <div className="flex-1 min-h-[180px] sm:min-h-[220px] my-3 border dark:border-purple-500/20 border-purple-200/50 dark:bg-black bg-slate-900 rounded-lg relative overflow-hidden flex items-center justify-center font-mono text-center">
+              
+              {/* Matrix of green/purple dots simulating a point cloud scan */}
+              <div className="absolute inset-0 opacity-25 pointer-events-none grid grid-cols-12 grid-rows-12 gap-1 p-4">
+                {Array.from({ length: 144 }).map((_, i) => (
+                  <div key={i} className={cn("rounded-full mx-auto", (i % 7 === 0 || i % 9 === 0) ? "w-1 h-1 bg-purple-500" : "w-0.5 h-0.5 bg-emerald-500")} />
+                ))}
+              </div>
+
+              {/* Holographic Wireframe Circle representing scanned target */}
+              <div className="w-36 h-36 sm:w-48 sm:h-48 rounded-full border-4 border-dashed dark:border-purple-500/40 border-purple-400/30 flex items-center justify-center animate-[spin_40s_linear_infinite]">
+                <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border border-double dark:border-emerald-500/40 border-emerald-400/30 flex items-center justify-center animate-[spin_20s_linear_infinite_reverse]">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-dotted dark:border-purple-500/60 border-purple-400/50" />
+                </div>
+              </div>
+
+              {/* Absolute coordinates panel */}
+              <div className="absolute bottom-4 left-4 text-[9px] sm:text-[10px] space-y-1 text-emerald-400/80 text-left">
+                <div>TARGET: {selectedMatterport}</div>
+                <div>SCANNER_LAT: 37.892° N | LON: -88.016° W</div>
+                <div>ALT: 114.25m | STATUS: COMPLETED</div>
+                <div>POINT_COUNT: 28,451,902 SECURED</div>
+              </div>
+
+              <div className="absolute top-4 right-4 text-[9px] sm:text-[10px] text-purple-400/80 flex flex-col items-end text-right">
+                <div>SENSORS: LiDAR v2 + Depth Sensor</div>
+                <div>OCTREE_DEPTH: 8 (OPTIMIZED)</div>
+                <div>DEEP_WALK_ENGINE: ACTIVE</div>
+              </div>
+
+              {/* Walkthrough view mock controls */}
+              <div className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none px-4">
+                <span className="px-3 py-1.5 bg-purple-500/20 border border-purple-500/40 rounded-full text-purple-300 font-bold text-xs tracking-wider animate-pulse select-none">
+                  LIDAR FIELD WALKTHROUGH MOCK ACTIVE
+                </span>
+                <span className="text-[10px] text-slate-400 mt-2">Use mouse on the 3D twin grid or click close to return</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center text-[9px] sm:text-[10px] dark:text-purple-400/60 text-purple-500 font-mono">
+              <span>SCAN_HASH: MD5_3A8FD6E9110B_SEALED</span>
+              <span>MATTERPORT3DSIMULATOR_ENGINE_ONLINE</span>
+            </div>
+          </div>
+        )}
         
         {/* Overlays */}
         <div className="absolute top-6 left-6 z-10 pointer-events-none">
@@ -656,55 +795,347 @@ export function DigitalTwinView() {
         </div>
       </div>
       
-      {/* Right Sidebar - Analytics */}
+      {/* Right Sidebar - Analytics & Sovereign Hub */}
       {!isFullscreen && (
         <div className="w-80 border-l dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col shrink-0 z-10">
-          <div className="p-4 border-b dark:border-slate-800 border-slate-200">
-            <h3 className="font-bold">Real-Time Metrics</h3>
+          <div className="flex border-b dark:border-slate-800 border-slate-200 shrink-0">
+            <button 
+              onClick={() => setSidebarTab('metrics')}
+              className={cn(
+                "flex-1 py-3 text-xs font-bold uppercase tracking-wider text-center border-b-2 transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+                sidebarTab === 'metrics' 
+                  ? "border-indigo-500 text-indigo-400 dark:bg-slate-900 bg-slate-50" 
+                  : "border-transparent dark:text-slate-500 text-slate-400 hover:dark:text-slate-300 hover:text-slate-700"
+              )}
+            >
+              <Activity size={13} />
+              Metrics
+            </button>
+            <button 
+              onClick={() => setSidebarTab('registry')}
+              className={cn(
+                "flex-1 py-3 text-xs font-bold uppercase tracking-wider text-center border-b-2 transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+                sidebarTab === 'registry' 
+                  ? "border-indigo-500 text-indigo-400 dark:bg-slate-900 bg-slate-50" 
+                  : "border-transparent dark:text-slate-500 text-slate-400 hover:dark:text-slate-300 hover:text-slate-700"
+              )}
+            >
+              <Database size={13} />
+              Sovereign Hub
+            </button>
           </div>
-          <div className="p-4 space-y-6 overflow-y-auto flex-1">
-            <div className="space-y-2">
-              <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Hydrology Node (PT-001)</div>
-              <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200">
-                <div className="text-2xl font-light font-mono text-emerald-400">
-                  {(3500 + waterDepth * 2000).toFixed(0)} <span className="text-sm dark:text-slate-500 text-slate-400">cfs</span>
-                </div>
-                <div className="text-xs dark:text-slate-400 text-slate-500 mt-1">Discharge Rate</div>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Geotechnical Status</div>
-              <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200">
-                <div className={cn("text-2xl font-light font-mono", waterDepth > 2.25 ? "text-red-400" : "text-emerald-400")}>
-                  {Math.max(1.0, 3.5 - waterDepth * 0.5).toFixed(2)}
-                </div>
-                <div className="text-xs dark:text-slate-400 text-slate-500 mt-1">Factor of Safety (FoS)</div>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Compliance Engine</div>
-              <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200">
-                <div className={cn("text-sm font-bold", waterDepth > 2.25 ? "text-red-400" : "text-emerald-400")}>
-                  {waterDepth > 2.25 ? "VIOLATION DETECTED" : "COMPLIANT_NO_RISE"}
+          {sidebarTab === 'metrics' ? (
+            <div className="p-4 space-y-6 overflow-y-auto flex-1">
+              <div className="space-y-2">
+                <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider flex items-center justify-between">
+                  <span>Hydrology Node (PT-001)</span>
+                  {isSimulating && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />}
                 </div>
-                <div className="text-xs dark:text-slate-400 text-slate-500 mt-2">
-                  {waterDepth > 2.25 ? "Depth exceeds FEMA maximum allowance (2.25m)." : "All state No-Rise limits currently satisfied."}
+                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200">
+                  <div className="text-2xl font-light font-mono text-emerald-400">
+                    {rasDischarge.toFixed(0)} <span className="text-sm dark:text-slate-500 text-slate-400">cfs</span>
+                  </div>
+                  <div className="text-xs dark:text-slate-400 text-slate-500 mt-1">Discharge Rate</div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Geotechnical Status</div>
+                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200">
+                  <div className={cn("text-2xl font-light font-mono flex items-center justify-between", waterDepth > 2.25 ? "text-red-400" : "text-emerald-400")}>
+                    <span>
+                      {modflowActive 
+                        ? Math.max(1.2, 3.8 - waterDepth * 0.4).toFixed(2) 
+                        : Math.max(1.0, 3.5 - waterDepth * 0.5).toFixed(2)
+                      }
+                    </span>
+                    {modflowActive && (
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                        MODFLOW Opt
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs dark:text-slate-400 text-slate-500 mt-1">Factor of Safety (FoS)</div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Compliance Engine</div>
+                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200">
+                  <div className={cn("text-sm font-bold", waterDepth > 2.25 ? "text-red-400" : "text-emerald-400")}>
+                    {waterDepth > 2.25 ? "VIOLATION DETECTED" : "COMPLIANT_NO_RISE"}
+                  </div>
+                  <div className="text-xs dark:text-slate-400 text-slate-500 mt-2 font-mono text-[11px] leading-snug">
+                    {waterDepth > 2.25 ? "Depth exceeds FEMA maximum allowance (2.25m)." : "All state No-Rise limits currently satisfied."}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Event Log</div>
+                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200 h-40 overflow-y-auto space-y-2 font-mono text-[10px]">
+                  <div className="text-emerald-400">[{new Date().toISOString().split('T')[1].slice(0, 8)}] Engine initialized.</div>
+                  {platOverlayActive && (
+                    <div className="text-yellow-400">[{new Date().toISOString().split('T')[1].slice(0, 8)}] MAP_SERVICE: Acres Plat grid overlay mapped.</div>
+                  )}
+                  {modflowActive && (
+                    <div className="text-indigo-400">[{new Date().toISOString().split('T')[1].slice(0, 8)}] FLO_PY: Soil saturation and pore water pressure stabilized.</div>
+                  )}
+                  {waterDepth > 2.25 && (
+                    <div className="text-red-400">[{new Date().toISOString().split('T')[1].slice(0, 8)}] CRITICAL_HAZARD: Breach detected in Wabash Confluence.</div>
+                  )}
                 </div>
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Event Log</div>
-              <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-800 border-slate-200 h-40 overflow-y-auto space-y-2 font-mono text-[10px]">
-                <div className="text-emerald-400">[{new Date().toISOString().split('T')[1].slice(0, 8)}] Engine initialized.</div>
-                {waterDepth > 2.25 && (
-                  <div className="text-red-400">[{new Date().toISOString().split('T')[1].slice(0, 8)}] CRITICAL_HAZARD: Breach detected in Wabash Confluence.</div>
-                )}
+          ) : (
+            <div className="p-4 space-y-6 overflow-y-auto flex-1 text-xs">
+              
+              {/* Land Record GIS Portals */}
+              <div className="space-y-3">
+                <div className="text-[10px] dark:text-slate-500 text-slate-400 font-bold uppercase tracking-widest border-b dark:border-slate-800 border-slate-200 pb-1.5 flex items-center gap-1">
+                  <Globe size={12} className="text-indigo-400" />
+                  Sovereign GIS & Tax Registry
+                </div>
+                
+                {/* WTHGIS Portal */}
+                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold dark:text-slate-300 text-slate-700">Posey County WTHGIS</span>
+                    <a href="https://poseyin.wthgis.com/" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors" title="Open County GIS Map">
+                      <Link size={14} />
+                    </a>
+                  </div>
+                  <p className="text-[11px] dark:text-slate-400 text-slate-500 leading-snug">
+                    Indiana Map Service provider for land parcel spatial datasets and public layers.
+                  </p>
+                </div>
+
+                {/* XSoft Tax Portal */}
+                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold dark:text-slate-300 text-slate-700">XSoft Property taxes</span>
+                    <a href="https://engage.xsoftinc.com/posey" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors" title="Open Tax Inquiry">
+                      <Link size={14} />
+                    </a>
+                  </div>
+                  <p className="text-[11px] dark:text-slate-400 text-slate-500 leading-snug">
+                    Real-time county assessor values, appraisals, and legal boundaries.
+                  </p>
+                  
+                  {/* Interactive Appraisal Puller */}
+                  <div className="pt-1.5 border-t dark:border-slate-800/60 border-slate-200/50 space-y-2">
+                    <button
+                      onClick={handleXSoftSync}
+                      disabled={isSyncingXSoft}
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-all shadow-[0_1px_3px_rgba(0,0,0,0.1)] disabled:opacity-50 cursor-pointer"
+                    >
+                      <RefreshCw size={12} className={cn(isSyncingXSoft && "animate-spin")} />
+                      {isSyncingXSoft ? "Syncing Assessors..." : "Sync Valuation Records"}
+                    </button>
+                    {xsoftRecord && (
+                      <div className="p-2 rounded bg-indigo-950/20 border border-indigo-500/20 font-mono text-[11px] space-y-1">
+                        <div className="flex justify-between"><span className="text-indigo-400/70">Parcel Tax ID:</span><span className="text-slate-300 font-bold">{xsoftRecord.taxId}</span></div>
+                        <div className="flex justify-between"><span className="text-indigo-400/70">Legal Owner:</span><span className="text-slate-300 font-bold text-right truncate max-w-[120px]">{xsoftRecord.owner}</span></div>
+                        <div className="flex justify-between"><span className="text-indigo-400/70">Appraisal:</span><span className="text-emerald-400 font-bold">{xsoftRecord.appraisedValue}</span></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Acres Plat Map */}
+                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold dark:text-slate-300 text-slate-700">Acres Plat Map Portal</span>
+                    <a href="https://www.acres.com/plat-map/map/in/posey-county-in" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors" title="Open Acres Plat map">
+                      <Link size={14} />
+                    </a>
+                  </div>
+                  <p className="text-[11px] dark:text-slate-400 text-slate-500 leading-snug">
+                    Public plat boundary survey matching Point township water boundaries.
+                  </p>
+                  
+                  {/* Interactive Plat Outline projection */}
+                  <div className="pt-1.5 border-t dark:border-slate-800/60 border-slate-200/50">
+                    <button
+                      onClick={() => setPlatOverlayActive(!platOverlayActive)}
+                      className={cn(
+                        "w-full flex items-center justify-center gap-1.5 py-1.5 rounded border transition-all text-[11px] font-semibold cursor-pointer",
+                        platOverlayActive
+                          ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/40 shadow-[0_0_8px_rgba(234,179,8,0.2)]"
+                          : "dark:bg-slate-800 bg-white dark:text-slate-300 text-slate-700 dark:border-slate-700 border-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      )}
+                    >
+                      <Layers size={12} />
+                      {platOverlayActive ? "Plat Grid Active" : "Project Acres Plat Outlines"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Computational Hydrology Stack */}
+              <div className="space-y-3">
+                <div className="text-[10px] dark:text-slate-500 text-slate-400 font-bold uppercase tracking-widest border-b dark:border-slate-800 border-slate-200 pb-1.5 flex items-center gap-1">
+                  <Cpu size={12} className="text-emerald-400" />
+                  Engineering Solvers
+                </div>
+
+                {/* HEC-RAS Commander */}
+                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold dark:text-slate-300 text-slate-700">HEC-RAS (ras-commander)</span>
+                    <a href="https://github.com/ATphobia22/ras-commander" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors">
+                      <Link size={14} />
+                    </a>
+                  </div>
+                  <p className="text-[11px] dark:text-slate-400 text-slate-500 leading-snug">
+                    Controls unsteady flow simulations on the Wabash-Ohio confluence models.
+                  </p>
+                  
+                  {/* Slider to interact with discharge rate */}
+                  <div className="pt-2 border-t dark:border-slate-800/60 border-slate-200/50 space-y-1">
+                    <div className="flex justify-between text-[11px] font-mono">
+                      <span className="dark:text-slate-400 text-slate-500">HEC-RAS Inflow Q:</span>
+                      <span className="text-emerald-400 font-bold">{rasDischarge.toFixed(0)} cfs</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="2000"
+                      max="12000"
+                      step="500"
+                      value={rasDischarge}
+                      onChange={(e) => handleRasDischargeChange(parseFloat(e.target.value))}
+                      className="w-full accent-indigo-500 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* FloPy Seepage */}
+                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold dark:text-slate-300 text-slate-700">FloPy / Groundwater (MODFLOW)</span>
+                    <a href="https://github.com/ATphobia22/flopy" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors">
+                      <Link size={14} />
+                    </a>
+                  </div>
+                  <p className="text-[11px] dark:text-slate-400 text-slate-500 leading-snug">
+                    USGS aquifer model assessing water table seepage across earth embankments.
+                  </p>
+                  
+                  <div className="pt-1.5 border-t dark:border-slate-800/60 border-slate-200/50">
+                    <button
+                      onClick={() => setModflowActive(!modflowActive)}
+                      className={cn(
+                        "w-full flex items-center justify-center gap-1.5 py-1.5 rounded border transition-all text-[11px] font-semibold cursor-pointer",
+                        modflowActive
+                          ? "bg-indigo-500/20 text-indigo-400 border-indigo-500/40 shadow-[0_0_8px_rgba(99,102,241,0.2)]"
+                          : "dark:bg-slate-800 bg-white dark:text-slate-300 text-slate-700 dark:border-slate-700 border-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      )}
+                    >
+                      <Sliders size={12} />
+                      {modflowActive ? "MODFLOW Seepage Enabled" : "Compute Groundwater Seepage"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* RMC BestFit Bayesian */}
+                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold dark:text-slate-300 text-slate-700">RMC-BestFit Bayesian Curves</span>
+                    <a href="https://github.com/ATphobia22/RMC-BestFit" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors">
+                      <Link size={14} />
+                    </a>
+                  </div>
+                  <p className="text-[11px] dark:text-slate-400 text-slate-500 leading-snug mb-2">
+                    Bayesian flood hazard frequency models for risk evaluation of the Point Township confluence.
+                  </p>
+                  
+                  {/* Recharts Bayesian Hazard Frequency Curve */}
+                  <div className="h-28 w-full dark:bg-[#020617] bg-slate-50 rounded border dark:border-slate-800 border-slate-200 p-1">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={bayesianCurveData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="2 2" stroke="#1e293b" />
+                        <XAxis dataKey="returnPeriod" stroke="#64748b" style={{ fontSize: 8 }} />
+                        <YAxis stroke="#64748b" style={{ fontSize: 8 }} />
+                        <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', fontSize: 8, color: '#f8fafc' }} />
+                        <Line type="monotone" dataKey="mode" stroke="#3b82f6" strokeWidth={1.5} dot={{ r: 1 }} name="Mode Q" />
+                        <Line type="monotone" dataKey="upper" stroke="#ef4444" strokeWidth={1} strokeDasharray="2 2" dot={false} name="95% CI Upper" />
+                        <Line type="monotone" dataKey="lower" stroke="#10b981" strokeWidth={1} strokeDasharray="2 2" dot={false} name="95% CI Lower" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="text-[8px] dark:text-slate-500 text-slate-400 text-center font-mono leading-none">
+                    Bayesian Peak flow (cfs) vs. Return Period Interval (Years)
+                  </div>
+                </div>
+
+                {/* Matterport Lidar Walker */}
+                <div className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold dark:text-slate-300 text-slate-700">Matterport Scan walkthrough</span>
+                    <div className="flex gap-1">
+                      <a href="https://github.com/ATphobia22/Matterport" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors" title="Repo 1">
+                        <Link size={12} />
+                      </a>
+                      <a href="https://github.com/ATphobia22/Matterport3DSimulator" target="_blank" rel="noopener noreferrer" className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors" title="Repo 2">
+                        <Link size={12} />
+                      </a>
+                    </div>
+                  </div>
+                  <p className="text-[11px] dark:text-slate-400 text-slate-500 leading-snug">
+                    3D point cloud walk-throughs of protected historic properties.
+                  </p>
+                  
+                  <div className="pt-1.5 border-t dark:border-slate-800/60 border-slate-200/50">
+                    <button
+                      onClick={() => setSelectedMatterport(selectedMatterport ? null : (selectedParcel ? selectedParcel.tractName : "Wabash River Base"))}
+                      className={cn(
+                        "w-full flex items-center justify-center gap-1.5 py-1.5 rounded border transition-all text-[11px] font-semibold cursor-pointer",
+                        selectedMatterport
+                          ? "bg-purple-500/20 text-purple-400 border-purple-500/40 shadow-[0_0_8px_rgba(168,85,247,0.2)]"
+                          : "dark:bg-slate-800 bg-white dark:text-slate-300 text-slate-700 dark:border-slate-700 border-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      )}
+                    >
+                      <Eye size={12} />
+                      {selectedMatterport ? "Close Walkthrough Simulation" : "Run Matterport Scanner"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Additional repositories links */}
+                <div className="dark:bg-[#020617]/40 bg-slate-50 border dark:border-slate-800/50 border-slate-200 rounded p-2.5 space-y-2">
+                  <div className="text-[9px] dark:text-slate-500 text-slate-400 uppercase tracking-wider font-bold">Additional Software Packages</div>
+                  <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+                    <a href="https://github.com/ATphobia22/cwms-database" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                      <Database size={10} /> cwms-database
+                    </a>
+                    <a href="https://github.com/ATphobia22/cwms-cli" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                      <Settings size={10} /> cwms-cli
+                    </a>
+                    <a href="https://github.com/ATphobia22/matlab-agentic-toolkit" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                      <Cpu size={10} /> matlab-toolkit
+                    </a>
+                    <a href="https://github.com/ATphobia22/matlab-mcp-server" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                      <Sliders size={10} /> matlab-mcp
+                    </a>
+                    <a href="https://github.com/ATphobia22/martin" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                      <Layers size={10} /> martin MVT
+                    </a>
+                    <a href="https://github.com/ATphobia22/QGIS" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors">
+                      <Globe size={10} /> QGIS plugin
+                    </a>
+                    <a href="https://github.com/ATphobia22/federal-emergency-management-agency" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors col-span-2">
+                      <AlertTriangle size={10} /> FEMA regulatory-sync
+                    </a>
+                    <a href="https://github.com/ATphobia22/natural-resources-conservation-service" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 p-1 hover:bg-slate-800/50 rounded text-slate-400 hover:text-indigo-300 transition-colors col-span-2">
+                      <Layers size={10} /> USDA NRCS soils-mapper
+                    </a>
+                  </div>
+                </div>
+
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
