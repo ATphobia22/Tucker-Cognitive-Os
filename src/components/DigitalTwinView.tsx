@@ -56,11 +56,19 @@ export function DigitalTwinView() {
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      viewWrapperRef.current?.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable fullscreen: ${err.message}`);
-      });
+      if (viewWrapperRef.current && typeof viewWrapperRef.current.requestFullscreen === 'function') {
+        viewWrapperRef.current.requestFullscreen().catch(err => {
+          console.error(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+      } else {
+        console.warn('Fullscreen API is not supported in this environment/iframe context.');
+      }
     } else {
-      document.exitFullscreen();
+      if (typeof document.exitFullscreen === 'function') {
+        document.exitFullscreen().catch(err => {
+          console.error(`Error exiting fullscreen: ${err.message}`);
+        });
+      }
     }
   };
 
