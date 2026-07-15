@@ -129,6 +129,42 @@ export function IntegrationsView() {
           tags: ["HydroShare", "Inundation", "CyberGIS", "NFIE"]
         }
       ]
+    },
+    {
+      name: "3D Visualization & Cinema Software",
+      icon: <Layers className="w-5 h-5 text-amber-500" />,
+      items: [
+        {
+          name: "openmoonray",
+          desc: "MoonRay is a state-of-the-art production path tracing renderer, initially developed at DreamWorks Animation.",
+          url: "https://github.com/ATphobia22/openmoonray",
+          tags: ["Render", "VFX", "Cinema", "Raytracing"]
+        },
+        {
+          name: "appleseed",
+          desc: "A modern, open-source physical rendering engine for animation and visual effects.",
+          url: "https://github.com/ATphobia22/appleseed",
+          tags: ["Animation", "Visual Effects", "Render"]
+        },
+        {
+          name: "cesium",
+          desc: "An open-source JavaScript library for world-class 3D globes and maps.",
+          url: "https://github.com/ATphobia22/cesium",
+          tags: ["WebGL", "3D Globe", "Maps", "Simulation"]
+        },
+        {
+          name: "Matterport3DSimulator",
+          desc: "AI Research Platform for Reinforcement Learning from Real Panoramic Images.",
+          url: "https://github.com/ATphobia22/Matterport3DSimulator",
+          tags: ["Matterport", "Simulation", "AI", "3D"]
+        },
+        {
+          name: "awesome-blender",
+          desc: "A curated list of awesome Blender addons, tools, tutorials, and 3D resources.",
+          url: "https://github.com/ATphobia22/awesome-blender",
+          tags: ["Blender", "3D Resources", "Addons"]
+        }
+      ]
     }
   ];
 
