@@ -1,3 +1,23 @@
+# PTDT v32 Kubernetes Manifests
+# Defines Physics Workers, Assimilation Service, Evidence Store, and API Gateway
+
+---
+# PVC for Physics Worker Data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ptdt-solver-pvc
+  labels:
+    app: ptdt
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+
+---
+# Physics Worker Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,6 +40,7 @@ spec:
       containers:
       - name: physics-engine
         image: registry.tristate.gov/ptdt/physics-worker:v32
+        imagePullPolicy: Always
         resources:
           requests:
             cpu: "4"
@@ -30,11 +51,25 @@ spec:
         volumeMounts:
         - name: solver-data
           mountPath: /data
+        livenessProbe:
+          httpGet:
+            path: /health/physics
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
       volumes:
       - name: solver-data
         persistentVolumeClaim:
           claimName: ptdt-solver-pvc
+
 ---
+# Assimilation Service Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -61,7 +96,24 @@ spec:
           requests:
             cpu: "2"
             memory: "8Gi"
+          limits:
+            cpu: "4"
+            memory: "16Gi"
+        livenessProbe:
+          httpGet:
+            path: /health/assimilation
+            port: 8081
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
 ---
+# Evidence Store / Service Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -87,7 +139,28 @@ spec:
         env:
         - name: VAULT_ADDR
           value: "https://vault.internal:8200"
+        resources:
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+        livenessProbe:
+          httpGet:
+            path: /health/evidence
+            port: 8082
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8082
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
 ---
+# API Gateway Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -112,3 +185,56 @@ spec:
         image: registry.tristate.gov/ptdt/api-gateway:v32
         ports:
         - containerPort: 443
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "1"
+            memory: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+# Services for inter-component communication
+apiVersion: v1
+kind: Service
+metadata:
+  name: ptdt-evidence-svc
+spec:
+  selector:
+    app: ptdt
+    component: evidence-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8082
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ptdt-gateway-svc
+spec:
+  type: LoadBalancer
+  selector:
+    app: ptdt
+    component: api-gateway
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 443
+    - protocol: TCP
+      port: 80
+      targetPort: 80
