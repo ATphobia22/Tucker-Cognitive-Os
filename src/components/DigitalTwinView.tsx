@@ -36,8 +36,16 @@ export function DigitalTwinView() {
   const isPlacingBermRef = useRef(false);
   const showHeatmapRef = useRef(false);
   const [waterDepth, setWaterDepth] = useState(0.1);
+  const waterDepthRef = useRef(0.1);
   const waterDepthUniformRef = useRef<any>(null);
   const heatmapUniformRef = useRef<any>(null);
+  
+  const [isRendererActive, setIsRendererActive] = useState(false);
+  const [isWebGLFallback, setIsWebGLFallback] = useState(false);
+
+  useEffect(() => {
+    waterDepthRef.current = waterDepth;
+  }, [waterDepth]);
 
   // Sovereign Integrations Hub States & Data
   const [sidebarTab, setSidebarTab] = useState<'metrics' | 'registry'>('metrics');
@@ -144,14 +152,33 @@ export function DigitalTwinView() {
   };
 
   useEffect(() => {
-    const nav = navigator as any;
-    if (!containerRef.current || !nav.gpu) return;
+    if (!containerRef.current) return;
     
+    const nav = navigator as any;
     let isMounted = true;
     
-    async function initWebGPU() {
+    async function init3D() {
       const container = containerRef.current!;
-      const renderer = new WebGPURenderer({ antialias: true, alpha: true });
+      let renderer: any;
+      let useWebGL = false;
+
+      if (nav.gpu) {
+        try {
+          renderer = new WebGPURenderer({ antialias: true, alpha: true });
+          await renderer.init();
+        } catch (gpuError) {
+          console.warn("WebGPURenderer init failed, falling back to WebGL:", gpuError);
+          useWebGL = true;
+        }
+      } else {
+        useWebGL = true;
+      }
+
+      if (useWebGL) {
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        setIsWebGLFallback(true);
+      }
+
       rendererRef.current = renderer;
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(container.clientWidth, container.clientHeight);
@@ -167,38 +194,51 @@ export function DigitalTwinView() {
       const gridHelper = new THREE.GridHelper(100, 50, 0x1e293b, 0x0f172a);
       scene.add(gridHelper);
 
-      // TSL Uniforms
-      const waterDepthUniform = uniform(waterDepth);
-      waterDepthUniformRef.current = waterDepthUniform;
-      
-      const heatmapUniform = uniform(showHeatmapRef.current ? 1.0 : 0.0);
-      heatmapUniformRef.current = heatmapUniform;
-      
-      const lineatTractColorUniform = uniform(vec3(0.0, 0.45, 0.85));
+      let material: any;
 
-      const localCoords = positionLocal;
-      const flowDisplacement = sin(localCoords.x.mul(0.1).add(time.mul(0.8)));
+      if (!useWebGL) {
+        // TSL Uniforms and nodes (WebGPU only)
+        const waterDepthUniform = uniform(waterDepth);
+        waterDepthUniformRef.current = waterDepthUniform;
+        
+        const heatmapUniform = uniform(showHeatmapRef.current ? 1.0 : 0.0);
+        heatmapUniformRef.current = heatmapUniform;
+        
+        const lineatTractColorUniform = uniform(vec3(0.0, 0.45, 0.85));
 
-      const depthColor = select(
-          greaterThan(waterDepthUniform, 2.25),
-          mix(vec3(1.0, 0.1, 0.1), vec3(1.0, 1.0, 1.0), flowDisplacement.mul(0.2)),
-          mix(lineatTractColorUniform, vec3(0.0, 1.0, 0.5), localCoords.y.mul(0.02))
-      );
-      
-      const heatColor = mix(vec3(0.0, 0.0, 1.0), vec3(1.0, 0.0, 0.0), localCoords.y.add(10).mul(0.05));
+        const localCoords = positionLocal;
+        const flowDisplacement = sin(localCoords.x.mul(0.1).add(time.mul(0.8)));
 
-      const dynamicColorNode = select(
-          greaterThan(heatmapUniform, 0.5),
-          heatColor,
-          depthColor
-      );
+        const depthColor = select(
+            greaterThan(waterDepthUniform, 2.25),
+            mix(vec3(1.0, 0.1, 0.1), vec3(1.0, 1.0, 1.0), flowDisplacement.mul(0.2)),
+            mix(lineatTractColorUniform, vec3(0.0, 1.0, 0.5), localCoords.y.mul(0.02))
+        );
+        
+        const heatColor = mix(vec3(0.0, 0.0, 1.0), vec3(1.0, 0.0, 0.0), localCoords.y.add(10).mul(0.05));
 
-      // @ts-ignore
-      const material = new MeshBasicNodeMaterial();
-      material.colorNode = dynamicColorNode;
-      material.wireframe = true;
-      material.transparent = true;
-      material.opacity = 0.8;
+        const dynamicColorNode = select(
+            greaterThan(heatmapUniform, 0.5),
+            heatColor,
+            depthColor
+        );
+
+        // @ts-ignore
+        const nodeMat = new MeshBasicNodeMaterial();
+        nodeMat.colorNode = dynamicColorNode;
+        nodeMat.wireframe = true;
+        nodeMat.transparent = true;
+        nodeMat.opacity = 0.8;
+        material = nodeMat;
+      } else {
+        // WebGL Standard material
+        material = new THREE.MeshBasicMaterial({
+          color: 0x3b82f6,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.8
+        });
+      }
 
       const geometry = new THREE.PlaneGeometry(100, 100, 50, 50).rotateX(-Math.PI / 2);
       
@@ -445,8 +485,10 @@ export function DigitalTwinView() {
       container.addEventListener('pointerdown', onPointerDown);
       window.addEventListener('pointerup', onPointerUp);
 
-      // Wait for renderer initialization
-      await renderer.init();
+      // Wait for renderer initialization (WebGPU only)
+      if (!useWebGL && typeof renderer.init === 'function') {
+        await renderer.init();
+      }
       
       if (!isMounted) return;
 
@@ -460,6 +502,18 @@ export function DigitalTwinView() {
             mesh.rotation.y += 0.015; // Gentle spin animation for a responsive, premium visual style
           }
         }
+
+        if (useWebGL) {
+          // Dynamic update in WebGL fallback mode
+          if (showHeatmapRef.current) {
+            material.color.setHex(0xf59e0b); // Orange heat
+          } else if (waterDepthRef.current > 2.25) {
+            material.color.setHex(0xef4444); // Red warning
+          } else {
+            material.color.setHex(0x3b82f6); // Electric Blue depth
+          }
+        }
+
         renderer.render(scene, camera);
       });
       
@@ -471,6 +525,8 @@ export function DigitalTwinView() {
       };
       
       window.addEventListener('resize', handleResize);
+      setIsRendererActive(true);
+
       return () => {
         window.removeEventListener('resize', handleResize);
         window.removeEventListener('pointerup', onPointerUp);
@@ -479,7 +535,7 @@ export function DigitalTwinView() {
       };
     }
     
-    initWebGPU().catch(e => console.error("WebGPU initialization failed:", e));
+    init3D().catch(e => console.error("3D rendering engine initialization failed:", e));
     
     return () => {
       isMounted = false;
@@ -521,15 +577,21 @@ export function DigitalTwinView() {
     <div ref={viewWrapperRef} className="w-full h-full relative dark:bg-[#020617] bg-slate-50 dark:text-slate-100 text-slate-900 flex overflow-hidden">
       {/* 3D Canvas Area */}
       <div className="flex-1 relative">
-        {!(navigator as any).gpu && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 dark:bg-[#020617] bg-slate-50/80 backdrop-blur-sm">
-            <div className="p-6 rounded-xl border border-red-500/30 bg-red-500/10 max-w-md text-center">
-              <ShieldAlert className="w-12 h-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-red-100 mb-2">WebGPU Not Supported</h3>
-              <p className="text-sm text-red-200/70">
-                Your browser does not support WebGPU, which is required for the Tri-State Digital Twin visualization engine. Please use Chrome 113+ or Edge 113+.
+        {!isRendererActive && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 dark:bg-[#020617] bg-slate-50/80 backdrop-blur-sm">
+            <div className="p-6 rounded-xl border border-indigo-500/30 bg-indigo-500/10 max-w-md text-center">
+              <RefreshCw className="w-12 h-12 text-indigo-400 mx-auto mb-4 animate-spin" />
+              <h3 className="text-lg font-bold text-indigo-100 mb-2 font-mono">INITIALIZING TWIN MESH...</h3>
+              <p className="text-sm text-indigo-200/70">
+                Compiling vectorized shader nodes and establishing sovereign GIS plat structures.
               </p>
             </div>
+          </div>
+        )}
+        {isRendererActive && isWebGLFallback && (
+          <div className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-md text-[10px] font-bold font-mono border dark:border-amber-500/30 dark:bg-amber-500/10 border-amber-200 bg-amber-50 dark:text-amber-400 text-amber-700 backdrop-blur-md flex items-center gap-1.5 shadow-sm">
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            <span>WEBGL ENGINE FALLBACK MODE</span>
           </div>
         )}
         <div ref={containerRef} className="absolute inset-0 transition-cursor" />
