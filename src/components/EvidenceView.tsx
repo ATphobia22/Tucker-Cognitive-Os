@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { ShieldCheck, FileKey, Fingerprint, History, Box, Download, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, FileKey, Fingerprint, History, Box, Download, CheckCircle2, X, Copy, Check } from 'lucide-react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { cn } from '../lib/utils';
 
 export function EvidenceView() {
   const [exportingId, setExportingId] = useState<string | null>(null);
+  const [viewingManifest, setViewingManifest] = useState<any | null>(null);
+  const [activeJsonTab, setActiveJsonTab] = useState<'manifest' | 'sbom'>('manifest');
+  const [copied, setCopied] = useState<boolean>(false);
 
   const manifests = [
     { id: 'evd-a7x9...2b1c', time: '2026-07-14T18:45:00Z', status: 'Verified', signers: 3, fullId: 'evd-a7x9f3k9-2b1c-4m8v-9p2q-x5y7z9a1b2c3' },
@@ -262,14 +265,21 @@ This section verifies that the simulated infrastructure adjustments meet all reg
                 </div>
                 
                 <div className="flex gap-2 ml-4">
-                  <button className="px-3 py-1.5 dark:bg-slate-800 bg-white hover:dark:bg-slate-700 hover:bg-slate-200 rounded dark:text-slate-300 text-slate-700 transition-colors font-sans">
+                  <button 
+                    onClick={() => {
+                      setViewingManifest(m);
+                      setActiveJsonTab('manifest');
+                      setCopied(false);
+                    }}
+                    className="px-3 py-1.5 dark:bg-slate-800 bg-white hover:dark:bg-slate-700 hover:bg-slate-200 rounded dark:text-slate-300 text-slate-700 transition-colors font-sans cursor-pointer"
+                  >
                     View JSON
                   </button>
                   <button 
                     onClick={() => handleExport(m)}
                     disabled={exportingId === m.id}
                     className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded text-white transition-colors font-sans",
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded text-white transition-colors font-sans cursor-pointer",
                       exportingId === m.id 
                         ? "bg-emerald-600/80 cursor-default" 
                         : "bg-indigo-600 hover:bg-indigo-500"
@@ -293,6 +303,128 @@ This section verifies that the simulated infrastructure adjustments meet all reg
           ))}
         </div>
       </div>
+
+      {/* Interactive JSON & SBOM modal */}
+      {viewingManifest && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-6 animate-in fade-in duration-200">
+          <div className="dark:bg-[#0F172A] bg-white border border-indigo-500/30 rounded-xl w-full max-w-2xl flex flex-col max-h-[90%] shadow-2xl overflow-hidden font-sans">
+            
+            <div className="flex items-center justify-between p-4 border-b dark:border-slate-800 border-slate-200 dark:bg-slate-900 bg-slate-100/50">
+              <div>
+                <h3 className="font-bold text-sm sm:text-base dark:text-slate-100 text-slate-900 flex items-center gap-2">
+                  <Fingerprint className="text-indigo-400" size={18} />
+                  Provenance Spec Inspector
+                </h3>
+                <p className="text-[10px] dark:text-slate-400 text-slate-500 font-mono mt-0.5">ID: {viewingManifest.id} ({viewingManifest.fullId.substring(0, 18)}...)</p>
+              </div>
+              <button 
+                onClick={() => setViewingManifest(null)}
+                className="p-1.5 rounded hover:dark:bg-slate-800 bg-white dark:text-slate-400 text-slate-500 hover:text-white transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Tabs & Actions */}
+            <div className="px-4 py-2 border-b dark:border-slate-800 border-slate-200 dark:bg-slate-950/40 bg-slate-50 flex justify-between items-center">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setActiveJsonTab('manifest'); setCopied(false); }}
+                  className={cn(
+                    "text-xs px-2.5 py-1.5 rounded-md font-medium transition-colors cursor-pointer",
+                    activeJsonTab === 'manifest'
+                      ? "dark:bg-indigo-600/20 bg-indigo-50 dark:text-indigo-400 text-indigo-700 font-semibold"
+                      : "dark:text-slate-400 text-slate-600 hover:dark:bg-slate-800 hover:bg-slate-100"
+                  )}
+                >
+                  Simulation Manifest
+                </button>
+                <button
+                  onClick={() => { setActiveJsonTab('sbom'); setCopied(false); }}
+                  className={cn(
+                    "text-xs px-2.5 py-1.5 rounded-md font-medium transition-colors cursor-pointer",
+                    activeJsonTab === 'sbom'
+                      ? "dark:bg-indigo-600/20 bg-indigo-50 dark:text-indigo-400 text-indigo-700 font-semibold"
+                      : "dark:text-slate-400 text-slate-600 hover:dark:bg-slate-800 hover:bg-slate-100"
+                  )}
+                >
+                  CycloneDX SBOM
+                </button>
+              </div>
+
+              <button
+                onClick={() => {
+                  const text = activeJsonTab === 'manifest' ? getManifestJson(viewingManifest) : getSbomJson(viewingManifest);
+                  navigator.clipboard.writeText(text);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="flex items-center gap-1 px-2 py-1 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-xs font-medium cursor-pointer"
+              >
+                {copied ? <Check size={12} className="text-emerald-400 animate-in zoom-in" /> : <Copy size={12} />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+            </div>
+
+            {/* Monospace JSON Display */}
+            <div className="p-4 overflow-y-auto flex-1 dark:bg-[#020617] bg-slate-50 border-b dark:border-slate-800 border-slate-200">
+              <pre className="text-[11px] font-mono dark:text-emerald-400 text-emerald-800 leading-relaxed whitespace-pre overflow-x-auto selection:bg-indigo-500/30">
+                {activeJsonTab === 'manifest' ? getManifestJson(viewingManifest) : getSbomJson(viewingManifest)}
+              </pre>
+            </div>
+
+            <div className="p-3 dark:bg-slate-900 bg-slate-50 flex justify-end">
+              <button
+                onClick={() => setViewingManifest(null)}
+                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-semibold cursor-pointer transition-colors"
+              >
+                Done
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const getManifestJson = (m: any) => {
+  return JSON.stringify({
+    schemaVersion: "1.0",
+    evidenceId: m.fullId,
+    timestamp: m.time,
+    status: m.status,
+    hashAlgorithm: "SHA-256",
+    signatureAlgorithm: "ECDSA",
+    signersCount: m.signers,
+    environment: "DLT Multi-Physics Twin Platform",
+    components: [
+      { name: "SimulationEngine", version: "4.2.1", hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+      { name: "HydrologyModel", version: "1.0.5", hash: "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92" }
+    ]
+  }, null, 2);
+};
+
+const getSbomJson = (m: any) => {
+  return JSON.stringify({
+    bomFormat: "CycloneDX",
+    specVersion: "1.4",
+    serialNumber: `urn:uuid:${m.fullId.substring(4)}`,
+    version: 1,
+    metadata: {
+      timestamp: m.time,
+      component: {
+        type: "application",
+        name: "Tri-State Digital Twin",
+        version: "2026.3.1"
+      }
+    },
+    components: [
+      { type: "library", name: "three", version: "0.160.0" },
+      { type: "library", name: "react", version: "18.2.0" },
+      { type: "library", name: "recharts", version: "2.12.0" },
+      { type: "library", name: "lucide-react", version: "0.344.0" }
+    ]
+  }, null, 2);
+};

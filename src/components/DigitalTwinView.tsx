@@ -7,6 +7,7 @@ import {
   Link, Globe, Sliders, Database, Cpu, Layers, Activity, Eye, Settings, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { WebGPU3DValley } from './WebGPU3DValley';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export interface ParcelInfo {
@@ -40,7 +41,7 @@ export function DigitalTwinView() {
   const waterDepthUniformRef = useRef<any>(null);
   const heatmapUniformRef = useRef<any>(null);
   
-  const [isRendererActive, setIsRendererActive] = useState(false);
+  const [isRendererActive, setIsRendererActive] = useState(true);
   const [isWebGLFallback, setIsWebGLFallback] = useState(false);
 
   useEffect(() => {
@@ -57,12 +58,59 @@ export function DigitalTwinView() {
   const [isSyncingXSoft, setIsSyncingXSoft] = useState(false);
   const [xsoftRecord, setXsoftRecord] = useState<{ owner: string; appraisedValue: string; taxId: string } | null>(null);
 
-  const handleRasDischargeChange = (val: number) => {
+  // Live USGS Telemetry States
+  const [usgsGages, setUsgsGages] = useState<any[]>([]);
+  const [usgsSource, setUsgsSource] = useState<string>("LOADING");
+  const [ingestionFeed, setIngestionFeed] = useState<{ gageName: string; discharge: number; time: string } | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchTelemetry = async () => {
+      try {
+        const res = await fetch('/api/usgs-telemetry');
+        if (!res.ok) throw new Error("Failed to fetch USGS readings: " + res.status);
+        const text = await res.text();
+        let json;
+        try {
+          json = JSON.parse(text);
+        } catch (e) {
+          throw new Error("Invalid JSON response");
+        }
+        if (json.success && isMounted) {
+          setUsgsGages(json.data || []);
+          setUsgsSource(json.source || "UNKNOWN");
+        }
+      } catch (err) {
+        console.warn("Telemetry fetch warning:", err);
+      }
+    };
+
+    fetchTelemetry();
+    const interval = setInterval(fetchTelemetry, 20000); // Poll every 20 seconds
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const handleRasDischargeChange = (val: number, gageName?: string) => {
     setRasDischarge(val);
     // Bind HEC-RAS boundary flow directly to water depth:
-    // 2000 cfs -> 0.1m, 12000 cfs -> 5.0m
-    const depth = 0.1 + ((val - 2000) / 10000) * 4.9;
+    // 2000 cfs -> 0.1m, 150000 cfs -> 5.0m
+    const depth = 0.1 + ((val - 2000) / 148000) * 4.9;
     setWaterDepth(depth);
+
+    if (gageName) {
+      setIngestionFeed({
+        gageName,
+        discharge: val,
+        time: new Date().toLocaleTimeString()
+      });
+      // Clear notification after 4 seconds
+      const timer = setTimeout(() => {
+        setIngestionFeed(prev => (prev?.gageName === gageName && prev?.discharge === val) ? null : prev);
+      }, 4000);
+    }
   };
 
   const handleXSoftSync = () => {
@@ -535,7 +583,7 @@ export function DigitalTwinView() {
       };
     }
     
-    init3D().catch(e => console.error("3D rendering engine initialization failed:", e));
+    // init3D().catch(e => console.error("3D rendering engine initialization failed:", e));
     
     return () => {
       isMounted = false;
@@ -594,7 +642,28 @@ export function DigitalTwinView() {
             <span>WEBGL ENGINE FALLBACK MODE</span>
           </div>
         )}
-        <div ref={containerRef} className="absolute inset-0 transition-cursor" />
+        <div className="absolute inset-0 transition-cursor">
+          <WebGPU3DValley waterLevel={waterDepth} />
+        </div>
+        
+        {/* Floating Telemetry Ingestion Toast Notification */}
+        {ingestionFeed && (
+          <div className="absolute top-16 right-4 z-20 backdrop-blur-xl dark:bg-[#0f172a]/95 bg-white/95 border border-emerald-500/30 px-3.5 py-2.5 rounded-lg shadow-xl animate-in fade-in slide-in-from-top-4 duration-300 max-w-xs flex flex-col gap-1 pointer-events-auto">
+            <div className="flex items-center gap-1.5 text-emerald-400 font-bold font-mono text-[9px] uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+              <span>USGS Telemetry Stream Ingested</span>
+            </div>
+            <div className="text-[11px] font-bold dark:text-slate-100 text-slate-800 truncate font-mono">
+              {ingestionFeed.gageName}
+            </div>
+            <div className="text-[10px] dark:text-slate-400 text-slate-500 font-mono">
+              Boundary Inflow: <span className="text-emerald-400 font-bold">{ingestionFeed.discharge.toLocaleString()} cfs</span>
+            </div>
+            <div className="text-[8px] dark:text-slate-500 text-slate-400 font-mono mt-0.5">
+              Assimilated Time: {ingestionFeed.time} | Convergence: <span className="text-indigo-400">Stable</span>
+            </div>
+          </div>
+        )}
         
         {/* Matterport Lidar Scan Walkthrough overlay */}
         {selectedMatterport && (
@@ -901,6 +970,69 @@ export function DigitalTwinView() {
                   <div className="text-xs dark:text-slate-400 text-slate-500 mt-1">Discharge Rate</div>
                 </div>
               </div>
+
+              {/* Live USGS River Telemetry Gauges */}
+              <div className="space-y-2">
+                <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider flex items-center justify-between">
+                  <span>Live USGS River Gauges</span>
+                  <span className={cn(
+                    "text-[8px] font-mono px-1.5 py-0.5 rounded",
+                    usgsSource === "USGS_NWIS_LIVE" ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
+                  )}>
+                    {usgsSource === "USGS_NWIS_LIVE" ? "LIVE NWIS" : "FALLBACK"}
+                  </span>
+                </div>
+                
+                <div className="space-y-2">
+                  {usgsGages.length === 0 ? (
+                    <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg text-center font-mono text-[10px] dark:text-slate-400 text-slate-500 border dark:border-slate-800 border-slate-200">
+                      <RefreshCw className="w-3.5 h-3.5 mx-auto animate-spin mb-1 text-indigo-400" />
+                      Connecting to USGS NWIS...
+                    </div>
+                  ) : (
+                    usgsGages.map((gage) => (
+                      <div key={gage.gauge_id} className="dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 flex flex-col gap-1.5">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-[10px] truncate max-w-[170px] dark:text-slate-200 text-slate-800 uppercase font-mono">{gage.name}</span>
+                          <span className="text-[8px] dark:text-slate-500 text-slate-400 font-mono">
+                            {gage.gauge_id.replace("USGS-", "")}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="p-1.5 rounded dark:bg-[#020617] bg-white border dark:border-slate-800 border-slate-200/50">
+                            <div className="text-[8px] dark:text-slate-500 text-slate-400 font-mono uppercase">Stage Height</div>
+                            <div className="text-xs font-bold font-mono text-indigo-400">
+                              {gage.water_level_stage_ft.toFixed(2)} ft
+                            </div>
+                          </div>
+                          <div className="p-1.5 rounded dark:bg-[#020617] bg-white border dark:border-slate-800 border-slate-200/50">
+                            <div className="text-[8px] dark:text-slate-500 text-slate-400 font-mono uppercase">Discharge</div>
+                            <div className="text-xs font-bold font-mono text-emerald-400">
+                              {gage.discharge_cfs.toLocaleString()} cfs
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between gap-1 mt-0.5 pt-1.5 border-t dark:border-slate-800 border-slate-200/50">
+                          {gage.seal_hash ? (
+                            <span className="text-[7px] text-indigo-400/70 font-mono truncate max-w-[130px]">
+                              SEAL: {gage.seal_hash.substring(0, 10)}...
+                            </span>
+                          ) : (
+                            <span className="text-[7px] dark:text-slate-600 text-slate-400 font-mono">Unsealed telemetry</span>
+                          )}
+                          <button
+                            onClick={() => handleRasDischargeChange(gage.discharge_cfs, gage.name)}
+                            className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium font-mono tracking-tight transition-colors flex items-center gap-0.5 cursor-pointer"
+                          >
+                            <Waves size={8} />
+                            Feed Twin
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
               
               <div className="space-y-2">
                 <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider">Geotechnical Status</div>
@@ -1063,8 +1195,8 @@ export function DigitalTwinView() {
                     <input
                       type="range"
                       min="2000"
-                      max="12000"
-                      step="500"
+                      max="150000"
+                      step="2000"
                       value={rasDischarge}
                       onChange={(e) => handleRasDischargeChange(parseFloat(e.target.value))}
                       className="w-full accent-indigo-500 cursor-pointer"

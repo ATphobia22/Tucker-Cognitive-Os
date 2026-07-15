@@ -360,8 +360,8 @@ function LayerToggle({ active, onClick, icon, label }: { active: boolean, onClic
         active ? "bg-cyan-500/10 text-cyan-300" : "hover:dark:bg-slate-800 hover:bg-slate-200 dark:text-slate-400 text-slate-500"
       }`}
     >
-      <div className={`w-4 h-4 ${active ? "text-cyan-400" : "dark:text-slate-500 text-slate-400"}`}>
-        {React.cloneElement(icon as React.ReactElement, { size: 16 })}
+      <div className={`flex items-center justify-center [&>svg]:w-4 [&>svg]:h-4 ${active ? "text-cyan-400" : "dark:text-slate-500 text-slate-400"}`}>
+        {icon}
       </div>
       <span className="text-xs font-medium tracking-wide flex-1">{label}</span>
       <div className={`w-8 h-4 rounded-full transition-colors relative ${active ? "bg-cyan-500" : "bg-slate-700"}`}>
