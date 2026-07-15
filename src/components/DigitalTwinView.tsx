@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { WebGPURenderer, MeshBasicNodeMaterial } from 'three/webgpu';
 import { color, positionLocal, vec3, uniform, mix, select, greaterThan, time, sin } from 'three/tsl';
-import { ShieldAlert, Plus, Play, Pause, Thermometer, Waves, X, Info } from 'lucide-react';
+import { ShieldAlert, Plus, Play, Pause, Thermometer, Waves, X, Info, Maximize, Minimize, FileText } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export interface ParcelInfo {
@@ -18,12 +18,16 @@ export interface ParcelInfo {
 
 export function DigitalTwinView() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const viewWrapperRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<any>(null);
+  
   const [isSimulating, setIsSimulating] = useState(false);
   const [isPlacingBerm, setIsPlacingBerm] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   const [selectedParcel, setSelectedParcel] = useState<ParcelInfo | null>(null);
+  const [showDossier, setShowDossier] = useState(false);
 
   const isPlacingBermRef = useRef(false);
   const showHeatmapRef = useRef(false);
@@ -41,6 +45,24 @@ export function DigitalTwinView() {
       heatmapUniformRef.current.value = showHeatmap ? 1.0 : 0.0;
     }
   }, [showHeatmap]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      viewWrapperRef.current?.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
 
   useEffect(() => {
     const nav = navigator as any;
@@ -120,13 +142,14 @@ export function DigitalTwinView() {
       // Create interactive parcels
       const parcelMeshes: THREE.Mesh[] = [];
       const parcelDataMap = new Map<THREE.Mesh, ParcelInfo>();
+      const originalColors = new Map<THREE.Mesh, THREE.Color>();
       
       const parcelGeo = new THREE.BoxGeometry(2, 2, 2);
       const parcelMat = new THREE.MeshBasicMaterial({ color: 0x4ade80, transparent: true, opacity: 0.9 });
       const parcelMatDanger = new THREE.MeshBasicMaterial({ color: 0xf87171, transparent: true, opacity: 0.9 });
 
       const addParcel = (x: number, z: number, info: ParcelInfo) => {
-        const mesh = new THREE.Mesh(parcelGeo, info.threatScore > 65 ? parcelMatDanger : parcelMat);
+        const mesh = new THREE.Mesh(parcelGeo, info.threatScore > 65 ? parcelMatDanger.clone() : parcelMat.clone());
         // compute approx Y on the terrain
         const valley = Math.abs(x) < 20 ? (Math.cos(x * Math.PI / 40) * -10) : 0;
         const noise = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 2;
@@ -134,6 +157,7 @@ export function DigitalTwinView() {
         scene.add(mesh);
         parcelMeshes.push(mesh);
         parcelDataMap.set(mesh, info);
+        originalColors.set(mesh, (mesh.material as THREE.MeshBasicMaterial).color.clone());
       };
 
       addParcel(-15, 10, {
@@ -142,7 +166,7 @@ export function DigitalTwinView() {
         lineageGroup: "Tucker",
         threatScore: 25.5,
         isInundated: false,
-        historicalNote: "Original 1820s settlement boundaries.",
+        historicalNote: "Original 1820s settlement boundaries. Significant elevation delta limits standard flood exposure.",
         historicalEvents: "Survived 1937 Great Ohio River Flood",
         grantEligibility: "FEMA_BRIC_2026 Eligible"
       });
@@ -152,7 +176,7 @@ export function DigitalTwinView() {
         lineageGroup: "Yeida",
         threatScore: 82.1,
         isInundated: true,
-        historicalNote: "German immigrant era land grant.",
+        historicalNote: "German immigrant era land grant. Highly vulnerable lowland area.",
         historicalEvents: "Severe damage during 1991 flash floods",
         grantEligibility: "IN_DNR_MIG_2026 High Priority"
       });
@@ -162,32 +186,86 @@ export function DigitalTwinView() {
         lineageGroup: "Smith",
         threatScore: 12.0,
         isInundated: false,
-        historicalNote: "Elevated plot acquired in 1950.",
+        historicalNote: "Elevated plot acquired in 1950. Requires no immediate action.",
         historicalEvents: "No major inundations recorded",
         grantEligibility: "Standard Relief Tier 3"
       });
 
+      // Brush Cursor for Berm Placement
+      const brushGeo = new THREE.RingGeometry(4.5, 5.5, 32);
+      const brushMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+      const brushMesh = new THREE.Mesh(brushGeo, brushMat);
+      brushMesh.rotation.x = -Math.PI / 2;
+      brushMesh.visible = false;
+      scene.add(brushMesh);
 
-      // Berm Placement / Parcel Selection Raycaster
+      // Berm Placement Raycaster
       const raycaster = new THREE.Raycaster();
       const mouse = new THREE.Vector2();
+      let hoveredMesh: THREE.Mesh | null = null;
 
-      const onPointerDown = (event: PointerEvent) => {
+      const updateRaycaster = (event: PointerEvent) => {
         const rect = container.getBoundingClientRect();
         mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
         raycaster.setFromCamera(mouse, camera);
+      };
+
+      const onPointerMove = (event: PointerEvent) => {
+        updateRaycaster(event);
+
+        // Hover effect for parcels
+        if (!isPlacingBermRef.current) {
+          const parcelIntersects = raycaster.intersectObjects(parcelMeshes);
+          if (parcelIntersects.length > 0) {
+            container.style.cursor = 'pointer';
+            const pMesh = parcelIntersects[0].object as THREE.Mesh;
+            if (hoveredMesh !== pMesh) {
+              if (hoveredMesh) {
+                (hoveredMesh.material as THREE.MeshBasicMaterial).color.copy(originalColors.get(hoveredMesh)!);
+              }
+              hoveredMesh = pMesh;
+              (pMesh.material as THREE.MeshBasicMaterial).color.setHex(0xffffff); // Highlight
+            }
+          } else {
+            container.style.cursor = 'default';
+            if (hoveredMesh) {
+              (hoveredMesh.material as THREE.MeshBasicMaterial).color.copy(originalColors.get(hoveredMesh)!);
+              hoveredMesh = null;
+            }
+          }
+          brushMesh.visible = false;
+        } else {
+          // Placing Berm Mode
+          container.style.cursor = 'crosshair';
+          if (hoveredMesh) {
+            (hoveredMesh.material as THREE.MeshBasicMaterial).color.copy(originalColors.get(hoveredMesh)!);
+            hoveredMesh = null;
+          }
+
+          const terrainIntersects = raycaster.intersectObject(terrainMesh);
+          if (terrainIntersects.length > 0) {
+            brushMesh.visible = true;
+            brushMesh.position.copy(terrainIntersects[0].point);
+            brushMesh.position.y += 0.2; 
+          } else {
+            brushMesh.visible = false;
+          }
+        }
+      };
+
+      const onPointerDown = (event: PointerEvent) => {
+        updateRaycaster(event);
 
         // First check if we clicked a parcel
         const parcelIntersects = raycaster.intersectObjects(parcelMeshes);
-        if (parcelIntersects.length > 0) {
+        if (parcelIntersects.length > 0 && !isPlacingBermRef.current) {
           const pMesh = parcelIntersects[0].object as THREE.Mesh;
           const info = parcelDataMap.get(pMesh);
           if (info) {
             setSelectedParcel(info);
           }
-          return; // Stop if we hit a parcel
+          return;
         }
 
         // If placing a berm, check terrain intersection
@@ -215,11 +293,11 @@ export function DigitalTwinView() {
             geometry.computeVertexNormals();
           }
         } else {
-          // Deselect parcel if we clicked empty space
           setSelectedParcel(null);
         }
       };
       
+      container.addEventListener('pointermove', onPointerMove);
       container.addEventListener('pointerdown', onPointerDown);
 
       // Wait for renderer initialization
@@ -234,9 +312,6 @@ export function DigitalTwinView() {
           const rotMatrix = new THREE.Matrix4().makeRotationY(0.001);
           for (const mesh of parcelMeshes) {
             mesh.position.applyMatrix4(rotMatrix);
-            // also rotate the box itself slightly for effect
-            mesh.rotation.x += 0.01;
-            mesh.rotation.y += 0.01;
           }
         }
         renderer.render(scene, camera);
@@ -252,6 +327,7 @@ export function DigitalTwinView() {
       window.addEventListener('resize', handleResize);
       return () => {
         window.removeEventListener('resize', handleResize);
+        container.removeEventListener('pointermove', onPointerMove);
         container.removeEventListener('pointerdown', onPointerDown);
       };
     }
@@ -290,7 +366,7 @@ export function DigitalTwinView() {
   }, [isSimulating]);
 
   return (
-    <div className="w-full h-full relative bg-[#020617] text-slate-100 flex overflow-hidden">
+    <div ref={viewWrapperRef} className="w-full h-full relative bg-[#020617] text-slate-100 flex overflow-hidden">
       {/* 3D Canvas Area */}
       <div className="flex-1 relative">
         {!(navigator as any).gpu && (
@@ -304,7 +380,7 @@ export function DigitalTwinView() {
             </div>
           </div>
         )}
-        <div ref={containerRef} className="absolute inset-0 cursor-crosshair" />
+        <div ref={containerRef} className="absolute inset-0 transition-cursor" />
         
         {/* Overlays */}
         <div className="absolute top-6 left-6 z-10 pointer-events-none">
@@ -336,9 +412,18 @@ export function DigitalTwinView() {
           </div>
         </div>
 
+        {/* Fullscreen Toggle */}
+        <button 
+          onClick={toggleFullscreen}
+          className="absolute top-6 right-6 z-10 p-2.5 rounded-lg bg-[#0F172A]/80 backdrop-blur-md border border-slate-800 text-slate-400 hover:text-white transition-colors"
+          title="Toggle Fullscreen"
+        >
+          {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+        </button>
+
         {/* Parcel Lineage Popup */}
-        {selectedParcel && (
-          <div className="absolute top-6 right-6 z-20 w-80 bg-[#0F172A]/90 backdrop-blur-xl border border-teal-500/30 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200">
+        {selectedParcel && !showDossier && (
+          <div className="absolute top-20 right-6 z-20 w-80 bg-[#0F172A]/95 backdrop-blur-xl border border-teal-500/30 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200">
             <div className="relative p-5">
               <button 
                 onClick={() => setSelectedParcel(null)}
@@ -389,15 +474,33 @@ export function DigitalTwinView() {
                   </p>
                 </div>
                 <div>
-                  <h4 className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Flood Events</h4>
-                  <p className="text-sm text-slate-300 leading-relaxed bg-slate-900/30 p-3 rounded-lg border border-slate-800/50">
-                    {selectedParcel.historicalEvents}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Grant Eligibility</h4>
-                  <div className="text-sm text-indigo-300 font-mono bg-indigo-900/20 p-2.5 rounded-lg border border-indigo-500/20">
-                    {selectedParcel.grantEligibility}
+                  <h4 className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Grant Eligibility Assessment</h4>
+                  <div className="text-sm text-indigo-300 font-mono bg-indigo-900/20 p-3 rounded-lg border border-indigo-500/20 space-y-2">
+                    <div className="flex justify-between border-b border-indigo-500/20 pb-1">
+                      <span className="text-indigo-400/70">Calculated Threat Index:</span>
+                      <span className="font-bold">{selectedParcel.threatScore.toFixed(1)}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-indigo-500/20 pb-1">
+                      <span className="text-indigo-400/70">Federal Match (FEMA):</span>
+                      <span className="font-bold">{selectedParcel.threatScore > 50 ? '75%' : '0%'}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-indigo-500/20 pb-1">
+                      <span className="text-indigo-400/70">State Match (IDNR):</span>
+                      <span className="font-bold">{selectedParcel.threatScore > 75 ? '85%' : '0%'}</span>
+                    </div>
+                    <div className="pt-1">
+                      <span className="text-indigo-400/70 block mb-1">Status:</span>
+                      <span className={cn(
+                        "px-2 py-0.5 rounded text-xs font-bold",
+                        selectedParcel.threatScore > 75 ? "bg-emerald-500/20 text-emerald-400" :
+                        selectedParcel.threatScore > 50 ? "bg-amber-500/20 text-amber-400" :
+                        "bg-slate-800 text-slate-400"
+                      )}>
+                        {selectedParcel.threatScore > 75 ? "IN_DNR_MIG_2026 High Priority" :
+                         selectedParcel.threatScore > 50 ? "FEMA_BRIC_2026 Eligible" :
+                         "Standard Relief Tier 3"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -405,8 +508,11 @@ export function DigitalTwinView() {
             
             <div className="bg-teal-950/30 border-t border-teal-500/20 p-3 flex justify-between items-center text-xs">
               <span className="text-teal-400/60 font-mono">NODE_LINK_ACTIVE</span>
-              <button className="text-teal-400 hover:text-teal-300 font-medium">
-                View Full Dossier →
+              <button 
+                onClick={() => setShowDossier(true)}
+                className="text-teal-400 hover:text-teal-300 font-medium flex items-center gap-1"
+              >
+                View Full Dossier <FileText size={14} />
               </button>
             </div>
           </div>
@@ -432,14 +538,14 @@ export function DigitalTwinView() {
               setIsPlacingBerm(!isPlacingBerm);
               if (!isPlacingBerm) setSelectedParcel(null); // deselect when placing berms
             }}
-            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all", isPlacingBerm && "bg-indigo-600 text-white hover:bg-indigo-500")}
+            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset]", isPlacingBerm && "bg-indigo-600 text-white hover:bg-indigo-500 border-indigo-400 shadow-[0_0_15px_rgba(79,70,229,0.3)]")}
           >
             <Plus size={16} />
             {isPlacingBerm ? "Stop Placing" : "Place Berm"}
           </button>
           <button 
             onClick={() => setShowHeatmap(!showHeatmap)}
-            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all", showHeatmap && "bg-emerald-600 text-white hover:bg-emerald-500")}
+            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset]", showHeatmap && "bg-emerald-600 text-white hover:bg-emerald-500 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]")}
           >
             <Thermometer size={16} />
             Heatmap
@@ -448,54 +554,143 @@ export function DigitalTwinView() {
       </div>
       
       {/* Right Sidebar - Analytics */}
-      <div className="w-80 border-l border-slate-800 bg-[#0F172A] flex flex-col shrink-0 z-10">
-        <div className="p-4 border-b border-slate-800">
-          <h3 className="font-bold">Real-Time Metrics</h3>
-        </div>
-        <div className="p-4 space-y-6 overflow-y-auto flex-1">
-          <div className="space-y-2">
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Hydrology Node (PT-001)</div>
-            <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
-              <div className="text-2xl font-light font-mono text-emerald-400">
-                {(3500 + waterDepth * 2000).toFixed(0)} <span className="text-sm text-slate-500">cfs</span>
-              </div>
-              <div className="text-xs text-slate-400 mt-1">Discharge Rate</div>
-            </div>
+      {!isFullscreen && (
+        <div className="w-80 border-l border-slate-800 bg-[#0F172A] flex flex-col shrink-0 z-10">
+          <div className="p-4 border-b border-slate-800">
+            <h3 className="font-bold">Real-Time Metrics</h3>
           </div>
-          
-          <div className="space-y-2">
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Geotechnical Status</div>
-            <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
-              <div className={cn("text-2xl font-light font-mono", waterDepth > 2.25 ? "text-red-400" : "text-emerald-400")}>
-                {Math.max(1.0, 3.5 - waterDepth * 0.5).toFixed(2)}
+          <div className="p-4 space-y-6 overflow-y-auto flex-1">
+            <div className="space-y-2">
+              <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Hydrology Node (PT-001)</div>
+              <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
+                <div className="text-2xl font-light font-mono text-emerald-400">
+                  {(3500 + waterDepth * 2000).toFixed(0)} <span className="text-sm text-slate-500">cfs</span>
+                </div>
+                <div className="text-xs text-slate-400 mt-1">Discharge Rate</div>
               </div>
-              <div className="text-xs text-slate-400 mt-1">Factor of Safety (FoS)</div>
             </div>
-          </div>
+            
+            <div className="space-y-2">
+              <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Geotechnical Status</div>
+              <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
+                <div className={cn("text-2xl font-light font-mono", waterDepth > 2.25 ? "text-red-400" : "text-emerald-400")}>
+                  {Math.max(1.0, 3.5 - waterDepth * 0.5).toFixed(2)}
+                </div>
+                <div className="text-xs text-slate-400 mt-1">Factor of Safety (FoS)</div>
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Compliance Engine</div>
-            <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
-              <div className={cn("text-sm font-bold", waterDepth > 2.25 ? "text-red-400" : "text-emerald-400")}>
-                {waterDepth > 2.25 ? "VIOLATION DETECTED" : "COMPLIANT_NO_RISE"}
-              </div>
-              <div className="text-xs text-slate-400 mt-2">
-                {waterDepth > 2.25 ? "Depth exceeds FEMA maximum allowance (2.25m)." : "All state No-Rise limits currently satisfied."}
+            <div className="space-y-2">
+              <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Compliance Engine</div>
+              <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
+                <div className={cn("text-sm font-bold", waterDepth > 2.25 ? "text-red-400" : "text-emerald-400")}>
+                  {waterDepth > 2.25 ? "VIOLATION DETECTED" : "COMPLIANT_NO_RISE"}
+                </div>
+                <div className="text-xs text-slate-400 mt-2">
+                  {waterDepth > 2.25 ? "Depth exceeds FEMA maximum allowance (2.25m)." : "All state No-Rise limits currently satisfied."}
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Event Log</div>
-            <div className="bg-slate-900 rounded-lg p-3 border border-slate-800 h-40 overflow-y-auto space-y-2 font-mono text-[10px]">
-              <div className="text-emerald-400">[{new Date().toISOString().split('T')[1].slice(0, 8)}] Engine initialized.</div>
-              {waterDepth > 2.25 && (
-                <div className="text-red-400">[{new Date().toISOString().split('T')[1].slice(0, 8)}] CRITICAL_HAZARD: Breach detected in Wabash Confluence.</div>
-              )}
+            
+            <div className="space-y-2">
+              <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Event Log</div>
+              <div className="bg-slate-900 rounded-lg p-3 border border-slate-800 h-40 overflow-y-auto space-y-2 font-mono text-[10px]">
+                <div className="text-emerald-400">[{new Date().toISOString().split('T')[1].slice(0, 8)}] Engine initialized.</div>
+                {waterDepth > 2.25 && (
+                  <div className="text-red-400">[{new Date().toISOString().split('T')[1].slice(0, 8)}] CRITICAL_HAZARD: Breach detected in Wabash Confluence.</div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Full Dossier Modal */}
+      {showDossier && selectedParcel && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-6 animate-in fade-in duration-200">
+          <div className="bg-[#0F172A] border border-indigo-500/30 rounded-xl w-full max-w-3xl flex flex-col max-h-full shadow-2xl">
+            
+            <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/50 rounded-t-xl">
+              <div>
+                <h3 className="font-bold text-lg text-slate-100 flex items-center gap-2">
+                  <FileText className="text-indigo-400" size={20} />
+                  DLT Infrastructure Asset Verification Pack
+                </h3>
+                <p className="text-xs text-slate-400 font-mono mt-1">Target Zone: {selectedParcel.tractName} | ID: {selectedParcel.id}</p>
+              </div>
+              <button 
+                onClick={() => setShowDossier(false)}
+                className="p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1 font-mono text-sm leading-relaxed text-slate-300 space-y-6">
+              
+              <div>
+                <h4 className="text-indigo-400 font-bold mb-2 uppercase tracking-widest text-xs border-b border-indigo-900/50 pb-2">Executive Framework Summary</h4>
+                <p>
+                  The infrastructure properties matching the target zone <strong className="text-slate-100">{selectedParcel.tractName}</strong> have been computed against multi-physics hazard layers. This package enforces compliance constraints regulated under checking authority rules.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-indigo-400 font-bold mb-2 uppercase tracking-widest text-xs border-b border-indigo-900/50 pb-2">Financial Apportionment Matrix</h4>
+                <div className="bg-[#020617] border border-slate-800 rounded p-4">
+                  <div className="flex justify-between border-b border-slate-800 pb-2 mb-2 font-bold text-slate-200">
+                    <span>Parameter Key</span>
+                    <span>Calculated Metric Value</span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-slate-400">Federal Contribution Percentage</span>
+                    <span>75.0%</span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-slate-400">Local Matching Responsibility</span>
+                    <span>25.0%</span>
+                  </div>
+                  <div className="flex justify-between py-1 font-bold text-emerald-400 mt-2 pt-2 border-t border-slate-800/50">
+                    <span>Evaluated Benefit-Cost Ratio (BCR)</span>
+                    <span>BCR = 2.45</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-indigo-400 font-bold mb-2 uppercase tracking-widest text-xs border-b border-indigo-900/50 pb-2">Analytical Risk Optimization Proofs</h4>
+                <p className="mb-2">
+                  Historical Records: {selectedParcel.historicalEvents}
+                </p>
+                <p>
+                  Calculated threat exposure yields a severity index of <span className={selectedParcel.threatScore > 50 ? 'text-red-400' : 'text-emerald-400'}>{selectedParcel.threatScore.toFixed(2)}</span>.
+                  Current multi-physics simulations indicate {selectedParcel.isInundated ? 'ACTIVE INUNDATION' : 'NO INUNDATION'}.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-indigo-400 font-bold mb-2 uppercase tracking-widest text-xs border-b border-indigo-900/50 pb-2">Regulatory Compliance Mandates Verified</h4>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Indiana State Rule 61 Validation</li>
+                  <li>Certified No-Rise Check</li>
+                  <li>{selectedParcel.grantEligibility}</li>
+                </ul>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-slate-800">
+                <h4 className="text-slate-100 font-bold mb-1">Civil Engineering Certification Sign-Off</h4>
+                <p className="text-xs text-slate-400 mb-6">
+                  The undersigned processing system certifies that the simulated structural upgrade yields a net-zero displacement profile across the adjacent cross-border properties.
+                </p>
+                <div className="w-64 border-b border-slate-600 mb-2"></div>
+                <p className="text-xs font-bold text-slate-300">Lead Automated Systems Engineer</p>
+                <p className="text-[10px] text-slate-500">DLT Multi-Physics Twin Platform Workspace</p>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
