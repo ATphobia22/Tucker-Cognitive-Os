@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { ExecutionGraph } from './components/ExecutionGraph';
 import { AssimilationView } from './components/AssimilationView';
 import { EvidenceView } from './components/EvidenceView';
-import { Network, Database, Shield } from 'lucide-react';
+import { DigitalTwinView } from './components/DigitalTwinView';
+import { Network, Database, Shield, MonitorPlay } from 'lucide-react';
 import { cn } from './lib/utils';
 
-type Tab = 'dag' | 'assimilation' | 'evidence';
+type Tab = 'twin' | 'dag' | 'assimilation' | 'evidence';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('dag');
+  const [activeTab, setActiveTab] = useState<Tab>('twin');
 
   return (
     <div className="w-screen h-screen flex flex-col bg-[#020617] text-slate-100 overflow-hidden font-sans">
@@ -25,6 +26,12 @@ function App() {
         </div>
 
         <div className="flex gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
+          <button 
+            onClick={() => setActiveTab('twin')}
+            className={cn("flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200", activeTab === 'twin' ? "bg-slate-800 text-white shadow" : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50")}
+          >
+            <MonitorPlay size={14} /> WebGPU Twin
+          </button>
           <button 
             onClick={() => setActiveTab('dag')}
             className={cn("flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200", activeTab === 'dag' ? "bg-slate-800 text-white shadow" : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50")}
@@ -48,6 +55,7 @@ function App() {
 
       {/* Main Content Area */}
       <div className="flex-1 relative overflow-hidden">
+        {activeTab === 'twin' && <DigitalTwinView />}
         {activeTab === 'dag' && <ExecutionGraph />}
         {activeTab === 'assimilation' && <AssimilationView />}
         {activeTab === 'evidence' && <EvidenceView />}
