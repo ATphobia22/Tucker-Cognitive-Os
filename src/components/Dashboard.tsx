@@ -8,6 +8,7 @@ import { ExecutionGraph } from './ExecutionGraph';
 import { AssimilationView } from './AssimilationView';
 import { EvidenceView } from './EvidenceView';
 import { IntegrationsView } from './IntegrationsView';
+import { TerminalOverlay } from './TerminalOverlay';
 import { useTheme } from '../context/ThemeContext';
 
 export function Dashboard() {
