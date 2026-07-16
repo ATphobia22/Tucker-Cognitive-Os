@@ -643,7 +643,7 @@ export function DigitalTwinView() {
           </div>
         )}
         <div className="absolute inset-0 transition-cursor">
-          <WebGPU3DValley waterLevel={waterDepth} />
+          <WebGPU3DValley waterLevel={waterDepth} onParcelClick={(info) => { setSelectedParcel(info); setShowDossier(true); }} />
         </div>
         
         {/* Floating Telemetry Ingestion Toast Notification */}
