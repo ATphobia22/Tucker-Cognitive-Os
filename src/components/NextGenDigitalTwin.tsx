@@ -3,7 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { 
   Layers, Map as MapIcon, ShieldAlert, Navigation, Settings2, 
-  Waves, Building2, Trees, Ship, Info, Sliders, Play, Pause, RefreshCw, Camera, Globe 
+  Waves, Building2, Trees, Ship, Info, Sliders, Play, Pause, RefreshCw, Camera, Globe, Glasses 
 } from "lucide-react";
 import { fetchFemaFloodZones, fetchIndianaHistoricSites, fetchDnrFloodplain } from "../services/gisService";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -20,8 +20,9 @@ export default function NextGenDigitalTwin() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [viewMode, setViewMode] = useState<"maplibre" | "google3d">(hasValidKey ? "google3d" : "maplibre");
+  const [viewMode, setViewMode] = useState<"maplibre" | "google3d">("google3d");
   const [cinematicMode, setCinematicMode] = useState(false);
+  const [webXrMode, setWebXrMode] = useState(false);
   const [activeLayers, setActiveLayers] = useState({
     basemap: true,
     femaNfhl: true,
@@ -487,6 +488,11 @@ export default function NextGenDigitalTwin() {
                       <Camera size={14} /> CINEMATIC TOUR ACTIVE
                     </div>
                   )}
+                  {webXrMode && (
+                    <div className="mt-2 text-cyan-400 font-bold flex items-center gap-1.5 animate-pulse">
+                      <Glasses size={14} /> IMMERSIVE XR (WebXR) ACTIVE
+                    </div>
+                  )}
                 </div>
 
                 {/* HUD Legend - Bottom Left for Google 3D */}
@@ -526,6 +532,19 @@ export default function NextGenDigitalTwin() {
             >
               {cinematicMode ? <Pause size={13} /> : <Play size={13} />}
               Cinematic Mode
+            </button>
+          )}
+          {viewMode === "google3d" && hasValidKey && (
+            <button
+              onClick={() => setWebXrMode(!webXrMode)}
+              className={`px-3 py-1.5 mr-2 rounded-md text-xs font-semibold font-mono transition-all uppercase flex items-center gap-1.5 cursor-pointer ${
+                webXrMode
+                  ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/25 animate-pulse"
+                  : "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700"
+              }`}
+            >
+              <Glasses size={13} />
+              Immersive XR
             </button>
           )}
           <button

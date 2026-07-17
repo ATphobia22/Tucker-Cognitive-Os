@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { APIProvider, useMapsLibrary } from "@vis.gl/react-google-maps";
 import { Globe, Play, Pause, Camera, Layers, Droplets } from "lucide-react";
 
@@ -26,8 +26,7 @@ function Google3DMapInner({
   const containerRef = useRef<HTMLDivElement>(null);
   const maps3dLib = useMapsLibrary("maps3d");
   const map3dInstanceRef = useRef<any>(null);
-  const polygonInstanceRef = useRef<any>(null);
-  const gaugeMarkersRef = useRef<any[]>([]);
+  const elementsRef = useRef<any[]>([]);
 
   // 1. Initialize Map3DElement
   useEffect(() => {
@@ -40,7 +39,7 @@ function Google3DMapInner({
         heading: heading,
         tilt: tilt,
         range: range,
-        defaultLabelsDisabled: false, // Show roads, bridges, and geographic names
+        defaultLabelsDisabled: false,
       });
 
       containerRef.current.appendChild(map3d);
@@ -93,20 +92,22 @@ function Google3DMapInner({
     return () => { isRunning = false; };
   }, [maps3dLib, cinematicMode, map3dInstanceRef.current]);
 
-  // 3. Flood Polygon (Water Volume)
+  // 3. Render 3D Sovereign Layers (Flood, Levees, Channels, Tracts)
   useEffect(() => {
     const map3d = map3dInstanceRef.current;
     if (!map3d || !maps3dLib) return;
 
-    if (polygonInstanceRef.current) {
-      try { map3d.removeChild(polygonInstanceRef.current); } catch (e) {}
-      polygonInstanceRef.current = null;
-    }
+    // Clear old elements
+    elementsRef.current.forEach(el => {
+      try { map3d.removeChild(el); } catch (e) {}
+    });
+    elementsRef.current = [];
 
     try {
       const delta = (waterLevel - 0.5) * 0.0045;
-      // Wabash-Ohio Confluence Box
-      const paths = [
+      
+      // A. Dynamic Flood Polygon (Extruded Volume)
+      const floodPaths = [
         { lat: 37.84 - delta, lng: -88.08 - delta },
         { lat: 37.84 - delta, lng: -87.94 + delta },
         { lat: 37.94 + delta, lng: -87.92 + delta },
@@ -119,7 +120,7 @@ function Google3DMapInner({
       const strokeColor = waterLevel > 4.5 ? "#ef4444" : (waterLevel > 2.8 ? "#f97316" : "#2563eb");
 
       const waterPolygon = new (google.maps as any).maps3d.Polygon3DElement({
-        paths,
+        outerCoordinates: floodPaths,
         fillColor,
         strokeColor,
         strokeWidth: 4,
@@ -128,14 +129,67 @@ function Google3DMapInner({
         drawsOccludedSegments: true,
       });
 
+      // B. Levee Boundary Line (Archimedes Line)
+      const leveeCoords = [
+        { lat: 37.9000, lng: -88.0320 },
+        { lat: 37.8900, lng: -88.0200 },
+        { lat: 37.8750, lng: -88.0050 },
+      ];
+      
+      const leveeLine = new (google.maps as any).maps3d.Polyline3DElement({
+        coordinates: leveeCoords,
+        strokeColor: "#fbbf24", // amber-400
+        strokeWidth: 6,
+        altitudeMode: "RELATIVE_TO_GROUND",
+        extruded: true,
+      });
+
+      // C. Historic Homestead Tract
+      const tractCoords = [
+        { lat: 37.8950, lng: -88.0270 },
+        { lat: 37.8950, lng: -88.0220 },
+        { lat: 37.8910, lng: -88.0220 },
+        { lat: 37.8910, lng: -88.0270 },
+        { lat: 37.8950, lng: -88.0270 }, // Close polygon
+      ];
+      
+      const tractPolygon = new (google.maps as any).maps3d.Polygon3DElement({
+        outerCoordinates: tractCoords,
+        fillColor: "rgba(16, 185, 129, 0.2)", // emerald
+        strokeColor: "#10b981",
+        strokeWidth: 3,
+        altitudeMode: "RELATIVE_TO_GROUND",
+      });
+
+      // D. River Channel Vectors
+      const channelCoords = [
+        { lat: 37.9100, lng: -88.0400 },
+        { lat: 37.8931, lng: -88.0245 },
+        { lat: 37.8700, lng: -88.0100 },
+      ];
+      
+      const channelLine = new (google.maps as any).maps3d.Polyline3DElement({
+        coordinates: channelCoords,
+        strokeColor: "#0ea5e9", // sky-500
+        strokeWidth: 8,
+        altitudeMode: "RELATIVE_TO_GROUND",
+      });
+
+      // Add all to map
       map3d.appendChild(waterPolygon);
-      polygonInstanceRef.current = waterPolygon;
-    } catch (e) {}
+      map3d.appendChild(leveeLine);
+      map3d.appendChild(tractPolygon);
+      map3d.appendChild(channelLine);
+      
+      elementsRef.current = [waterPolygon, leveeLine, tractPolygon, channelLine];
+    } catch (e) {
+      console.error("Error drawing 3D layers:", e);
+    }
 
     return () => {
-      if (polygonInstanceRef.current && map3dInstanceRef.current) {
-        try { map3dInstanceRef.current.removeChild(polygonInstanceRef.current); } catch (e) {}
-      }
+      elementsRef.current.forEach(el => {
+        try { if (map3dInstanceRef.current) map3dInstanceRef.current.removeChild(el); } catch (e) {}
+      });
     };
   }, [maps3dLib, waterLevel, map3dInstanceRef.current]);
 
