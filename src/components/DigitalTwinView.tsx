@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { WebGPU3DValley } from './WebGPU3DValley';
+import { fetchNwsAlerts } from '../services/gisService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export interface ParcelInfo {
@@ -62,6 +63,29 @@ export function DigitalTwinView() {
   const [usgsGages, setUsgsGages] = useState<any[]>([]);
   const [usgsSource, setUsgsSource] = useState<string>("LOADING");
   const [ingestionFeed, setIngestionFeed] = useState<{ gageName: string; discharge: number; time: string } | null>(null);
+
+  // NWS Alerts State
+  const [nwsAlerts, setNwsAlerts] = useState<any[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchAlerts = async () => {
+      try {
+        const data = await fetchNwsAlerts();
+        if (isMounted && data && data.features) {
+          setNwsAlerts(data.features);
+        }
+      } catch (err) {
+        console.warn("NWS alerts fetch warning:", err);
+      }
+    };
+    fetchAlerts();
+    const interval = setInterval(fetchAlerts, 60000); // Poll every 60 seconds
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -1027,6 +1051,42 @@ export function DigitalTwinView() {
                             <Waves size={8} />
                             Feed Twin
                           </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* NWS Active Alerts */}
+              <div className="space-y-2">
+                <div className="text-xs dark:text-slate-500 text-slate-400 font-medium uppercase tracking-wider flex items-center justify-between">
+                  <span>NWS Active Alerts</span>
+                </div>
+                <div className="space-y-2">
+                  {nwsAlerts.length === 0 ? (
+                    <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg text-center font-mono text-[10px] dark:text-slate-400 text-slate-500 border dark:border-slate-800 border-slate-200">
+                      No active alerts.
+                    </div>
+                  ) : (
+                    nwsAlerts.map((alert, index) => (
+                      <div key={index} className={cn("dark:bg-slate-900 bg-slate-100 rounded-lg p-2.5 border dark:border-slate-800 border-slate-200 flex flex-col gap-1.5",
+                        alert.properties?.severity === "Severe" || alert.properties?.severity === "Extreme" ? "border-red-500/50 bg-red-500/5" : ""
+                      )}>
+                        <div className="flex justify-between items-center gap-2">
+                          <span className={cn("font-bold text-[10px] dark:text-slate-200 text-slate-800 uppercase font-mono",
+                             alert.properties?.severity === "Severe" || alert.properties?.severity === "Extreme" ? "text-red-400" : ""
+                          )}>{alert.properties?.event || "Alert"}</span>
+                          {alert.properties?.severity && (
+                            <span className={cn("text-[8px] font-mono px-1.5 py-0.5 rounded",
+                              alert.properties?.severity === "Severe" || alert.properties?.severity === "Extreme" ? "bg-red-500/10 text-red-400" : "bg-amber-500/10 text-amber-400"
+                            )}>
+                              {alert.properties.severity}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] dark:text-slate-400 text-slate-500 line-clamp-3">
+                          {alert.properties?.headline || alert.properties?.description}
                         </div>
                       </div>
                     ))

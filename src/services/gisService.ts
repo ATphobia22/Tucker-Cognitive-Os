@@ -45,3 +45,31 @@ export async function fetchIndianaHistoricSites(bbox: [number, number, number, n
     return { type: "FeatureCollection", features: [] };
   }
 }
+
+export async function fetchDnrFloodplain(bbox: [number, number, number, number]): Promise<GeoJSONFeatureCollection> {
+  const url = `/api/dnr-floodplain`;
+  const params = new URLSearchParams({
+    bbox: bbox.join(',')
+  });
+
+  try {
+    const res = await fetch(`${url}?${params.toString()}`);
+    if (!res.ok) throw new Error('Failed to fetch Indiana DNR floodplain');
+    return await res.json();
+  } catch (error) {
+    console.error("DNR Floodplain API Error:", error);
+    return { type: "FeatureCollection", features: [] };
+  }
+}
+
+export async function fetchNwsAlerts(): Promise<any> {
+  const url = `/api/nws-alerts`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch NWS alerts');
+    return await res.json();
+  } catch (error) {
+    console.error("NWS Alerts API Error:", error);
+    return null;
+  }
+}

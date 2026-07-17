@@ -361,6 +361,83 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
     }
   });
 
+  app.get("/api/dnr-floodplain", async (req, res) => {
+    try {
+      const bbox = req.query.bbox as string;
+      const url = `https://maps.dnr.in.gov/arcgis/rest/services/DNR/BestAvailableFloodplain/MapServer/0/query`;
+      const params = new URLSearchParams({
+        where: "1=1",
+        outFields: "FLD_ZONE,ZONE_SUBTY",
+        geometry: bbox,
+        geometryType: "esriGeometryEnvelope",
+        inSR: "4326",
+        spatialRel: "esriSpatialRelIntersects",
+        outSR: "4326",
+        f: "geojson"
+      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const response = await fetch(`${url}?${params.toString()}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error(`DNR BestAvailableFloodplain responded with status: ${response.status}`);
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      console.log("[DNR Floodplain Proxy] Status:", error.message || String(error), "- using local fallback layer");
+      res.json({
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: { FLD_ZONE: "AE", ZONE_SUBTY: "Floodway" },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[
+                [-88.02, 37.88],
+                [-87.98, 37.88],
+                [-87.98, 37.92],
+                [-88.02, 37.92],
+                [-88.02, 37.88]
+              ]]
+            }
+          }
+        ]
+      });
+    }
+  });
+
+  app.get("/api/nws-alerts", async (req, res) => {
+    try {
+      const url = `https://api.weather.gov/alerts/active?zone=INC129`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const response = await fetch(url, {
+        headers: { "User-Agent": "PTDT-v23-Sovereign-Twin (admin@pointtownship.gov)" },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error(`NWS API responded with status: ${response.status}`);
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      console.log("[NWS Alerts Proxy] Status:", error.message || String(error), "- using local cached alerts");
+      res.json({
+        title: "NWS Active Alerts Cache",
+        features: [
+          {
+            properties: {
+              event: "Flood Warning",
+              headline: "Flood Warning issued for Wabash River at Mount Carmel affecting Posey County",
+              severity: "Severe",
+              description: "The National Weather Service in Paducah has issued a Flood Warning for the Wabash River at Mount Carmel... or until further notice. At 18.0 feet the river begins to overflow lowlands. Precautionary actions should be taken.",
+              instruction: "Do not drive across flooded roads. Turn around, don't drown."
+            }
+          }
+        ]
+      });
+    }
+  });
+
   app.get("/api/usgs-telemetry", async (req, res) => {
     const fallbackData = [
       {

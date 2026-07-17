@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { Layers, Map, ShieldAlert, Navigation, Settings2, Waves, Building2, Trees, Ship } from "lucide-react";
-import { fetchFemaFloodZones, fetchIndianaHistoricSites } from "../services/gisService";
+import { fetchFemaFloodZones, fetchIndianaHistoricSites, fetchDnrFloodplain } from "../services/gisService";
 import { parseGeoJSONToGroup } from "../services/geoJsonParser";
 
 export default function NextGenDigitalTwin() {
@@ -14,7 +14,7 @@ export default function NextGenDigitalTwin() {
     parcelsXSoft: true,
     infrastructure: true,
     historicSites: false,
-    dnrWetlands: false,
+    dnrFloodplain: false,
     portOfIndiana: true
   });
 
@@ -120,6 +120,20 @@ export default function NextGenDigitalTwin() {
       floodZone.add(group);
     });
 
+    // DNR Floodplain Overlay
+    const dnrFloodZone = new THREE.Group();
+    dnrFloodZone.visible = activeLayers.dnrFloodplain;
+    layerGroup.add(dnrFloodZone);
+    
+    // Fetch DNR Floodplain data for a specific bounding box
+    fetchDnrFloodplain([-88.1, 37.8, -87.9, 38.0]).then(data => {
+      const group = parseGeoJSONToGroup(data, (feature) => {
+        // Purple for DNR zones
+        return 0x8b5cf6; 
+      }, 1.5); // slightly above FEMA layer
+      dnrFloodZone.add(group);
+    });
+
     // Historic Sites
     const historicSites = new THREE.Group();
     historicSites.visible = activeLayers.historicSites;
@@ -198,6 +212,7 @@ export default function NextGenDigitalTwin() {
       terrain,
       water,
       femaNfhl: floodZone,
+      dnrFloodplain: dnrFloodZone,
       parcelsXSoft: parcelGroup,
       portOfIndiana: portGroup,
       historicSites: historicSites
@@ -230,6 +245,7 @@ export default function NextGenDigitalTwin() {
       if (refs.terrain) refs.terrain.visible = activeLayers.terrain;
       if (refs.water) refs.water.visible = activeLayers.waterLevels;
       if (refs.femaNfhl) refs.femaNfhl.visible = activeLayers.femaNfhl;
+      if (refs.dnrFloodplain) refs.dnrFloodplain.visible = activeLayers.dnrFloodplain;
       if (refs.parcelsXSoft) refs.parcelsXSoft.visible = activeLayers.parcelsXSoft;
       if (refs.historicSites) refs.historicSites.visible = activeLayers.historicSites;
       if (refs.portOfIndiana) refs.portOfIndiana.visible = activeLayers.portOfIndiana;
@@ -325,10 +341,10 @@ export default function NextGenDigitalTwin() {
                 label="Port of Indiana Assets" 
               />
               <LayerToggle 
-                active={activeLayers.dnrWetlands} 
-                onClick={() => toggleLayer('dnrWetlands')} 
+                active={activeLayers.dnrFloodplain} 
+                onClick={() => toggleLayer('dnrFloodplain')} 
                 icon={<Trees />} 
-                label="DNR Environmental (Wetlands)" 
+                label="DNR Best Available Floodplain" 
               />
               <LayerToggle 
                 active={activeLayers.infrastructure} 

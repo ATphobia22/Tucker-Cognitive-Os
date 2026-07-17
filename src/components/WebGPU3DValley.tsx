@@ -3,7 +3,6 @@ import { Canvas, useFrame, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Sky, Environment, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { Ruler, Shield, X, Check } from 'lucide-react';
-import { CityInfrastructure, getTerrainHeight } from './CityInfrastructure';
 import { ParcelInfo } from './DigitalTwinView';
 
 export const PARCELS = [
@@ -77,9 +76,9 @@ const ParcelMarker = ({ x, z, info, onClick }: { x: number, z: number, info: Par
     return { geo, colorHex, offset };
   }, [info]);
 
-   
-   
-  const y = getTerrainHeight(x, z) + offset;
+  const valley = Math.abs(x) < 20 ? (Math.cos(x * Math.PI / 40) * -10) : 0;
+  const noise = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 2;
+  const y = 5 + valley + noise + offset;
 
   useFrame(({ clock }) => {
     if (meshRef.current) {
@@ -122,10 +121,10 @@ const Terrain = ({ onPointerDown, onPointerMove }: {
       const x = pos.getX(i);
       const z = pos.getZ(i);
       
-       
-       
+      const valley = Math.pow(x / 30, 2) * 10;
+      const noise = Math.sin(x * 0.3) * Math.cos(z * 0.3) * 1.5 + Math.sin(x * 0.8 + z * 0.5) * 0.5;
       
-      pos.setY(i, getTerrainHeight(x, z));
+      pos.setY(i, valley + noise);
     }
     geo.computeVertexNormals();
     return geo;
@@ -271,7 +270,6 @@ export const WebGPU3DValley: React.FC<WebGPU3DValleyProps> = ({ waterLevel = 2, 
         />
         <Environment preset="city" />
         
-        <CityInfrastructure />
         <Terrain 
           onPointerDown={handleTerrainPointerDown} 
           onPointerMove={handleTerrainPointerMove}
