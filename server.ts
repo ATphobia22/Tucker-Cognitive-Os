@@ -270,7 +270,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
         f: "geojson"
       });
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
       const response = await fetch(`${url}?${params.toString()}`, { signal: controller.signal });
       clearTimeout(timeoutId);
       if (!response.ok) throw new Error(`FEMA API responded with status: ${response.status}`);
@@ -329,7 +329,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
         f: "geojson"
       });
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
       const response = await fetch(`${url}?${params.toString()}`, { signal: controller.signal });
       clearTimeout(timeoutId);
       if (!response.ok) throw new Error(`IndianaMap API responded with status: ${response.status}`);
@@ -376,7 +376,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
         f: "geojson"
       });
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
       const response = await fetch(`${url}?${params.toString()}`, { signal: controller.signal });
       clearTimeout(timeoutId);
       if (!response.ok) throw new Error(`DNR BestAvailableFloodplain responded with status: ${response.status}`);
@@ -410,7 +410,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
     try {
       const url = `https://api.weather.gov/alerts/active?zone=INC129`;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
       const response = await fetch(url, {
         headers: { "User-Agent": "PTDT-v23-Sovereign-Twin (admin@pointtownship.gov)" },
         signal: controller.signal
@@ -467,10 +467,13 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
       
       const url = "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=03377500,03322000&parameterCd=00060,00065&siteStatus=all";
-      const response = await fetch(url, { signal: controller.signal });
+      const response = await fetch(url, { 
+        headers: { "User-Agent": "PTDT-v23-Sovereign-Twin (admin@pointtownship.gov)" },
+        signal: controller.signal 
+      });
       clearTimeout(timeoutId);
 
       if (!response.ok) {
