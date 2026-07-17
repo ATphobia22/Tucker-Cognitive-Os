@@ -476,7 +476,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       
       const url = "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=03377500,03322000&parameterCd=00060,00065&siteStatus=all";
       const response = await fetch(url, { 
@@ -541,7 +541,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
 
       res.json({ success: true, source: "USGS_NWIS_LIVE", data: sealedData });
     } catch (error: any) {
-      console.log("[USGS Telemetry Proxy] Error:", error.message || String(error), "- using high-fidelity local fallback");
+      console.log("[USGS Telemetry Proxy] Status:", error.message || String(error), "- using high-fidelity local fallback");
       const sealedFallback = fallbackData.map((record) => ({
         ...record,
         seal_hash: generateSovereignSeal(record.gauge_id, record.timestamp, record.water_level_stage_ft, record.discharge_cfs)
