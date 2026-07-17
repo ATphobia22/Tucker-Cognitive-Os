@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon } from 'lucide-react';
 import { DigitalTwinView } from './DigitalTwinView';
+import NextGenDigitalTwin from './NextGenDigitalTwin';
 import { ExecutionGraph } from './ExecutionGraph';
 import { AssimilationView } from './AssimilationView';
 import { EvidenceView } from './EvidenceView';
@@ -49,10 +50,14 @@ export function Dashboard() {
       <main className="flex-1 p-6 flex flex-col overflow-hidden max-w-[1600px] mx-auto w-full gap-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col h-full">
           <div className="flex items-center justify-between mb-2">
-            <TabsList className="grid w-full max-w-[600px] grid-cols-4 bg-slate-100 dark:bg-slate-900/50">
+            <TabsList className="grid w-full max-w-[750px] grid-cols-5 bg-slate-100 dark:bg-slate-900/50">
               <TabsTrigger value="twin" className="gap-2 text-xs font-semibold">
                 <MonitorPlay size={14} />
                 <span className="hidden sm:inline">WebGPU Twin</span>
+              </TabsTrigger>
+              <TabsTrigger value="gis" className="gap-2 text-xs font-semibold">
+                <Globe size={14} />
+                <span className="hidden sm:inline">Sovereign GIS</span>
               </TabsTrigger>
               <TabsTrigger value="dag" className="gap-2 text-xs font-semibold">
                 <Network size={14} />
@@ -77,6 +82,10 @@ export function Dashboard() {
           <div className="flex-1 mt-2 min-h-0 bg-white dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden relative">
             <TabsContent value="twin" className="h-full m-0 p-0 border-0 outline-none flex">
               <DigitalTwinView />
+            </TabsContent>
+
+            <TabsContent value="gis" className="h-full m-0 p-0 border-0 outline-none flex">
+              <NextGenDigitalTwin />
             </TabsContent>
             
             <TabsContent value="dag" className="h-full m-0 p-0 border-0 outline-none overflow-hidden">
