@@ -3,7 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { 
   Layers, Map as MapIcon, ShieldAlert, Navigation, Settings2, 
-  Waves, Building2, Trees, Ship, Info, Sliders, Play, Pause, RefreshCw, Camera, Globe, Glasses 
+  Waves, Building2, Trees, Ship, Info, Sliders, Play, Pause, RefreshCw, Camera, Globe, Glasses, ChevronDown, ChevronRight
 } from "lucide-react";
 import { fetchFemaFloodZones, fetchIndianaHistoricSites, fetchDnrFloodplain } from "../services/gisService";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -31,6 +31,13 @@ export default function NextGenDigitalTwin() {
     telemetryGages: true,
     waterSimulation: true
   });
+  
+  const [openMenus, setOpenMenus] = useState({
+    sim: true,
+    layers: true,
+    usgs: true
+  });
+  const toggleMenu = (key: keyof typeof openMenus) => setOpenMenus(m => ({ ...m, [key]: !m[key] }));
 
   const [waterLevel, setWaterLevel] = useState(2.5); // Simulation water depth in meters
   const [selectedGage, setSelectedGage] = useState<any>(null);
@@ -586,129 +593,152 @@ export default function NextGenDigitalTwin() {
 
         {/* Simulation Water Level Controller */}
         <div className="p-3 bg-slate-950 rounded-lg border border-slate-800/60 space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-800/50 pb-2">
+          <div 
+            className="flex items-center justify-between border-b border-slate-800/50 pb-2 cursor-pointer select-none"
+            onClick={() => toggleMenu("sim")}
+          >
             <span className="text-xs font-semibold text-indigo-200 uppercase font-mono flex items-center gap-1">
               <Sliders className="w-3.5 h-3.5 text-indigo-400" />
               River stage
             </span>
-            <span className="text-xs font-bold font-mono text-cyan-400 px-1.5 py-0.5 bg-cyan-950/40 rounded border border-cyan-800/30">
-              {waterLevel.toFixed(2)} m
-            </span>
-          </div>
-
-          <div className="space-y-1">
-            <input 
-              type="range" 
-              min="0.5" 
-              max="6.0" 
-              step="0.05" 
-              value={waterLevel} 
-              onChange={(e) => setWaterLevel(parseFloat(e.target.value))}
-              className="w-full accent-indigo-500 cursor-pointer"
-            />
-            <div className="flex justify-between text-[8px] font-mono text-slate-500">
-              <span>0.5m (Min)</span>
-              <span>3.0m (Moderate)</span>
-              <span>6.0m (Extreme)</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold font-mono text-cyan-400 px-1.5 py-0.5 bg-cyan-950/40 rounded border border-cyan-800/30">
+                {waterLevel.toFixed(2)} m
+              </span>
+              {openMenus.sim ? <ChevronDown size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400" />}
             </div>
           </div>
-
-          <div className="flex gap-2 pt-1">
-            <button
-              onClick={() => setSimRunning(!simRunning)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-bold tracking-wider transition-all cursor-pointer border ${
-                simRunning 
-                  ? "bg-red-950/40 border-red-500/40 text-red-400 hover:bg-red-900/30" 
-                  : "bg-emerald-950/40 border-emerald-500/40 text-emerald-400 hover:bg-emerald-900/30"
-              }`}
-            >
-              {simRunning ? <Pause size={12} /> : <Play size={12} />}
-              {simRunning ? "HALT CYCLE" : "SIMULATE SURGE"}
-            </button>
-          </div>
+          {openMenus.sim && (
+            <>
+              <div className="space-y-1">
+                <input 
+                  type="range" 
+                  min="0.5" 
+                  max="6.0" 
+                  step="0.05" 
+                  value={waterLevel} 
+                  onChange={(e) => setWaterLevel(parseFloat(e.target.value))}
+                  className="w-full accent-indigo-500 cursor-pointer"
+                />
+                <div className="flex justify-between text-[8px] font-mono text-slate-500">
+                  <span>0.5m (Min)</span>
+                  <span>3.0m (Moderate)</span>
+                  <span>6.0m (Extreme)</span>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => setSimRunning(!simRunning)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-bold tracking-wider transition-all cursor-pointer border ${
+                    simRunning 
+                      ? "bg-red-950/40 border-red-500/40 text-red-400 hover:bg-red-900/30" 
+                      : "bg-emerald-950/40 border-emerald-500/40 text-emerald-400 hover:bg-emerald-900/30"
+                  }`}
+                >
+                  {simRunning ? <Pause size={12} /> : <Play size={12} />}
+                  {simRunning ? "HALT CYCLE" : "SIMULATE SURGE"}
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* GIS Interactive Layers */}
         <div className="p-3 bg-slate-950 rounded-lg border border-slate-800/60 space-y-2">
-          <span className="text-xs font-semibold text-slate-300 font-mono flex items-center gap-1 uppercase border-b border-slate-800 pb-1.5 mb-2">
-            <Layers className="w-3.5 h-3.5 text-indigo-400" />
-            Sovereign GIS Layers
-          </span>
-          <div className="space-y-1">
-            <LayerToggle 
-              active={activeLayers.femaNfhl} 
-              onClick={() => toggleLayer("femaNfhl")} 
-              label="FEMA NFHL (3D Extruded)" 
-              colorClass="bg-red-500"
-            />
-            <LayerToggle 
-              active={activeLayers.dnrFloodplain} 
-              onClick={() => toggleLayer("dnrFloodplain")} 
-              label="DNR Best Available (3D)" 
-              colorClass="bg-purple-500"
-            />
-            <LayerToggle 
-              active={activeLayers.historicSites} 
-              onClick={() => toggleLayer("historicSites")} 
-              label="Historic Sites Points" 
-              colorClass="bg-yellow-500"
-            />
-            <LayerToggle 
-              active={activeLayers.waterSimulation} 
-              onClick={() => toggleLayer("waterSimulation")} 
-              label="Confluence Hydrology Simulation" 
-              colorClass="bg-blue-500"
-            />
+          <div 
+            className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2 cursor-pointer select-none"
+            onClick={() => toggleMenu("layers")}
+          >
+            <span className="text-xs font-semibold text-slate-300 font-mono flex items-center gap-1 uppercase">
+              <Layers className="w-3.5 h-3.5 text-indigo-400" />
+              Sovereign GIS Layers
+            </span>
+            {openMenus.layers ? <ChevronDown size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400" />}
           </div>
+          {openMenus.layers && (
+            <div className="space-y-1">
+              <LayerToggle 
+                active={activeLayers.femaNfhl} 
+                onClick={() => toggleLayer("femaNfhl")} 
+                label="FEMA NFHL (3D Extruded)" 
+                colorClass="bg-red-500"
+              />
+              <LayerToggle 
+                active={activeLayers.dnrFloodplain} 
+                onClick={() => toggleLayer("dnrFloodplain")} 
+                label="DNR Best Available (3D)" 
+                colorClass="bg-purple-500"
+              />
+              <LayerToggle 
+                active={activeLayers.historicSites} 
+                onClick={() => toggleLayer("historicSites")} 
+                label="Historic Sites Points" 
+                colorClass="bg-yellow-500"
+              />
+              <LayerToggle 
+                active={activeLayers.waterSimulation} 
+                onClick={() => toggleLayer("waterSimulation")} 
+                label="Confluence Hydrology Simulation" 
+                colorClass="bg-blue-500"
+              />
+            </div>
+          )}
         </div>
 
         {/* USGS Stream Telemetry Gauges List */}
-        <div className="flex-1 flex flex-col gap-2 min-h-[150px]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-300 font-mono uppercase">
+        <div className="flex-1 flex flex-col gap-2 min-h-[150px] p-3 bg-slate-950 rounded-lg border border-slate-800/60">
+          <div 
+            className="flex items-center justify-between cursor-pointer select-none"
+            onClick={() => toggleMenu("usgs")}
+          >
+            <span className="text-xs font-semibold text-slate-300 font-mono uppercase flex items-center gap-1">
               USGS Gauges ({usgsGages.length})
             </span>
-            <button 
-              onClick={fetchTelemetry}
-              disabled={syncStatus === "syncing"}
-              className="p-1 hover:bg-slate-800 rounded transition-colors text-indigo-400 disabled:opacity-50"
-            >
-              <RefreshCw size={12} className={syncStatus === "syncing" ? "animate-spin" : ""} />
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-1.5 overflow-y-auto pr-1">
-            {usgsGages.map((gage: any) => (
-              <button
-                key={gage.gauge_id}
-                onClick={() => {
-                  setSelectedGage(gage);
-                  // Move map to selected gauge coordinate
-                  if (mapRef.current) {
-                    mapRef.current.easeTo({
-                      center: [gage.lng, gage.lat],
-                      zoom: 12.8,
-                      pitch: 55,
-                      duration: 1500
-                    });
-                  }
-                }}
-                className={`w-full p-2 rounded text-left border text-xs font-mono transition-all flex flex-col gap-1 cursor-pointer ${
-                  selectedGage?.gauge_id === gage.gauge_id
-                    ? "bg-indigo-950/30 border-indigo-500/50 text-indigo-300"
-                    : "bg-slate-950/40 border-slate-800 text-slate-400 hover:bg-slate-800/30"
-                }`}
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={(e) => { e.stopPropagation(); fetchTelemetry(); }}
+                disabled={syncStatus === "syncing"}
+                className="p-1 hover:bg-slate-800 rounded transition-colors text-indigo-400 disabled:opacity-50"
               >
-                <div className="font-semibold text-slate-200 truncate">{gage.name}</div>
-                <div className="flex justify-between items-center text-[10px]">
-                  <span>Stage Height: <span className="text-cyan-400 font-bold">{gage.water_level_stage_ft}ft</span></span>
-                  <span>Flow: <span className="text-emerald-400 font-bold">{gage.discharge_cfs.toLocaleString()} cfs</span></span>
-                </div>
+                <RefreshCw size={12} className={syncStatus === "syncing" ? "animate-spin" : ""} />
               </button>
-            ))}
+              {openMenus.usgs ? <ChevronDown size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400" />}
+            </div>
           </div>
+          {openMenus.usgs && (
+            <div className="flex flex-col gap-1.5 overflow-y-auto pr-1 mt-1">
+              {usgsGages.map((gage: any) => (
+                <button
+                  key={gage.gauge_id}
+                  onClick={() => {
+                    setSelectedGage(gage);
+                    // Move map to selected gauge coordinate
+                    if (mapRef.current) {
+                      mapRef.current.easeTo({
+                        center: [gage.lng, gage.lat],
+                        zoom: 12.8,
+                        pitch: 55,
+                        duration: 1500
+                      });
+                    }
+                  }}
+                  className={`w-full p-2 rounded text-left border text-xs font-mono transition-all flex flex-col gap-1 cursor-pointer ${
+                    selectedGage?.gauge_id === gage.gauge_id
+                      ? "bg-indigo-950/30 border-indigo-500/50 text-indigo-300"
+                      : "bg-slate-950/40 border-slate-800 text-slate-400 hover:bg-slate-800/30"
+                  }`}
+                >
+                  <div className="font-semibold text-slate-200 truncate">{gage.name}</div>
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span>Stage Height: <span className="text-cyan-400 font-bold">{gage.water_level_stage_ft}ft</span></span>
+                    <span>Flow: <span className="text-emerald-400 font-bold">{gage.discharge_cfs.toLocaleString()} cfs</span></span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-
+        
         {/* Selected Gauge Detailed Stats */}
         {selectedGage && (
           <div className="p-3 bg-slate-950 rounded-lg border border-indigo-500/20 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300">

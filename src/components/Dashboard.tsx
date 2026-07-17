@@ -50,7 +50,7 @@ export function Dashboard() {
       <main className="flex-1 p-6 flex flex-col overflow-hidden max-w-[1600px] mx-auto w-full gap-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col h-full">
           <div className="flex items-center justify-between mb-2">
-            <TabsList className="grid w-full max-w-[750px] grid-cols-5 bg-slate-100 dark:bg-slate-900/50">
+            <TabsList className="grid w-full max-w-[850px] grid-cols-6 bg-slate-100 dark:bg-slate-900/50">
               <TabsTrigger value="twin" className="gap-2 text-xs font-semibold">
                 <MonitorPlay size={14} />
                 <span className="hidden sm:inline">WebGPU Twin</span>
@@ -71,6 +71,10 @@ export function Dashboard() {
                 <Shield size={14} />
                 <span className="hidden sm:inline">Evidence</span>
               </TabsTrigger>
+              <TabsTrigger value="integrations" className="gap-2 text-xs font-semibold">
+                <Database size={14} />
+                <span className="hidden sm:inline">Integrations</span>
+              </TabsTrigger>
             </TabsList>
             
             <div className="text-sm text-slate-500 dark:text-slate-400 font-mono hidden md:flex items-center gap-2">
@@ -90,6 +94,9 @@ export function Dashboard() {
             
             <TabsContent value="dag" className="h-full m-0 p-0 border-0 outline-none overflow-hidden">
               <ExecutionGraph />
+            <TabsContent value="integrations" className="h-full m-0 p-0 border-0 outline-none overflow-auto">
+              <IntegrationsView />
+            </TabsContent>
             </TabsContent>
 
             <TabsContent value="assimilation" className="h-full m-0 p-0 border-0 outline-none overflow-auto">
