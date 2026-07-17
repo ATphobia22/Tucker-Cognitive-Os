@@ -94,9 +94,10 @@ export function Dashboard() {
             
             <TabsContent value="dag" className="h-full m-0 p-0 border-0 outline-none overflow-hidden">
               <ExecutionGraph />
+            </TabsContent>
+
             <TabsContent value="integrations" className="h-full m-0 p-0 border-0 outline-none overflow-auto">
               <IntegrationsView />
-            </TabsContent>
             </TabsContent>
 
             <TabsContent value="assimilation" className="h-full m-0 p-0 border-0 outline-none overflow-auto">
