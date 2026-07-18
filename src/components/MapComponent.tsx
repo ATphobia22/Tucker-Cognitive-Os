@@ -47,28 +47,28 @@ const CAMERA_PRESETS: CameraPreset[] = [
     description: 'FEMA Flood Zone Area of Interest'
   },
   {
-    name: 'Manhattan, NY',
-    center: [-74.0060, 40.7128],
-    zoom: 15.2,
-    pitch: 65,
-    bearing: -20,
-    description: 'Densely populated high-rise urban core'
-  },
-  {
-    name: 'Chicago Loop, IL',
-    center: [-87.6298, 41.8781],
-    zoom: 14.8,
-    pitch: 60,
-    bearing: 45,
-    description: 'Skyscraper skyline on Lake Michigan'
-  },
-  {
-    name: 'London City, UK',
-    center: [-0.09, 51.505],
+    name: 'Mount Vernon, IN',
+    center: [-87.8950, 37.9320],
     zoom: 14.2,
     pitch: 50,
     bearing: -10,
-    description: 'Historic architecture with modern high-rises'
+    description: 'Wabash-Ohio River Port & Industrial Hub'
+  },
+  {
+    name: 'Old Shawneetown, IL',
+    center: [-88.1345, 37.6975],
+    zoom: 14.8,
+    pitch: 45,
+    bearing: 30,
+    description: 'Historic river port and flood-prone settlement'
+  },
+  {
+    name: 'Uniontown, KY',
+    center: [-87.9353, 37.7781],
+    zoom: 14.5,
+    pitch: 55,
+    bearing: 20,
+    description: 'Coal-loading terminal and historical Ohio town'
   }
 ];
 

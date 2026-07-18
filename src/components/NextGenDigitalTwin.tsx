@@ -9,16 +9,8 @@ import {
 } from "lucide-react";
 import { fetchFemaFloodZones, fetchIndianaHistoricSites, fetchDnrFloodplain } from "../services/gisService";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import Google3DMap, { GoogleKeySplashScreen } from "./Google3DMap";
 import { Spinner } from "./ui/spinner";
 import { Skeleton } from "./ui/skeleton";
-
-const GOOGLE_MAPS_API_KEY =
-  process.env.GOOGLE_MAPS_PLATFORM_KEY ||
-  (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
-  (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY ||
-  "";
-const hasValidKey = Boolean(GOOGLE_MAPS_API_KEY) && GOOGLE_MAPS_API_KEY !== "YOUR_API_KEY";
 
 export default function NextGenDigitalTwin() {
   const { theme } = useTheme();
@@ -26,7 +18,7 @@ export default function NextGenDigitalTwin() {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const protocolAdded = useRef(false);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [viewMode, setViewMode] = useState<"maplibre" | "google3d">("google3d");
+  const [viewMode, setViewMode] = useState<"maplibre">("maplibre");
   const [satelliteMode, setSatelliteMode] = useState(true);
   const [cinematicMode, setCinematicMode] = useState(false);
   const [webXrMode, setWebXrMode] = useState(false);
@@ -488,187 +480,66 @@ export default function NextGenDigitalTwin() {
     <div className="w-full h-full flex flex-col md:flex-row relative bg-slate-100 dark:bg-slate-950 font-sans overflow-hidden">
       {/* 3D Map Viewport */}
       <div className="flex-1 relative min-h-[350px] md:min-h-0">
-        {viewMode === "maplibre" ? (
-          <>
-            <div ref={mapContainerRef} className="absolute inset-0 z-0" />
-            
-            {!mapLoaded && (
-              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-6 text-center animate-in fade-in duration-300">
-                <div className="max-w-md w-full flex flex-col items-center gap-6">
-                  <Spinner size="xl" variant="primary" />
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-bold tracking-widest font-mono text-indigo-600 dark:text-indigo-400 uppercase">
-                      INITIALIZING GIS MAP...
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
-                      Setting up hardware-accelerated Maplibre 3D Engine, building projection matrices, and loading sovereign telemetry structures.
-                    </p>
-                  </div>
-                  <div className="w-full space-y-2">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-2/3 mx-auto" />
-                  </div>
-                </div>
+        <div ref={mapContainerRef} className="absolute inset-0 z-0" />
+        
+        {!mapLoaded && (
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-6 text-center animate-in fade-in duration-300">
+            <div className="max-w-md w-full flex flex-col items-center gap-6">
+              <Spinner size="xl" variant="primary" />
+              <div className="space-y-2">
+                <h3 className="text-sm font-bold tracking-widest font-mono text-indigo-600 dark:text-indigo-400 uppercase">
+                  INITIALIZING GIS MAP...
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
+                  Setting up hardware-accelerated Maplibre 3D Engine, building projection matrices, and loading sovereign telemetry structures.
+                </p>
               </div>
-            )}
-            
-            {/* HUD Overlay - Top Left */}
-            <div className="absolute top-4 left-4 z-10 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white max-w-sm font-mono flex flex-col gap-1.5 shadow-2xl pointer-events-none">
-              <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1.5 mb-1">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-bold tracking-wider uppercase text-emerald-400">Maplibre 3D Engine</span>
-              </div>
-              <div className="text-[10px] text-slate-700 dark:text-slate-300">
-                Render Mode: <span className="text-cyan-400 font-bold">Hardware Accelerated (WebGL)</span>
-              </div>
-              <div className="text-[10px] text-slate-700 dark:text-slate-300">
-                Simulation Extent: <span className="text-yellow-400 font-bold">Wabash-Ohio Confluence</span>
-              </div>
-              <div className="text-[10px] text-slate-700 dark:text-slate-300">
-                BBox: <span className="text-slate-600 dark:text-slate-400">[-88.1, 37.8, -87.9, 38.0]</span>
+              <div className="w-full space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3 mx-auto" />
               </div>
             </div>
-
-            {/* HUD Legend - Bottom Left */}
-            <div className="absolute bottom-6 left-6 z-10 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-[10px] text-slate-900 dark:text-white font-mono space-y-2 shadow-xl pointer-events-auto">
-              <div className="font-bold border-b border-slate-200 dark:border-slate-800 pb-1 text-slate-700 dark:text-slate-300 uppercase tracking-widest text-[9px]">Sovereign Legend</div>
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-500/50 border border-red-500 rounded" />
-                  <span>FEMA AE Zones (3D Extruded)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-purple-500/50 border border-purple-500 rounded" />
-                  <span>DNR Best Available Floodplain</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-yellow-400" />
-                  <span>Indiana Historic Sites (Registry)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3.5 h-1.5 bg-blue-500/80 rounded" />
-                  <span>Active Dynamic Water Model</span>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="absolute inset-0 z-0 bg-slate-100 dark:bg-slate-950">
-            {hasValidKey ? (
-              <>
-                <Google3DMap
-                  apiKey={GOOGLE_MAPS_API_KEY}
-                  center={{ lat: 37.893, lng: -88.005, altitude: 280 }}
-                  heading={-15}
-                  tilt={60}
-                  range={1500}
-                  usgsGages={usgsGages}
-                  selectedGage={selectedGage}
-                  waterLevel={waterLevel}
-                  cinematicMode={cinematicMode}
-                />
-                
-                {/* HUD Overlay - Top Left for Google 3D */}
-                <div className="absolute top-4 left-4 z-10 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white max-w-sm font-mono flex flex-col gap-1.5 shadow-2xl pointer-events-none">
-                  <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1.5 mb-1">
-                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
-                    <span className="font-bold tracking-wider uppercase text-indigo-400">Google 3D Tiles</span>
-                  </div>
-                  <div className="text-[10px] text-slate-700 dark:text-slate-300">
-                    Render Mode: <span className="text-cyan-400 font-bold">Photorealistic 3D Mesh</span>
-                  </div>
-                  <div className="text-[10px] text-slate-700 dark:text-slate-300">
-                    Infrastructure: <span className="text-yellow-400 font-bold">Real Roads, Bridges & Houses</span>
-                  </div>
-                  <div className="text-[10px] text-slate-700 dark:text-slate-300">
-                    3D Terrain: <span className="text-emerald-400 font-bold">Wabash/Ohio Confluence Active</span>
-                  </div>
-                  {cinematicMode && (
-                    <div className="mt-2 text-rose-400 font-bold flex items-center gap-1.5 animate-pulse">
-                      <Camera size={14} /> CINEMATIC TOUR ACTIVE
-                    </div>
-                  )}
-                  {webXrMode && (
-                    <div className="mt-2 text-cyan-400 font-bold flex items-center gap-1.5 animate-pulse">
-                      <Glasses size={14} /> IMMERSIVE XR (WebXR) ACTIVE
-                    </div>
-                  )}
-                </div>
-
-                {/* HUD Legend - Bottom Left for Google 3D */}
-                <div className="absolute bottom-6 left-6 z-10 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-[10px] text-slate-900 dark:text-white font-mono space-y-2 shadow-xl pointer-events-auto">
-                  <div className="font-bold border-b border-slate-200 dark:border-slate-800 pb-1 text-slate-700 dark:text-slate-300 uppercase tracking-widest text-[9px]">Google 3D Legend</div>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-blue-500/50 border border-blue-500 rounded animate-pulse" />
-                      <span>3D Dynamic Hydraulic Inundation</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 border border-slate-900 shadow" />
-                      <span>Active USGS Stream Gauges</span>
-                    </div>
-                    <div className="text-[9px] text-slate-600 dark:text-slate-400 leading-tight">
-                      * Real roads, bridges, and ditches are embedded natively in Google's high-fidelity tiles.
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <GoogleKeySplashScreen />
-            )}
           </div>
         )}
+        
+        {/* HUD Overlay - Top Left */}
+        <div className="absolute top-4 left-4 z-10 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white max-w-sm font-mono flex flex-col gap-1.5 shadow-2xl pointer-events-none">
+          <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1.5 mb-1">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-bold tracking-wider uppercase text-emerald-400">Maplibre 3D Engine</span>
+          </div>
+          <div className="text-[10px] text-slate-700 dark:text-slate-300">
+            Render Mode: <span className="text-cyan-400 font-bold">Hardware Accelerated (WebGL)</span>
+          </div>
+          <div className="text-[10px] text-slate-700 dark:text-slate-300">
+            Simulation Extent: <span className="text-yellow-400 font-bold">Wabash-Ohio Confluence</span>
+          </div>
+          <div className="text-[10px] text-slate-700 dark:text-slate-300">
+            BBox: <span className="text-slate-600 dark:text-slate-400">[-88.1, 37.8, -87.9, 38.0]</span>
+          </div>
+        </div>
 
-        {/* View Mode Switcher - Top Right */}
-        <div className="absolute top-4 right-4 z-10 p-1.5 rounded-lg bg-slate-50 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 flex gap-1.5 shadow-2xl pointer-events-auto">
-          {viewMode === "google3d" && hasValidKey && (
-            <button
-              onClick={() => setCinematicMode(!cinematicMode)}
-              className={`px-3 py-1.5 mr-2 rounded-md text-xs font-semibold font-mono transition-all uppercase flex items-center gap-1.5 cursor-pointer ${
-                cinematicMode
-                  ? "bg-rose-600 text-slate-900 dark:text-white shadow-md shadow-rose-600/25 animate-pulse"
-                  : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white hover:bg-slate-700"
-              }`}
-            >
-              {cinematicMode ? <Pause size={13} /> : <Play size={13} />}
-              Cinematic Mode
-            </button>
-          )}
-          {viewMode === "google3d" && hasValidKey && (
-            <button
-              onClick={() => setWebXrMode(!webXrMode)}
-              className={`px-3 py-1.5 mr-2 rounded-md text-xs font-semibold font-mono transition-all uppercase flex items-center gap-1.5 cursor-pointer ${
-                webXrMode
-                  ? "bg-cyan-600 text-slate-900 dark:text-white shadow-md shadow-cyan-600/25 animate-pulse"
-                  : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white hover:bg-slate-700"
-              }`}
-            >
-              <Glasses size={13} />
-              Immersive XR
-            </button>
-          )}
-          <button
-            onClick={() => setViewMode("maplibre")}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold font-mono transition-all uppercase flex items-center gap-1.5 cursor-pointer ${
-              viewMode === "maplibre"
-                ? "bg-indigo-600 text-slate-900 dark:text-white shadow-md shadow-indigo-600/25"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:bg-slate-800/50"
-            }`}
-          >
-            <MapIcon size={13} />
-            Maplibre GIS
-          </button>
-          <button
-            onClick={() => setViewMode("google3d")}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold font-mono transition-all uppercase flex items-center gap-1.5 cursor-pointer ${
-              viewMode === "google3d"
-                ? "bg-indigo-600 text-slate-900 dark:text-white shadow-md shadow-indigo-600/25"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:bg-slate-800/50"
-            }`}
-          >
-            <Globe size={13} />
-            Google 3D Earth
-          </button>
+        {/* HUD Legend - Bottom Left */}
+        <div className="absolute bottom-6 left-6 z-10 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-[10px] text-slate-900 dark:text-white font-mono space-y-2 shadow-xl pointer-events-auto">
+          <div className="font-bold border-b border-slate-200 dark:border-slate-800 pb-1 text-slate-700 dark:text-slate-300 uppercase tracking-widest text-[9px]">Sovereign Legend</div>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-red-500/50 border border-red-500 rounded" />
+              <span>FEMA AE Zones (3D Extruded)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-purple-500/50 border border-purple-500 rounded" />
+              <span>DNR Best Available Floodplain</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-yellow-400" />
+              <span>Indiana Historic Sites (Registry)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3.5 h-1.5 bg-blue-500/80 rounded" />
+              <span>Active Dynamic Water Model</span>
+            </div>
+          </div>
         </div>
       </div>
 
