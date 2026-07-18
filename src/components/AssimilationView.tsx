@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Activity, Radio, Target, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { Spinner } from './ui/spinner';
+import { Skeleton } from './ui/skeleton';
 
 export function AssimilationView() {
   const [usgsGages, setUsgsGages] = useState<any[]>([]);
@@ -109,29 +111,51 @@ export function AssimilationView() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Metric Cards */}
-        <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-2 shadow-sm">
-          <div className="flex items-center gap-2 text-emerald-400 font-mono text-[10px] uppercase tracking-wider">
-            <Radio size={14} /> Active Sensors
-          </div>
-          <div className="text-3xl font-light font-mono">1,248</div>
-          <div className="text-xs dark:text-slate-500 text-slate-400 font-mono">Wabash-Ohio telemetry network nodes</div>
-        </div>
-        
-        <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-2 shadow-sm">
-          <div className="flex items-center gap-2 text-amber-400 font-mono text-[10px] uppercase tracking-wider">
-            <Activity size={14} /> Ensemble Members (N)
-          </div>
-          <div className="text-3xl font-light font-mono">100</div>
-          <div className="text-xs dark:text-slate-500 text-slate-400 font-mono">Parallel stochastic forecast grids</div>
-        </div>
+        {loading ? (
+          <>
+            <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-3 shadow-sm">
+              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-8 w-1/2" />
+              <Skeleton className="h-3.5 w-3/4" />
+            </div>
+            <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-3 shadow-sm">
+              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-8 w-1/2" />
+              <Skeleton className="h-3.5 w-3/4" />
+            </div>
+            <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-3 shadow-sm">
+              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-8 w-1/2" />
+              <Skeleton className="h-3.5 w-3/4" />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-2 shadow-sm">
+              <div className="flex items-center gap-2 text-emerald-400 font-mono text-[10px] uppercase tracking-wider">
+                <Radio size={14} /> Active Sensors
+              </div>
+              <div className="text-3xl font-light font-mono">1,248</div>
+              <div className="text-xs dark:text-slate-500 text-slate-400 font-mono">Wabash-Ohio telemetry network nodes</div>
+            </div>
+            
+            <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-2 shadow-sm">
+              <div className="flex items-center gap-2 text-amber-400 font-mono text-[10px] uppercase tracking-wider">
+                <Activity size={14} /> Ensemble Members (N)
+              </div>
+              <div className="text-3xl font-light font-mono">100</div>
+              <div className="text-xs dark:text-slate-500 text-slate-400 font-mono">Parallel stochastic forecast grids</div>
+            </div>
 
-        <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-2 shadow-sm">
-          <div className="flex items-center gap-2 text-indigo-400 font-mono text-[10px] uppercase tracking-wider">
-            <Target size={14} /> Innovations Residual (y - Hx)
-          </div>
-          <div className="text-3xl font-light font-mono">{residual.toFixed(4)} ft</div>
-          <div className="text-xs dark:text-slate-500 text-slate-400 font-mono">Mean observational divergence</div>
-        </div>
+            <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-2 shadow-sm">
+              <div className="flex items-center gap-2 text-indigo-400 font-mono text-[10px] uppercase tracking-wider">
+                <Target size={14} /> Innovations Residual (y - Hx)
+              </div>
+              <div className="text-3xl font-light font-mono">{residual.toFixed(4)} ft</div>
+              <div className="text-xs dark:text-slate-500 text-slate-400 font-mono">Mean observational divergence</div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Primary Display & Live Charts */}
@@ -144,9 +168,19 @@ export function AssimilationView() {
           </div>
 
           {loading ? (
-            <div className="flex-1 flex flex-col items-center justify-center font-mono text-xs dark:text-slate-400 text-slate-500">
-              <RefreshCw className="w-6 h-6 animate-spin mb-2 text-indigo-400" />
-              Ingesting live NWIS telemetry stream...
+            <div className="flex-1 flex flex-col items-center justify-center font-mono text-xs dark:text-slate-400 text-slate-500 gap-4">
+              <Spinner size="lg" variant="primary" />
+              <div className="text-center space-y-1">
+                <div className="font-bold text-indigo-400">Ingesting live NWIS telemetry stream...</div>
+                <div className="text-[10px] text-slate-400 max-w-sm mx-auto">
+                  Synchronizing with Wabash-Ohio sensor arrays & generating forward uncertainty boundaries.
+                </div>
+              </div>
+              <div className="w-4/5 space-y-2 mt-4">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-5/6" />
+                <Skeleton className="h-3 w-4/5" />
+              </div>
             </div>
           ) : (
             <div className="flex-1 w-full h-[320px]">

@@ -11,6 +11,8 @@ import { cn } from '../lib/utils';
 import { WebGPU3DValley } from './WebGPU3DValley';
 import { fetchNwsAlerts } from '../services/gisService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Spinner } from './ui/spinner';
+import { Skeleton } from './ui/skeleton';
 
 export interface ParcelInfo {
   id: string;
@@ -652,13 +654,21 @@ export function DigitalTwinView() {
       {/* 3D Canvas Area */}
       <div className="flex-1 relative">
         {!isRendererActive && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 dark:bg-[#020617] bg-slate-50/80 backdrop-blur-sm">
-            <div className="p-6 rounded-xl border border-indigo-500/30 bg-indigo-500/10 max-w-md text-center">
-              <RefreshCw className="w-12 h-12 text-indigo-400 mx-auto mb-4 animate-spin" />
-              <h3 className="text-lg font-bold text-indigo-100 mb-2 font-mono">INITIALIZING TWIN MESH...</h3>
-              <p className="text-sm text-indigo-800 dark:text-indigo-200/70">
-                Compiling vectorized shader nodes and establishing sovereign GIS plat structures.
-              </p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 dark:bg-[#020617] bg-slate-50/80 backdrop-blur-sm p-6 text-center animate-in fade-in duration-300">
+            <div className="max-w-md w-full flex flex-col items-center gap-6">
+              <Spinner size="xl" variant="primary" />
+              <div className="space-y-2">
+                <h3 className="text-sm font-bold tracking-widest font-mono text-indigo-600 dark:text-indigo-400 uppercase">
+                  INITIALIZING TWIN MESH...
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
+                  Compiling high-precision vectorized shader nodes, binding vertex buffers, and loading real-time sovereign GIS plat structures.
+                </p>
+              </div>
+              <div className="w-full space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3 mx-auto" />
+              </div>
             </div>
           </div>
         )}
@@ -1011,9 +1021,9 @@ export function DigitalTwinView() {
                 
                 <div className="space-y-2">
                   {usgsGages.length === 0 ? (
-                    <div className="p-3 dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg text-center font-mono text-[10px] dark:text-slate-600 dark:text-slate-400 text-slate-500 dark:text-slate-500 border dark:border-slate-200 dark:border-slate-800 border-slate-200">
-                      <RefreshCw className="w-3.5 h-3.5 mx-auto animate-spin mb-1 text-indigo-400" />
-                      Connecting to USGS NWIS...
+                    <div className="space-y-2 py-1">
+                      <Skeleton className="h-20 w-full" />
+                      <Skeleton className="h-20 w-full" />
                     </div>
                   ) : (
                     usgsGages.map((gage) => (

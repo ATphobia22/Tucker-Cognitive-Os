@@ -9,6 +9,8 @@ import {
 import { fetchFemaFloodZones, fetchIndianaHistoricSites, fetchDnrFloodplain } from "../services/gisService";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import Google3DMap, { GoogleKeySplashScreen } from "./Google3DMap";
+import { Spinner } from "./ui/spinner";
+import { Skeleton } from "./ui/skeleton";
 
 const GOOGLE_MAPS_API_KEY =
   process.env.GOOGLE_MAPS_PLATFORM_KEY ||
@@ -423,6 +425,26 @@ export default function NextGenDigitalTwin() {
           <>
             <div ref={mapContainerRef} className="absolute inset-0 z-0" />
             
+            {!mapLoaded && (
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-6 text-center animate-in fade-in duration-300">
+                <div className="max-w-md w-full flex flex-col items-center gap-6">
+                  <Spinner size="xl" variant="primary" />
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-bold tracking-widest font-mono text-indigo-600 dark:text-indigo-400 uppercase">
+                      INITIALIZING GIS MAP...
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
+                      Setting up hardware-accelerated Maplibre 3D Engine, building projection matrices, and loading sovereign telemetry structures.
+                    </p>
+                  </div>
+                  <div className="w-full space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3 mx-auto" />
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* HUD Overlay - Top Left */}
             <div className="absolute top-4 left-4 z-10 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white max-w-sm font-mono flex flex-col gap-1.5 shadow-2xl pointer-events-none">
               <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1.5 mb-1">
@@ -711,34 +733,41 @@ export default function NextGenDigitalTwin() {
           </div>
           {openMenus.usgs && (
             <div className="flex flex-col gap-1.5 overflow-y-auto pr-1 mt-1">
-              {usgsGages.map((gage: any) => (
-                <button
-                  key={gage.gauge_id}
-                  onClick={() => {
-                    setSelectedGage(gage);
-                    // Move map to selected gauge coordinate
-                    if (mapRef.current) {
-                      mapRef.current.easeTo({
-                        center: [gage.lng, gage.lat],
-                        zoom: 12.8,
-                        pitch: 55,
-                        duration: 1500
-                      });
-                    }
-                  }}
-                  className={`w-full p-2 rounded text-left border text-xs font-mono transition-all flex flex-col gap-1 cursor-pointer ${
-                    selectedGage?.gauge_id === gage.gauge_id
-                      ? "bg-indigo-950/30 border-indigo-500/50 text-indigo-300"
-                      : "bg-slate-100 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-800/30"
-                  }`}
-                >
-                  <div className="font-semibold text-slate-800 dark:text-slate-200 truncate">{gage.name}</div>
-                  <div className="flex justify-between items-center text-[10px]">
-                    <span>Stage Height: <span className="text-cyan-400 font-bold">{gage.water_level_stage_ft}ft</span></span>
-                    <span>Flow: <span className="text-emerald-400 font-bold">{gage.discharge_cfs.toLocaleString()} cfs</span></span>
-                  </div>
-                </button>
-              ))}
+              {usgsGages.length === 0 ? (
+                <div className="space-y-1.5 py-1">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : (
+                usgsGages.map((gage: any) => (
+                  <button
+                    key={gage.gauge_id}
+                    onClick={() => {
+                      setSelectedGage(gage);
+                      // Move map to selected gauge coordinate
+                      if (mapRef.current) {
+                        mapRef.current.easeTo({
+                          center: [gage.lng, gage.lat],
+                          zoom: 12.8,
+                          pitch: 55,
+                          duration: 1500
+                        });
+                      }
+                    }}
+                    className={`w-full p-2 rounded text-left border text-xs font-mono transition-all flex flex-col gap-1 cursor-pointer ${
+                      selectedGage?.gauge_id === gage.gauge_id
+                        ? "bg-indigo-950/30 border-indigo-500/50 text-indigo-300"
+                        : "bg-slate-100 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-800/30"
+                    }`}
+                  >
+                    <div className="font-semibold text-slate-800 dark:text-slate-200 truncate">{gage.name}</div>
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span>Stage Height: <span className="text-cyan-400 font-bold">{gage.water_level_stage_ft}ft</span></span>
+                      <span>Flow: <span className="text-emerald-400 font-bold">{gage.discharge_cfs.toLocaleString()} cfs</span></span>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           )}
         </div>

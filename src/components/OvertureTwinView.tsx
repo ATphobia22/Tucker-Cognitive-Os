@@ -4,6 +4,8 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import * as pmtiles from 'pmtiles';
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Map, Shield, Activity, Menu } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { Spinner } from './ui/spinner';
+import { Skeleton } from './ui/skeleton';
 
 export function OvertureTwinView() {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -14,6 +16,7 @@ export function OvertureTwinView() {
   
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -78,6 +81,7 @@ export function OvertureTwinView() {
     mapRef.current = map;
 
     map.on('load', () => {
+      setMapLoaded(true);
       // Add flood plane
       map.addSource('flood-plane', {
         type: 'geojson',
@@ -180,6 +184,28 @@ export function OvertureTwinView() {
   return (
     <div className="relative w-full h-full bg-slate-100 dark:bg-[#020617] overflow-hidden font-sans text-slate-900 dark:text-white rounded-xl">
       
+      {/* Map Loading Overlay */}
+      {!mapLoaded && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-50 dark:bg-[#020617] p-6 text-center animate-in fade-in duration-300">
+          <div className="max-w-md w-full flex flex-col items-center gap-6">
+            <Spinner size="xl" variant="primary" />
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold tracking-widest font-mono text-indigo-600 dark:text-indigo-400 uppercase">
+                LOADING OVERTURE 3D MAP...
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
+                Connecting to Overture Maps S3 Extras Repository and fetching 3D vector buildings data structure.
+              </p>
+            </div>
+            <div className="w-full flex justify-between gap-4 mt-2">
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-24" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toggle Buttons (visible when panels are closed) */}
       {!leftPanelOpen && (
         <button 
