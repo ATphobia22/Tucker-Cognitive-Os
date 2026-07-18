@@ -17,6 +17,7 @@ export function OvertureTwinView() {
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapStyleMode, setMapStyleMode] = useState<'thematic' | 'satellite'>('satellite');
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -27,6 +28,20 @@ export function OvertureTwinView() {
       protocolAdded.current = true;
     }
 
+    const tilesUrl = mapStyleMode === 'satellite'
+      ? ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}']
+      : [
+          theme === 'dark' 
+            ? 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
+            : 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
+          theme === 'dark' 
+            ? 'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
+            : 'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
+          theme === 'dark' 
+            ? 'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
+            : 'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png'
+        ];
+
     const map = new maplibregl.Map({
       container: mapContainer.current,
       style: {
@@ -34,17 +49,7 @@ export function OvertureTwinView() {
         sources: {
           'osm': {
             type: 'raster',
-            tiles: [
-              theme === 'dark' 
-                ? 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
-                : 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
-              theme === 'dark' 
-                ? 'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
-                : 'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
-              theme === 'dark' 
-                ? 'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
-                : 'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png'
-            ],
+            tiles: tilesUrl,
             tileSize: 256,
           },
           'overture-buildings': {
@@ -65,9 +70,21 @@ export function OvertureTwinView() {
             'source-layer': 'buildings',
             minzoom: 12,
             paint: {
-              'fill-extrusion-color': theme === 'dark' ? '#475569' : '#cbd5e1',
-              'fill-extrusion-height': ['get', 'height'],
-              'fill-extrusion-opacity': 0.8
+              'fill-extrusion-color': mapStyleMode === 'satellite'
+                ? [
+                    'interpolate',
+                    ['linear'],
+                    ['coalesce', ['get', 'height'], 10],
+                    0, '#b45309',   // Warm brick / terracotta
+                    15, '#d97706',  // Sandstone / stucco
+                    45, '#475569',  // Medium concrete
+                    85, '#0ea5e9',  // Reflective blue glass
+                    150, '#38bdf8'  // Aluminum sky high-rise
+                  ]
+                : (theme === 'dark' ? '#475569' : '#cbd5e1'),
+              'fill-extrusion-height': ['coalesce', ['get', 'height'], 8],
+              'fill-extrusion-base': ['coalesce', ['get', 'min_height'], 0],
+              'fill-extrusion-opacity': mapStyleMode === 'satellite' ? 0.75 : 0.85
             }
           }
         ]
@@ -153,7 +170,7 @@ export function OvertureTwinView() {
     return () => {
       map.remove();
     };
-  }, [theme]); // Re-initialize map when theme changes
+  }, [theme, mapStyleMode]); // Re-initialize map when theme or style mode changes
 
   useEffect(() => {
     if (mapRef.current && mapRef.current.getLayer('flood-plane-fill')) {
@@ -244,6 +261,34 @@ export function OvertureTwinView() {
           <div className="flex justify-between"><span>SYSTEM:</span> <span className="text-emerald-600 dark:text-emerald-500 font-bold">ONLINE</span></div>
           <div className="flex justify-between"><span>LAYER:</span> <span className="text-indigo-600 dark:text-indigo-400 font-bold">OVERTURE 3D</span></div>
           <div className="flex justify-between"><span>REGION:</span> <span className="text-indigo-600 dark:text-indigo-400 font-bold">PT. TOWNSHIP</span></div>
+        </div>
+
+        <div className="mb-4 space-y-2">
+          <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider font-mono">
+            3D Basemap Theme
+          </label>
+          <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-950 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
+            <button
+              onClick={() => setMapStyleMode('thematic')}
+              className={`py-1.5 px-2 rounded text-[11px] font-mono font-semibold transition-all cursor-pointer ${
+                mapStyleMode === 'thematic'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Thematic Slate
+            </button>
+            <button
+              onClick={() => setMapStyleMode('satellite')}
+              className={`py-1.5 px-2 rounded text-[11px] font-mono font-semibold transition-all cursor-pointer ${
+                mapStyleMode === 'satellite'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Photorealistic
+            </button>
+          </div>
         </div>
         
         <div className="space-y-2">

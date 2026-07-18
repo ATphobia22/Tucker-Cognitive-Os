@@ -25,6 +25,7 @@ export default function NextGenDigitalTwin() {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [viewMode, setViewMode] = useState<"maplibre" | "google3d">("google3d");
+  const [satelliteMode, setSatelliteMode] = useState(true);
   const [cinematicMode, setCinematicMode] = useState(false);
   const [webXrMode, setWebXrMode] = useState(false);
   const [activeLayers, setActiveLayers] = useState({
@@ -109,12 +110,30 @@ export default function NextGenDigitalTwin() {
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // Use a high-quality dark themed basemap
-    const mapStyle = theme === "dark" ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+    // Use a high-quality dark themed basemap or photorealistic satellite imagery
+    const mapStyle = satelliteMode 
+      ? {
+          version: 8,
+          sources: {
+            'satellite': {
+              type: 'raster',
+              tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+              tileSize: 256
+            }
+          },
+          layers: [
+            {
+              id: 'satellite-base',
+              type: 'raster',
+              source: 'satellite'
+            }
+          ]
+        }
+      : (theme === "dark" ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json");
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: mapStyle,
+      style: mapStyle as any,
       center: [-88.005, 37.893], // Point Township, IN
       zoom: 11.2,
       pitch: 45,
@@ -342,7 +361,7 @@ export default function NextGenDigitalTwin() {
       }
       mapRef.current = null;
     };
-  }, [theme]);
+  }, [theme, satelliteMode]);
 
   // Reactive updates of layers when state changes
   useEffect(() => {
@@ -667,6 +686,38 @@ export default function NextGenDigitalTwin() {
               </div>
             </>
           )}
+        </div>
+
+        {/* Map Basemap Styling Selection */}
+        <div className="p-3 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-200/60 dark:border-slate-800/60 space-y-2">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-1.5 mb-2">
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 font-mono flex items-center gap-1 uppercase">
+              <MapIcon className="w-3.5 h-3.5 text-indigo-400" />
+              Basemap Styling
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 bg-slate-200/50 dark:bg-slate-900/50 p-1 rounded-md border border-slate-200/80 dark:border-slate-800">
+            <button
+              onClick={() => setSatelliteMode(false)}
+              className={`py-1 rounded text-[10px] font-mono font-semibold transition-all cursor-pointer ${
+                !satelliteMode
+                  ? 'bg-indigo-600 text-white shadow shadow-indigo-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Thematic Vector
+            </button>
+            <button
+              onClick={() => setSatelliteMode(true)}
+              className={`py-1 rounded text-[10px] font-mono font-semibold transition-all cursor-pointer ${
+                satelliteMode
+                  ? 'bg-indigo-600 text-white shadow shadow-indigo-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Photorealistic Sat
+            </button>
+          </div>
         </div>
 
         {/* GIS Interactive Layers */}
