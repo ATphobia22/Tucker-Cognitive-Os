@@ -10,10 +10,11 @@ import { AssimilationView } from './AssimilationView';
 import { EvidenceView } from './EvidenceView';
 import { IntegrationsView } from './IntegrationsView';
 import { TerminalOverlay } from './TerminalOverlay';
+import { CesiumTwinView } from './CesiumTwinView';
 import { useTheme } from '../context/ThemeContext';
 
 export function Dashboard() {
-  const [activeTab, setActiveTab] = useState('twin');
+  const [activeTab, setActiveTab] = useState('cesium');
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -50,7 +51,11 @@ export function Dashboard() {
       <main className="flex-1 p-6 flex flex-col overflow-hidden max-w-[1600px] mx-auto w-full gap-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col h-full">
           <div className="flex items-center justify-between mb-2">
-            <TabsList className="grid w-full max-w-[850px] grid-cols-6 bg-slate-100 dark:bg-slate-900/50">
+            <TabsList className="grid w-full max-w-[1000px] grid-cols-7 bg-slate-100 dark:bg-slate-900/50">
+              <TabsTrigger value="cesium" className="gap-2 text-xs font-semibold">
+                <Globe size={14} />
+                <span className="hidden sm:inline">Cesium 3D</span>
+              </TabsTrigger>
               <TabsTrigger value="twin" className="gap-2 text-xs font-semibold">
                 <MonitorPlay size={14} />
                 <span className="hidden sm:inline">WebGPU Twin</span>
@@ -84,6 +89,10 @@ export function Dashboard() {
           </div>
 
           <div className="flex-1 mt-2 min-h-0 bg-white dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden relative">
+            <TabsContent value="cesium" className="h-full m-0 p-0 border-0 outline-none flex">
+              {activeTab === 'cesium' && <CesiumTwinView />}
+            </TabsContent>
+
             <TabsContent value="twin" className="h-full m-0 p-0 border-0 outline-none flex">
               {activeTab === 'twin' && <DigitalTwinView />}
             </TabsContent>
