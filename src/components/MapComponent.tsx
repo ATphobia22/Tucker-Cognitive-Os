@@ -18,7 +18,13 @@ import {
   Check,
   ChevronRight,
   HelpCircle,
-  Activity
+  Activity,
+  Plus,
+  Minus,
+  RotateCw,
+  RotateCcw,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -85,6 +91,8 @@ export function MapComponent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [activePreset, setActivePreset] = useState<string>('Point Township, IN');
   const [buildingCount, setBuildingCount] = useState<number>(0);
+  const [tilesLoading, setTilesLoading] = useState<boolean>(false);
+  const [is3D, setIs3D] = useState<boolean>(true);
 
   // Initialize PMTiles Protocol globally
   useEffect(() => {
@@ -222,6 +230,15 @@ export function MapComponent() {
       }
 
       // Estimate rendered features
+      updateBuildingCount();
+    });
+
+    map.on('dataloading', () => {
+      setTilesLoading(true);
+    });
+
+    map.on('idle', () => {
+      setTilesLoading(false);
       updateBuildingCount();
     });
 
@@ -372,6 +389,62 @@ export function MapComponent() {
     }
   };
 
+  const handleZoomIn = () => {
+    mapRef.current?.zoomIn({ duration: 300 });
+  };
+
+  const handleZoomOut = () => {
+    mapRef.current?.zoomOut({ duration: 300 });
+  };
+
+  const handlePitchUp = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.easeTo({
+      pitch: Math.min(map.getPitch() + 10, 85),
+      duration: 300
+    });
+  };
+
+  const handlePitchDown = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.easeTo({
+      pitch: Math.max(map.getPitch() - 10, 0),
+      duration: 300
+    });
+  };
+
+  const handleRotateLeft = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.easeTo({
+      bearing: map.getBearing() - 15,
+      duration: 300
+    });
+  };
+
+  const handleRotateRight = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.easeTo({
+      bearing: map.getBearing() + 15,
+      duration: 300
+    });
+  };
+
+  const handleToggle3D = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (is3D) {
+      map.easeTo({ pitch: 0, bearing: 0, duration: 800 });
+      setIs3D(false);
+    } else {
+      map.easeTo({ pitch: 55, bearing: 15, duration: 800 });
+      setIs3D(true);
+    }
+  };
+
   const handlePresetClick = (preset: CameraPreset) => {
     const map = mapRef.current;
     if (!map) return;
@@ -415,6 +488,92 @@ export function MapComponent() {
           <span className="text-xs text-slate-500 font-mono mt-1">
             Loading vector building tiles
           </span>
+        </div>
+      )}
+
+      {/* Floating Map Controls */}
+      {mapLoaded && (
+        <div className="absolute top-16 right-4 z-40 flex flex-col items-center gap-1.5 p-1.5 rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/90 dark:bg-slate-950/90 shadow-xl backdrop-blur-md">
+          {/* Zoom In */}
+          <button
+            onClick={handleZoomIn}
+            title="Zoom In"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+          
+          {/* Zoom Out */}
+          <button
+            onClick={handleZoomOut}
+            title="Zoom Out"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all cursor-pointer"
+          >
+            <Minus className="h-4 w-4" />
+          </button>
+
+          <div className="h-[1px] w-5 bg-slate-200 dark:bg-slate-800 my-0.5" />
+
+          {/* Pitch Up */}
+          <button
+            onClick={handlePitchUp}
+            title="Tilt Up"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all cursor-pointer"
+          >
+            <ChevronUp className="h-4 w-4" />
+          </button>
+
+          {/* Pitch Down */}
+          <button
+            onClick={handlePitchDown}
+            title="Tilt Down"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all cursor-pointer"
+          >
+            <ChevronDown className="h-4 w-4" />
+          </button>
+
+          <div className="h-[1px] w-5 bg-slate-200 dark:bg-slate-800 my-0.5" />
+
+          {/* Rotate Left */}
+          <button
+            onClick={handleRotateLeft}
+            title="Rotate Left"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all cursor-pointer"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+
+          {/* Rotate Right */}
+          <button
+            onClick={handleRotateRight}
+            title="Rotate Right"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all cursor-pointer"
+          >
+            <RotateCw className="h-4 w-4" />
+          </button>
+
+          <div className="h-[1px] w-5 bg-slate-200 dark:bg-slate-800 my-0.5" />
+
+          {/* Toggle 3D Perspective */}
+          <button
+            onClick={handleToggle3D}
+            title={is3D ? "Switch to 2D Plan View" : "Switch to 3D Perspective"}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all cursor-pointer ${
+              is3D 
+                ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40' 
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Real-time Tile Synchronizing State Indicator */}
+      {tilesLoading && mapLoaded && (
+        <div className="absolute top-4 right-4 z-40 flex items-center gap-2 px-3 py-1.5 rounded-lg border border-indigo-500/20 bg-slate-950/80 text-[11px] font-mono font-bold text-indigo-400 shadow-xl backdrop-blur-sm animate-pulse">
+          <RefreshCw className="h-3 w-3 animate-spin text-indigo-400" />
+          <span>Syncing pipeline...</span>
         </div>
       )}
 
