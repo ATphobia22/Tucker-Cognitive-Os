@@ -24,7 +24,8 @@ import {
   RotateCw,
   RotateCcw,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Landmark
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -35,6 +36,8 @@ interface CameraPreset {
   pitch: number;
   bearing: number;
   description: string;
+  year?: string;
+  state?: 'IN' | 'IL' | 'KY';
 }
 
 const CAMERA_PRESETS: CameraPreset[] = [
@@ -69,6 +72,59 @@ const CAMERA_PRESETS: CameraPreset[] = [
     pitch: 55,
     bearing: 20,
     description: 'Coal-loading terminal and historical Ohio town'
+  }
+];
+
+const HISTORIC_SITES_PRESETS: CameraPreset[] = [
+  {
+    name: 'Old New Harmony',
+    center: [-87.9351, 38.1293],
+    zoom: 15.5,
+    pitch: 55,
+    bearing: 15,
+    description: 'Famous utopian community founded by George Rapp and Robert Owen',
+    year: '1814',
+    state: 'IN'
+  },
+  {
+    name: 'Hovey Lake Archaeological Site',
+    center: [-87.9272, 37.8340],
+    zoom: 15.0,
+    pitch: 45,
+    bearing: 0,
+    description: 'Prehistoric Mississippian culture settlement and earthwork mounds',
+    year: '1400 AD',
+    state: 'IN'
+  },
+  {
+    name: 'Old Shawneetown Bank',
+    center: [-88.1345, 37.6975],
+    zoom: 15.8,
+    pitch: 50,
+    bearing: -10,
+    description: 'Historic 1839 Greek Revival structure, oldest standing Illinois bank',
+    year: '1839',
+    state: 'IL'
+  },
+  {
+    name: 'Bone Bank site',
+    center: [-88.0160, 37.8930],
+    zoom: 15.2,
+    pitch: 45,
+    bearing: -15,
+    description: 'Crucial prehistoric village along the erosion-prone Wabash River bank',
+    year: '1200 AD',
+    state: 'IN'
+  },
+  {
+    name: 'Uniontown Coal & River Port',
+    center: [-87.9353, 37.7781],
+    zoom: 15.4,
+    pitch: 52,
+    bearing: 25,
+    description: 'Major historic Ohio River coal coaling station and shipping terminal',
+    year: '1840',
+    state: 'KY'
   }
 ];
 
@@ -461,7 +517,8 @@ export function MapComponent() {
   };
 
   const resetView = () => {
-    const current = CAMERA_PRESETS.find(p => p.name === activePreset) || CAMERA_PRESETS[0];
+    const allPresets = [...CAMERA_PRESETS, ...HISTORIC_SITES_PRESETS];
+    const current = allPresets.find(p => p.name === activePreset) || CAMERA_PRESETS[0];
     mapRef.current?.flyTo({
       center: current.center,
       zoom: current.zoom,
@@ -747,7 +804,7 @@ export function MapComponent() {
           {/* Quick Camera Preset Focus */}
           <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">
-              Camera Preset Focus
+              Municipal Center Focus
             </label>
             <div className="space-y-1.5">
               {CAMERA_PRESETS.map((preset) => (
@@ -767,6 +824,56 @@ export function MapComponent() {
                     activePreset === preset.name ? 'text-indigo-200' : 'text-slate-400 dark:text-slate-500'
                   }`}>
                     {preset.description}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tri-State Historical Landmarks Preset Focus */}
+          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+              <Landmark className="h-3.5 w-3.5" />
+              <label className="text-[10px] font-bold uppercase tracking-wider font-mono">
+                Tri-State Historical Sites
+              </label>
+            </div>
+            <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
+              {HISTORIC_SITES_PRESETS.map((site) => (
+                <button
+                  key={site.name}
+                  onClick={() => handlePresetClick(site)}
+                  className={`w-full p-2 rounded-lg text-left cursor-pointer transition-all border flex flex-col ${
+                    activePreset === site.name
+                      ? 'bg-amber-600 border-amber-600 text-white'
+                      : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-[11px] font-bold leading-tight flex items-center gap-1">
+                      {site.name}
+                    </span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {site.year && (
+                        <span className={`text-[8px] px-1 py-0.5 rounded font-mono font-bold ${
+                          activePreset === site.name ? 'bg-amber-800 text-amber-100' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}>
+                          {site.year}
+                        </span>
+                      )}
+                      {site.state && (
+                        <span className={`text-[8px] px-1 py-0.5 rounded font-mono font-bold ${
+                          activePreset === site.name ? 'bg-amber-700 text-amber-200' : 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300'
+                        }`}>
+                          {site.state}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span className={`text-[9px] leading-tight mt-1 ${
+                    activePreset === site.name ? 'text-amber-100' : 'text-slate-400 dark:text-slate-500'
+                  }`}>
+                    {site.description}
                   </span>
                 </button>
               ))}
