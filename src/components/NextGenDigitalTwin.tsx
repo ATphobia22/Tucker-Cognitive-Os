@@ -2,6 +2,7 @@ import { useTheme } from '../context/ThemeContext';
 import React, { useState, useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import * as pmtiles from "pmtiles";
 import { 
   Layers, Map as MapIcon, ShieldAlert, Navigation, Settings2, 
   Waves, Building2, Trees, Ship, Info, Sliders, Play, Pause, RefreshCw, Camera, Globe, Glasses, ChevronDown, ChevronRight
@@ -23,6 +24,7 @@ export default function NextGenDigitalTwin() {
   const { theme } = useTheme();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const protocolAdded = useRef(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [viewMode, setViewMode] = useState<"maplibre" | "google3d">("google3d");
   const [satelliteMode, setSatelliteMode] = useState(true);
@@ -34,7 +36,8 @@ export default function NextGenDigitalTwin() {
     dnrFloodplain: true,
     historicSites: true,
     telemetryGages: true,
-    waterSimulation: true
+    waterSimulation: true,
+    overtureBuildings: true
   });
   
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
@@ -109,6 +112,12 @@ export default function NextGenDigitalTwin() {
   // Initializing Maplibre Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
+
+    if (!protocolAdded.current) {
+      const protocol = new pmtiles.Protocol();
+      maplibregl.addProtocol('pmtiles', protocol.tile);
+      protocolAdded.current = true;
+    }
 
     // Use a high-quality dark themed basemap or photorealistic satellite imagery
     const mapStyle = satelliteMode 
@@ -349,6 +358,44 @@ export default function NextGenDigitalTwin() {
           "fill-extrusion-base": 0
         }
       });
+
+      // 5. Add Overture 3D Buildings
+      try {
+        map.addSource("overture-buildings", {
+          type: "vector",
+          url: "pmtiles://https://overturemaps-extras-us-west-2.s3.amazonaws.com/tiles/2026-05-20.0/buildings.pmtiles",
+        });
+
+        map.addLayer({
+          id: "overture-buildings-3d",
+          type: "fill-extrusion",
+          source: "overture-buildings",
+          "source-layer": "buildings",
+          minzoom: 12,
+          layout: {
+            visibility: activeLayers.overtureBuildings ? "visible" : "none"
+          },
+          paint: {
+            "fill-extrusion-color": satelliteMode
+              ? [
+                  "interpolate",
+                  ["linear"],
+                  ["coalesce", ["get", "height"], 10],
+                  0, "#b45309",   // Warm brick / terracotta
+                  15, "#d97706",  // Sandstone / stucco
+                  45, "#475569",  // Medium concrete
+                  85, "#0ea5e9",  // Reflective blue glass
+                  150, "#38bdf8"  // Aluminum sky high-rise
+                ]
+              : (theme === "dark" ? "#475569" : "#cbd5e1"),
+            "fill-extrusion-height": ["coalesce", ["get", "height"], 8],
+            "fill-extrusion-base": ["coalesce", ["get", "min_height"], 0],
+            "fill-extrusion-opacity": satelliteMode ? 0.75 : 0.85
+          }
+        });
+      } catch (e) {
+        console.error("Maplibre failed to load overture buildings:", e);
+      }
     });
 
     return () => {
@@ -381,6 +428,7 @@ export default function NextGenDigitalTwin() {
     toggle("historic-sites-points", activeLayers.historicSites);
     toggle("historic-labels", activeLayers.historicSites);
     toggle("water-sim-extrusion", activeLayers.waterSimulation);
+    toggle("overture-buildings-3d", activeLayers.overtureBuildings);
   }, [activeLayers, mapLoaded]);
 
   // Handle water level slider adjustments
@@ -757,6 +805,12 @@ export default function NextGenDigitalTwin() {
                 onClick={() => toggleLayer("waterSimulation")} 
                 label="Confluence Hydrology Simulation" 
                 colorClass="bg-blue-500"
+              />
+              <LayerToggle 
+                active={activeLayers.overtureBuildings} 
+                onClick={() => toggleLayer("overtureBuildings")} 
+                label="Overture 3D Buildings" 
+                colorClass="bg-indigo-500"
               />
             </div>
           )}
