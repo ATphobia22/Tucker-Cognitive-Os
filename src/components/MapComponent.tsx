@@ -25,9 +25,11 @@ import {
   RotateCcw,
   ChevronUp,
   ChevronDown,
-  Landmark
+  Landmark,
+  Microscope
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { ScientificProofOverlay } from './ScientificProofOverlay';
 
 interface CameraPreset {
   name: string;
@@ -149,6 +151,52 @@ export function MapComponent() {
   const [buildingCount, setBuildingCount] = useState<number>(0);
   const [tilesLoading, setTilesLoading] = useState<boolean>(false);
   const [is3D, setIs3D] = useState<boolean>(true);
+  const [showProof, setShowProof] = useState<boolean>(false);
+
+  // High-performance states to minimize initial memory overhead
+  const [isIntersecting, setIsIntersecting] = useState(false);
+  const [terrainLoaded, setTerrainLoaded] = useState(false);
+  const [terrainActive, setTerrainActive] = useState(false);
+
+  // Setup Intersection Observer to lazy load the entire map canvas only when visible
+  useEffect(() => {
+    if (!mapContainer.current) return;
+    
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsIntersecting(true);
+          observer.disconnect(); // Map stays loaded once triggered
+        }
+      },
+      { threshold: 0.05, rootMargin: '120px' } // Pre-triggers map load slightly before visible
+    );
+
+    observer.observe(mapContainer.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Helper to dynamically load high-density terrain mesh data on-demand
+  const loadTerrain = (mapInstance: maplibregl.Map) => {
+    if (!mapInstance || terrainLoaded) return;
+    try {
+      // Configure on-demand AWS terrarium DEM tiles encoding to render real-time elevations
+      mapInstance.addSource('terrain-dem', {
+        type: 'raster-dem',
+        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+        encoding: 'terrarium',
+        tileSize: 256,
+        maxzoom: 15
+      });
+      
+      mapInstance.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
+      setTerrainLoaded(true);
+      setTerrainActive(true);
+      console.log('Sovereign 3D Terrain Mesh lazy-loaded dynamically on navigation.');
+    } catch (err) {
+      console.warn('Terrain DEM source failed to initialize:', err);
+    }
+  };
 
   // Initialize PMTiles Protocol globally
   useEffect(() => {
@@ -163,9 +211,9 @@ export function MapComponent() {
     }
   }, []);
 
-  // Main Map Re-initialization when theme or source type changes
+  // Main Map Re-initialization when theme, source type, or intersection changes
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || !isIntersecting) return;
 
     // Determine the base map style
     // OpenFreeMap Liberty and Bright styles are perfect open-source options
@@ -300,6 +348,19 @@ export function MapComponent() {
 
     map.on('moveend', () => {
       updateBuildingCount();
+
+      // Lazy-load high-density terrain mesh when near a Tri-State location
+      const center = map.getCenter();
+      const allLocations = [...CAMERA_PRESETS, ...HISTORIC_SITES_PRESETS];
+      const isNearAnyLocation = allLocations.some(site => {
+        const dx = site.center[0] - center.lng;
+        const dy = site.center[1] - center.lat;
+        return Math.sqrt(dx * dx + dy * dy) < 0.15; // Within ~10-15 miles range
+      });
+
+      if (isNearAnyLocation && !terrainLoaded) {
+        loadTerrain(map);
+      }
     });
 
     return () => {
@@ -307,7 +368,7 @@ export function MapComponent() {
       mapRef.current = null;
       setMapLoaded(false);
     };
-  }, [sourceType, theme]); // Re-initialize when the data source or global theme shifts
+  }, [sourceType, theme, isIntersecting]); // Re-initialize when the data source, global theme, or intersection changes
 
   // Reactive updates for theme styling, heights, and opacity (without full map reload)
   useEffect(() => {
@@ -506,6 +567,12 @@ export function MapComponent() {
     if (!map) return;
 
     setActivePreset(preset.name);
+
+    // Prioritize and lazy-load high-density terrain mesh when navigating to a new Tri-State location
+    if (!terrainLoaded) {
+      loadTerrain(map);
+    }
+
     map.flyTo({
       center: preset.center,
       zoom: preset.zoom,
@@ -532,6 +599,9 @@ export function MapComponent() {
     <div className="relative flex w-full h-full min-h-[500px] overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-900 text-white">
       {/* Map Container */}
       <div ref={mapContainer} className="absolute inset-0 w-full h-full" id="maplibre-3d-canvas" />
+
+      {/* Scientific Proof Overlay */}
+      {showProof && <ScientificProofOverlay onClose={() => setShowProof(false)} />}
 
       {/* Map Loading overlay */}
       {!mapLoaded && (
@@ -674,7 +744,22 @@ export function MapComponent() {
         {/* Sidebar Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-5 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
           
-          {/* Data Source Segmented Control */}
+          {/* Scientific Proof Toggle */}
+          <button
+            onClick={() => setShowProof(!showProof)}
+            className={`w-full p-3 rounded-lg border flex items-center gap-3 transition-all cursor-pointer ${
+              showProof 
+                ? 'bg-indigo-600 border-indigo-600 text-white' 
+                : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+            }`}
+          >
+            <Microscope className="h-4 w-4" />
+            <div className="text-left">
+              <div className="text-xs font-bold leading-tight">Scientific Proof</div>
+              <div className="text-[9px] opacity-70">FEMA/INdnr Metrics Analysis</div>
+            </div>
+          </button>
+
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">
               Vector Tile Source
@@ -798,6 +883,37 @@ export function MapComponent() {
                 />
                 Show Streets & Landmark Labels
               </label>
+
+              {/* Dynamic 3D Terrain Mesh Status indicator */}
+              <div className="mt-2.5 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 flex flex-col gap-1 text-[10px]">
+                <div className="flex items-center justify-between font-mono font-bold">
+                  <span className="text-slate-400 dark:text-slate-500">3D Terrain Mesh:</span>
+                  {terrainActive ? (
+                    <span className="text-emerald-500 flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      ACTIVE (LAZY)
+                    </span>
+                  ) : (
+                    <span className="text-amber-500 flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                      STANDBY (SAVER)
+                    </span>
+                  )}
+                </div>
+                <p className="text-[9px] text-slate-400 dark:text-slate-500 font-sans leading-tight mt-0.5">
+                  Terrain elevation data lazy-loads on navigating to any Tri-State location to conserve WebGL memory overhead.
+                </p>
+                {!terrainActive && (
+                  <button
+                    onClick={() => {
+                      if (mapRef.current) loadTerrain(mapRef.current);
+                    }}
+                    className="mt-1.5 px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-mono text-[9px] text-center font-bold tracking-wider uppercase cursor-pointer transition-all border border-indigo-500/10 shadow-sm"
+                  >
+                    Prioritize & Load 3D Terrain
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

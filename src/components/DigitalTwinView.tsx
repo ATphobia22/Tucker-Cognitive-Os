@@ -743,7 +743,7 @@ export function DigitalTwinView() {
               </div>
 
               <div className="absolute top-4 right-4 text-[9px] sm:text-[10px] text-purple-400/80 flex flex-col items-end text-right">
-                <div>SENSORS: LiDAR v2 + Depth Sensor</div>
+                {/* Placeholder */}
                 <div>OCTREE_DEPTH: 8 (OPTIMIZED)</div>
                 <div>DEEP_WALK_ENGINE: ACTIVE</div>
               </div>
@@ -996,7 +996,7 @@ export function DigitalTwinView() {
             <div className="p-4 space-y-6 overflow-y-auto flex-1">
               <div className="space-y-2">
                 <div className="text-xs dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 font-medium uppercase tracking-wider flex items-center justify-between">
-                  <span>Hydrology Node (PT-001)</span>
+                  {/* Placeholder */}
                   {isSimulating && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />}
                 </div>
                 <div className="dark:bg-slate-50 dark:bg-slate-900 bg-slate-100 rounded-lg p-3 border dark:border-slate-200 dark:border-slate-800 border-slate-200">

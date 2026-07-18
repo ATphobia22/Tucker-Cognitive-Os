@@ -133,7 +133,7 @@ export function AssimilationView() {
           <>
             <div className="p-4 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col gap-2 shadow-sm">
               <div className="flex items-center gap-2 text-emerald-400 font-mono text-[10px] uppercase tracking-wider">
-                <Radio size={14} /> Active Sensors
+                <Radio size={14} /> Active Nodes
               </div>
               <div className="text-3xl font-light font-mono">1,248</div>
               <div className="text-xs dark:text-slate-500 text-slate-400 font-mono">Wabash-Ohio telemetry network nodes</div>
@@ -173,7 +173,7 @@ export function AssimilationView() {
               <div className="text-center space-y-1">
                 <div className="font-bold text-indigo-400">Ingesting live NWIS telemetry stream...</div>
                 <div className="text-[10px] text-slate-400 max-w-sm mx-auto">
-                  Synchronizing with Wabash-Ohio sensor arrays & generating forward uncertainty boundaries.
+                  Synchronizing with Wabash-Ohio telemetry arrays & generating forward uncertainty boundaries.
                 </div>
               </div>
               <div className="w-4/5 space-y-2 mt-4">
