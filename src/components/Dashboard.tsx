@@ -85,27 +85,27 @@ export function Dashboard() {
 
           <div className="flex-1 mt-2 min-h-0 bg-white dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden relative">
             <TabsContent value="twin" className="h-full m-0 p-0 border-0 outline-none flex">
-              <DigitalTwinView />
+              {activeTab === 'twin' && <DigitalTwinView />}
             </TabsContent>
 
             <TabsContent value="gis" className="h-full m-0 p-0 border-0 outline-none flex">
-              <NextGenDigitalTwin />
+              {activeTab === 'gis' && <NextGenDigitalTwin />}
             </TabsContent>
             
             <TabsContent value="dag" className="h-full m-0 p-0 border-0 outline-none overflow-hidden">
-              <ExecutionGraph />
+              {activeTab === 'dag' && <ExecutionGraph />}
             </TabsContent>
 
             <TabsContent value="integrations" className="h-full m-0 p-0 border-0 outline-none overflow-auto">
-              <IntegrationsView />
+              {activeTab === 'integrations' && <IntegrationsView />}
             </TabsContent>
 
             <TabsContent value="assimilation" className="h-full m-0 p-0 border-0 outline-none overflow-auto">
-              <AssimilationView />
+              {activeTab === 'assimilation' && <AssimilationView />}
             </TabsContent>
 
             <TabsContent value="evidence" className="h-full m-0 p-0 border-0 outline-none overflow-auto">
-              <EvidenceView />
+              {activeTab === 'evidence' && <EvidenceView />}
             </TabsContent>
           </div>
         </Tabs>

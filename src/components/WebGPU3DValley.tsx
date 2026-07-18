@@ -255,7 +255,7 @@ export const WebGPU3DValley: React.FC<WebGPU3DValleyProps> = ({ waterLevel = 2, 
 
   return (
     <div className="w-full h-full relative bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
-      <Canvas shadows camera={{ position: [0, 20, 40], fov: 45 }}>
+      <Canvas shadows={{ type: THREE.PCFShadowMap }} camera={{ position: [0, 20, 40], fov: 45 }}>
         <Sky sunPosition={[100, 20, 100]} turbidity={0.1} rayleigh={0.5} />
         <ambientLight intensity={0.4} />
         <directionalLight 
