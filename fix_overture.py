@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+with open("src/components/OvertureTwinView.tsx", "r") as f:
+    content = f.read()
+
+import re
+
+# We will just rewrite the whole file for OvertureTwinView.tsx since we are making significant UI changes.
+new_content = """import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as pmtiles from 'pmtiles';
@@ -73,6 +79,7 @@ export function OvertureTwinView() {
       zoom: 15,
       pitch: 60,
       bearing: 15,
+      antialias: true
     });
 
     mapRef.current = map;
@@ -302,3 +309,7 @@ export function OvertureTwinView() {
 }
 
 export default OvertureTwinView;
+"""
+
+with open("src/components/OvertureTwinView.tsx", "w") as f:
+    f.write(new_content)

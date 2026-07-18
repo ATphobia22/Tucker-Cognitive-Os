@@ -1,17 +1,9 @@
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-import {defineConfig} from 'vite';
+import re
 
-export default defineConfig(() => {
-  return {
-    plugins: [react(), tailwindcss()],
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './src'),
-      },
-    },
-    build: {
+with open("vite.config.ts", "r") as f:
+    content = f.read()
+
+chunking = """  build: {
     chunkSizeWarningLimit: 2000,
     rollupOptions: {
       output: {
@@ -28,12 +20,8 @@ export default defineConfig(() => {
       }
     }
   },
-  server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
-    },
-  };
-});
+  server: {"""
+content = re.sub(r'  build: {.*?  server: {', chunking, content, flags=re.DOTALL)
+
+with open("vite.config.ts", "w") as f:
+    f.write(content)

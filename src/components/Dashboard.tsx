@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon } from 'lucide-react';
+import { Activity, Maximize2, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon } from 'lucide-react';
 import { DigitalTwinView } from './DigitalTwinView';
 import NextGenDigitalTwin from './NextGenDigitalTwin';
 import { ExecutionGraph } from './ExecutionGraph';
@@ -41,6 +41,17 @@ export function Dashboard() {
             <Cpu size={14} />
             Diagnostics
           </Button>
+          <Button variant="outline" size="icon" onClick={() => {
+            if (!document.fullscreenElement) {
+              document.documentElement.requestFullscreen().catch(err => {
+                console.log(`Error attempting to enable fullscreen: ${err.message}`);
+              });
+            } else {
+              document.exitFullscreen();
+            }
+          }} className="ml-2 hidden sm:flex">
+            <Maximize2 size={18} />
+          </Button>
           <Button variant="outline" size="icon" onClick={toggleTheme} className="ml-2">
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </Button>
@@ -54,7 +65,7 @@ export function Dashboard() {
             <TabsList className="grid w-full max-w-[1000px] grid-cols-7 bg-slate-100 dark:bg-slate-900/50">
               <TabsTrigger value="cesium" className="gap-2 text-xs font-semibold">
                 <Globe size={14} />
-                <span className="hidden sm:inline">Cesium 3D</span>
+                <span className="hidden sm:inline">Overture 3D</span>
               </TabsTrigger>
               <TabsTrigger value="twin" className="gap-2 text-xs font-semibold">
                 <MonitorPlay size={14} />
