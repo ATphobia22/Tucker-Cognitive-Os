@@ -140,7 +140,8 @@ export function ExecutionGraph() {
         </button>
       </div>
 
-      <div className="flex-1 w-full h-full min-h-[450px] relative mt-20">
+      <div className="absolute inset-0 pt-28 pb-4 px-4 flex flex-col">
+        <div className="flex-1 w-full relative border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -155,6 +156,7 @@ export function ExecutionGraph() {
           <Background color="#1e293b" gap={24} size={2} />
           <Controls className="dark:!bg-slate-900 bg-slate-100 dark:!border-slate-800 border-slate-200 !fill-slate-400" />
         </ReactFlow>
+        </div>
       </div>
     </div>
   );
