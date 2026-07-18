@@ -12,22 +12,23 @@ export default defineConfig(() => {
       },
     },
     build: {
-    chunkSizeWarningLimit: 2000,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('three') || id.includes('@react-three')) return 'vendor-three';
-            if (id.includes('lucide')) return 'vendor-lucide';
-            if (id.includes('maplibre') || id.includes('pmtiles') || id.includes('@vis.gl')) return 'vendor-maplibre';
-            if (id.includes('react') || id.includes('react-dom') || id.includes('recharts') || id.includes('xyflow') || id.includes('framer-motion')) return 'vendor-react';
-            if (id.includes('@base-ui')) return 'vendor-ui';
-            return 'vendor-core';
+      chunkSizeWarningLimit: 2000,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('node_modules/three/')) {
+                return 'vendor-three';
+              }
+              if (id.includes('maplibre-gl') || id.includes('pmtiles')) {
+                return 'vendor-maps';
+              }
+              return 'vendor';
+            }
           }
         }
       }
-    }
-  },
+    },
   server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
