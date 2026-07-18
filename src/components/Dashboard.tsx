@@ -10,7 +10,7 @@ import { AssimilationView } from './AssimilationView';
 import { EvidenceView } from './EvidenceView';
 import { IntegrationsView } from './IntegrationsView';
 import { TerminalOverlay } from './TerminalOverlay';
-import { OvertureTwinView } from './OvertureTwinView';
+import { MapComponent } from './MapComponent';
 import { useTheme } from '../context/ThemeContext';
 
 export function Dashboard() {
@@ -101,7 +101,7 @@ export function Dashboard() {
 
           <div className="flex-1 mt-2 min-h-0 bg-white dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden relative">
             <TabsContent value="cesium" className="h-full m-0 p-0 border-0 outline-none flex">
-              {activeTab === 'cesium' && <OvertureTwinView />}
+              {activeTab === 'cesium' && <MapComponent />}
             </TabsContent>
 
             <TabsContent value="twin" className="h-full m-0 p-0 border-0 outline-none flex">
