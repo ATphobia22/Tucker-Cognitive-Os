@@ -92,7 +92,7 @@ export function Dashboard() {
               {activeTab === 'gis' && <NextGenDigitalTwin />}
             </TabsContent>
             
-            <TabsContent value="dag" className="h-full m-0 p-0 border-0 outline-none overflow-hidden">
+            <TabsContent value="dag" className="h-full w-full m-0 p-0 border-0 outline-none overflow-hidden flex flex-col">
               {activeTab === 'dag' && <ExecutionGraph />}
             </TabsContent>
 

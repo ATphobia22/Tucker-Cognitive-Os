@@ -115,7 +115,7 @@ export function ExecutionGraph() {
   };
 
   return (
-    <div className="w-full h-full relative dark:bg-[#020617] bg-slate-50">
+    <div className="w-full h-full relative dark:bg-[#020617] bg-slate-50 flex flex-col" style={{ width: '100%', height: '100%', minHeight: '550px' }}>
       <div className="absolute top-6 left-6 z-10 flex flex-col gap-2">
         <h2 className="text-xl font-bold dark:text-slate-100 text-slate-900 tracking-tight">PTDT v32 Execution Graph</h2>
         <p className="text-sm dark:text-slate-400 text-slate-500 font-mono">Prefect / Temporal Orchestration</p>
@@ -140,19 +140,22 @@ export function ExecutionGraph() {
         </button>
       </div>
 
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
-        className="dark:bg-[#020617] bg-slate-50"
-      >
-        <Background color="#1e293b" gap={24} size={2} />
-        <Controls className="dark:!bg-slate-900 bg-slate-100 dark:!border-slate-800 border-slate-200 !fill-slate-400" />
-      </ReactFlow>
+      <div className="flex-1 w-full h-full min-h-[450px] relative mt-20">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+          className="dark:bg-[#020617] bg-slate-50"
+          style={{ width: '100%', height: '100%' }}
+        >
+          <Background color="#1e293b" gap={24} size={2} />
+          <Controls className="dark:!bg-slate-900 bg-slate-100 dark:!border-slate-800 border-slate-200 !fill-slate-400" />
+        </ReactFlow>
+      </div>
     </div>
   );
 }
