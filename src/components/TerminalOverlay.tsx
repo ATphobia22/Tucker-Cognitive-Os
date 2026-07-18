@@ -50,6 +50,7 @@ export function TerminalOverlay() {
           '  search [query]    - Search the Sovereign GIS datastore',
           '  analyze [target]  - Run deep analysis on target metric',
           '  status            - System operational status',
+          '  ask [question]    - Query the Sovereign Cognitive Kernel (Gemini AI)',
           '  clear             - Clear terminal output',
           '  exit              - Close terminal'
         ].join('\n');
@@ -67,10 +68,41 @@ export function TerminalOverlay() {
       case 'analyze':
         if (args.length < 2) return 'Error: Missing analysis target. Usage: analyze [target]';
         return `Initiating deep analysis on "${args.slice(1).join(' ')}"...\n[████████████] 100%\nAnalysis complete. No structural anomalies detected.`;
+      case 'ask':
+        if (args.length < 2) return 'Error: Please specify a question. Usage: ask [your question]';
+        try {
+          const query = args.slice(1).join(' ');
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: query })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            return data.reply;
+          }
+          return `Error: Sovereign AI node returned status ${res.status}.`;
+        } catch (e) {
+          return `Error: Failed to connect to the Sovereign AI pipeline.`;
+        }
       case '':
         return null;
       default:
-        return `Command not found: ${mainCommand}. Type "help" for a list of commands.`;
+        // Automatically ask the Sovereign Cognitive Kernel
+        try {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: cmd })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            return data.reply;
+          }
+          return `Command not found: ${mainCommand}. Type "help" for a list of commands.`;
+        } catch (e) {
+          return `Command not found: ${mainCommand}. Type "help" for a list of commands.`;
+        }
     }
   };
 

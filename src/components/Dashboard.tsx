@@ -130,6 +130,7 @@ export function Dashboard() {
           </div>
         </Tabs>
       </main>
+      <TerminalOverlay />
     </div>
   );
 }
