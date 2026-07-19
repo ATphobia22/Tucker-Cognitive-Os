@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - master
   pull_request:
     branches:
       - main
+      - master
 
 jobs:
   build:
@@ -35,3 +37,6 @@ jobs:
         with:
           name: app-build
           path: dist/
+
+      - name: Build Docker Image
+        run: docker build -t my-app:latest .
