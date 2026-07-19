@@ -13,7 +13,9 @@ import {
   Layers, 
   HelpCircle,
   TrendingDown,
-  Coins
+  Coins,
+  Minimize2,
+  Maximize2
 } from 'lucide-react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -90,6 +92,7 @@ export function ScientificProofOverlay({ onClose }: ScientificProofOverlayProps)
 
   // Active view tab inside the overlay
   const [activeTab, setActiveTab] = useState<'science' | 'grants' | 'export'>('science');
+  const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [selectedState, setSelectedState] = useState<'ALL' | 'IN' | 'IL' | 'KY'>('ALL');
   const [scaleFactor, setScaleFactor] = useState<number>(1.0);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -385,6 +388,34 @@ Cryptographic Seal Status: SECURED & TIMESTAMPTED
     }
   };
 
+  if (isMinimized) {
+    return (
+      <div className="absolute top-20 left-6 z-40 bg-slate-900/95 border border-indigo-500/40 px-3 py-2 rounded-xl shadow-2xl flex items-center gap-3 font-mono text-xs text-slate-100 pointer-events-auto select-none backdrop-blur-md">
+        <ShieldCheck size={16} className="text-emerald-400" />
+        <div className="flex flex-col">
+          <span className="font-bold text-indigo-400 text-[10px]">Scientific Proof Panel</span>
+          <span className="text-[8px] text-slate-400">IN, IL, KY FEMA Grants (Minimized)</span>
+        </div>
+        <div className="flex items-center gap-1.5 ml-2 border-l border-slate-800 pl-2">
+          <button 
+            onClick={() => setIsMinimized(false)}
+            title="Restore Panel"
+            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-[#00D4FF] transition-all cursor-pointer"
+          >
+            <Maximize2 size={13} />
+          </button>
+          <button 
+            onClick={onClose}
+            title="Close Panel"
+            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition-all cursor-pointer"
+          >
+            <X size={13} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="absolute top-20 left-6 z-30 w-[420px] bg-slate-900/95 border border-indigo-500/40 rounded-xl shadow-2xl backdrop-blur-md text-slate-100 font-mono text-xs max-h-[80vh] flex flex-col overflow-hidden">
       
@@ -397,12 +428,22 @@ Cryptographic Seal Status: SECURED & TIMESTAMPTED
             <span className="text-[9px] text-slate-400">Regional Grants Accountant (FEMA)</span>
           </div>
         </div>
-        <button 
-          onClick={onClose} 
-          className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
-        >
-          <X size={16} />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button 
+            onClick={() => setIsMinimized(true)} 
+            title="Minimize Panel"
+            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-[#00D4FF] transition-colors cursor-pointer"
+          >
+            <Minimize2 size={14} />
+          </button>
+          <button 
+            onClick={onClose} 
+            title="Close Panel"
+            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}

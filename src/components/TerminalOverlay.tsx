@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Terminal as TerminalIcon, X, Maximize2, Minimize2, Command } from 'lucide-react';
+import { Terminal as TerminalIcon, X, Maximize2, Minimize2, Command, Minus } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface CommandEntry {
@@ -151,10 +151,25 @@ export function TerminalOverlay() {
           <span className="text-xs font-bold uppercase tracking-widest">Tri-State Command Line</span>
         </div>
         <div className="flex items-center gap-2 text-slate-500">
-          <button onClick={() => setIsExpanded(!isExpanded)} className="hover:text-slate-300 p-1">
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)} 
+            title={isExpanded ? "Collapse panel height" : "Expand panel height"} 
+            className="hover:text-slate-300 p-1"
+          >
             {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
           </button>
-          <button onClick={() => setIsOpen(false)} className="hover:text-slate-300 p-1">
+          <button 
+            onClick={() => setIsOpen(false)} 
+            title="Minimize terminal to tray" 
+            className="hover:text-slate-300 p-1"
+          >
+            <Minus size={16} />
+          </button>
+          <button 
+            onClick={() => setIsOpen(false)} 
+            title="Close terminal" 
+            className="hover:text-slate-300 p-1"
+          >
             <X size={16} />
           </button>
         </div>
