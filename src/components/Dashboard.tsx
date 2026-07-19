@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Maximize2, Server } from 'lucide-react';
+import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Maximize2, Server, Zap } from 'lucide-react';
 import { AssimilationView } from './AssimilationView';
 import { EvidenceView } from './EvidenceView';
 import { SystemTelemetry } from './SystemTelemetry';
+import { UpgradesView } from './UpgradesView';
 import { MapComponent } from './MapComponent';
 import { TerminalOverlay } from './TerminalOverlay';
 import { useTheme } from '../context/ThemeContext';
 
 export function Dashboard() {
-  const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | null>('telemetry');
+  const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | null>('telemetry');
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -63,6 +64,13 @@ export function Dashboard() {
                 </CardContent>
               </Card>
             )}
+            {activePanel === 'upgrades' && (
+              <Card className="bg-slate-900/80 backdrop-blur-md border-slate-700 text-slate-100 h-[600px] flex flex-col">
+                <CardContent className="p-4 flex-1 overflow-hidden">
+                  <UpgradesView />
+                </CardContent>
+              </Card>
+            )}
           </div>
           <div className="flex-1"></div>
         </div>
@@ -77,6 +85,9 @@ export function Dashboard() {
           </button>
           <button onClick={() => setActivePanel('system')} className={`p-3 rounded-lg border transition-colors ${activePanel === 'system' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700'}`} title="System Telemetry">
             <Server size={18} />
+          </button>
+          <button onClick={() => setActivePanel('upgrades')} className={`p-3 rounded-lg border transition-colors ${activePanel === 'upgrades' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700'}`} title="Strategic Upgrades">
+            <Zap size={18} />
           </button>
         </footer>
       </div>
