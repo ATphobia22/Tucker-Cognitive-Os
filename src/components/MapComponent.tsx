@@ -261,7 +261,20 @@ export function MapComponent({ layers: externalLayers }: MapComponentProps) {
       center: initialPreset.center,
       zoom: initialPreset.zoom,
       pitch: initialPreset.pitch,
-      bearing: initialPreset.bearing
+      bearing: initialPreset.bearing,
+      transformRequest: (url, resourceType) => {
+        if (resourceType === 'Glyphs' && url.includes('/fonts/')) {
+          const decoded = decodeURIComponent(url);
+          const isBold = decoded.toLowerCase().includes('bold') || 
+                         decoded.toLowerCase().includes('semibold') || 
+                         decoded.toLowerCase().includes('medium') ||
+                         decoded.toLowerCase().includes('black');
+          const targetFont = isBold ? 'Metropolis Bold' : 'Metropolis Regular';
+          const newUrl = url.replace(/\/fonts\/[^\/]+\//, `/fonts/${encodeURIComponent(targetFont)}/`);
+          return { url: newUrl };
+        }
+        return { url };
+      }
     });
 
     mapRef.current = map;
