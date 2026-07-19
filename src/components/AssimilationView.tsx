@@ -249,53 +249,97 @@ export function AssimilationView() {
           </div>
 
           <div className="flex-1 space-y-3">
-            {/* Wabash River Gauge */}
-            <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg border dark:border-slate-800 border-slate-200 flex flex-col gap-1.5">
-              <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-1.5">
-                <span className="font-bold text-[10px] dark:text-slate-200 text-slate-800 truncate font-mono">WABASH RIVER AT NEW HARMONY</span>
-                <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 font-mono text-[8px] rounded">USGS-03377500</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                <div>
-                  <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Stage Height</span>
-                  <span className="text-sm font-bold font-mono text-indigo-400">{(wabashGage?.water_level_stage_ft ?? 18.42).toFixed(2)} ft</span>
+            {loading ? (
+              <>
+                {/* Wabash River Gauge Skeleton */}
+                <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg border dark:border-slate-800 border-slate-200 flex flex-col gap-2">
+                  <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-1.5">
+                    <Skeleton className="h-3 w-2/3" />
+                    <Skeleton className="h-2.5 w-12" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-2 w-1/2" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-2 w-1/2" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-2.5 w-5/6 mt-1" />
                 </div>
-                <div>
-                  <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Discharge Rate</span>
-                  <span className="text-sm font-bold font-mono text-emerald-400">{(wabashGage?.discharge_cfs ?? 45100).toLocaleString()} cfs</span>
-                </div>
-              </div>
-              {wabashGage?.seal_hash && (
-                <div className="text-[8px] text-indigo-400/80 font-mono truncate mt-1 pt-1.5 border-t dark:border-slate-800 border-slate-200/50 flex justify-between items-center">
-                  <span>BLOCK SEAL: {wabashGage.seal_hash.substring(0, 14)}...</span>
-                  <span className="text-emerald-400">✔ VERIFIED</span>
-                </div>
-              )}
-            </div>
 
-            {/* Ohio River Gauge */}
-            <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg border dark:border-slate-800 border-slate-200 flex flex-col gap-1.5">
-              <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-1.5">
-                <span className="font-bold text-[10px] dark:text-slate-200 text-slate-800 truncate font-mono">OHIO RIVER AT UNIONTOWN DAM</span>
-                <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 font-mono text-[8px] rounded">USGS-03322000</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                <div>
-                  <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Stage Height</span>
-                  <span className="text-sm font-bold font-mono text-indigo-400">{(ohioGage?.water_level_stage_ft ?? 24.85).toFixed(2)} ft</span>
+                {/* Ohio River Gauge Skeleton */}
+                <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg border dark:border-slate-800 border-slate-200 flex flex-col gap-2">
+                  <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-1.5">
+                    <Skeleton className="h-3 w-2/3" />
+                    <Skeleton className="h-2.5 w-12" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-2 w-1/2" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-2 w-1/2" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-2.5 w-5/6 mt-1" />
                 </div>
-                <div>
-                  <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Discharge Rate</span>
-                  <span className="text-sm font-bold font-mono text-emerald-400">{(ohioGage?.discharge_cfs ?? 115000).toLocaleString()} cfs</span>
+              </>
+            ) : (
+              <>
+                {/* Wabash River Gauge */}
+                <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg border dark:border-slate-800 border-slate-200 flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-1.5">
+                    <span className="font-bold text-[10px] dark:text-slate-200 text-slate-800 truncate font-mono">WABASH RIVER AT NEW HARMONY</span>
+                    <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 font-mono text-[8px] rounded">USGS-03377500</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div>
+                      <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Stage Height</span>
+                      <span className="text-sm font-bold font-mono text-indigo-400">{(wabashGage?.water_level_stage_ft ?? 18.42).toFixed(2)} ft</span>
+                    </div>
+                    <div>
+                      <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Discharge Rate</span>
+                      <span className="text-sm font-bold font-mono text-emerald-400">{(wabashGage?.discharge_cfs ?? 45100).toLocaleString()} cfs</span>
+                    </div>
+                  </div>
+                  {wabashGage?.seal_hash && (
+                    <div className="text-[8px] text-indigo-400/80 font-mono truncate mt-1 pt-1.5 border-t dark:border-slate-800 border-slate-200/50 flex justify-between items-center">
+                      <span>BLOCK SEAL: {wabashGage.seal_hash.substring(0, 14)}...</span>
+                      <span className="text-emerald-400">✔ VERIFIED</span>
+                    </div>
+                  )}
                 </div>
-              </div>
-              {ohioGage?.seal_hash && (
-                <div className="text-[8px] text-indigo-400/80 font-mono truncate mt-1 pt-1.5 border-t dark:border-slate-800 border-slate-200/50 flex justify-between items-center">
-                  <span>BLOCK SEAL: {ohioGage.seal_hash.substring(0, 14)}...</span>
-                  <span className="text-emerald-400">✔ VERIFIED</span>
+
+                {/* Ohio River Gauge */}
+                <div className="p-3 dark:bg-slate-900 bg-slate-100 rounded-lg border dark:border-slate-800 border-slate-200 flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-1.5">
+                    <span className="font-bold text-[10px] dark:text-slate-200 text-slate-800 truncate font-mono">OHIO RIVER AT UNIONTOWN DAM</span>
+                    <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 font-mono text-[8px] rounded">USGS-03322000</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div>
+                      <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Stage Height</span>
+                      <span className="text-sm font-bold font-mono text-indigo-400">{(ohioGage?.water_level_stage_ft ?? 24.85).toFixed(2)} ft</span>
+                    </div>
+                    <div>
+                      <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Discharge Rate</span>
+                      <span className="text-sm font-bold font-mono text-emerald-400">{(ohioGage?.discharge_cfs ?? 115000).toLocaleString()} cfs</span>
+                    </div>
+                  </div>
+                  {ohioGage?.seal_hash && (
+                    <div className="text-[8px] text-indigo-400/80 font-mono truncate mt-1 pt-1.5 border-t dark:border-slate-800 border-slate-200/50 flex justify-between items-center">
+                      <span>BLOCK SEAL: {ohioGage.seal_hash.substring(0, 14)}...</span>
+                      <span className="text-emerald-400">✔ VERIFIED</span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
 
           <div className="pt-2 border-t dark:border-slate-800 border-slate-200 space-y-1 bg-slate-950/20 p-2.5 rounded border dark:border-slate-800/50 border-slate-200 font-mono text-[10px]">
