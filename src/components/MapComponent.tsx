@@ -201,7 +201,7 @@ export function MapComponent({ layers: externalLayers }: MapComponentProps) {
       mapInstance.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
       setTerrainLoaded(true);
       setTerrainActive(true);
-      console.log('Sovereign 3D Terrain Mesh lazy-loaded dynamically on navigation.');
+      console.log('Tri-State 3D Terrain Mesh lazy-loaded dynamically on navigation.');
     } catch (err) {
       console.warn('Terrain DEM source failed to initialize:', err);
     }
@@ -846,7 +846,7 @@ export function MapComponent({ layers: externalLayers }: MapComponentProps) {
               <Building2 className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-none">Sovereign 3D</h2>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-none">Tri-State 3D</h2>
               <span className="text-[9px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 font-semibold mt-1 block">
                 Extrusion Engine
               </span>

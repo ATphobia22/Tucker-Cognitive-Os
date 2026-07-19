@@ -27,7 +27,7 @@ class USGSGageDataBridge:
             encoded_query = urllib.parse.urlencode(query_params)
             full_url = f"{self.base_url}?{encoded_query}"
             
-            req = urllib.request.Request(full_url, headers={"User-Agent": "PTDT-v23-Sovereign-Twin"})
+            req = urllib.request.Request(full_url, headers={"User-Agent": "PTDT-v23-Tri-State-Twin"})
             with urllib.request.urlopen(req, timeout=8) as response:
                 raw_data = json.loads(response.read().decode("utf-8"))
                 return self._parse_usgs_json_response(raw_data)

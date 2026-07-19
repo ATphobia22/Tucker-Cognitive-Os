@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { ThemeProvider } from './context/ThemeContext';
+import { AudioSystemProvider } from './context/AudioContext';
 
 // Clean up console noise from third-party library deprecation warnings beyond our control
 const originalWarn = console.warn;
@@ -22,7 +23,9 @@ console.warn = (...args) => {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
-      <App />
+      <AudioSystemProvider>
+        <App />
+      </AudioSystemProvider>
     </ThemeProvider>
   </StrictMode>,
 );

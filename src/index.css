@@ -9,7 +9,7 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
-/* Custom glow animations and layouts for the Sovereign Cockpit */
+/* Custom glow animations and layouts for the Tri-State Cockpit */
 @layer utilities {
   .glow-green {
     box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);

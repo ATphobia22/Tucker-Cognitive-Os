@@ -53,7 +53,7 @@ export function DigitalTwinView() {
     waterDepthRef.current = waterDepth;
   }, [waterDepth]);
 
-  // Sovereign Integrations Hub States & Data
+  // Tri-State Integrations Hub States & Data
   const [sidebarTab, setSidebarTab] = useState<'metrics' | 'registry'>('metrics');
   const [rasDischarge, setRasDischarge] = useState(3500);
   const [modflowActive, setModflowActive] = useState(false);
@@ -149,7 +149,7 @@ export function DigitalTwinView() {
       if (selectedParcel) {
         if (selectedParcel.lineageGroup.toLowerCase() === 'tucker') {
           setXsoftRecord({
-            owner: "John Tucker Revocable Trust",
+            owner: "Tri-State Family Trust",
             appraisedValue: "$285,400",
             taxId: "116-013-002-00"
           });
@@ -402,7 +402,7 @@ export function DigitalTwinView() {
 
       addParcel(-15, 10, {
         id: "PRCL_TUCKER_01",
-        tractName: "Tucker Homestead (13101 Bonebank Rd)",
+        tractName: "Family Homestead (13101 Bonebank Rd)",
         lineageGroup: "Tucker",
         threatScore: 25.5,
         isInundated: false,
@@ -662,7 +662,7 @@ export function DigitalTwinView() {
                   INITIALIZING TWIN MESH...
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
-                  Compiling high-precision vectorized shader nodes, binding vertex buffers, and loading real-time sovereign GIS plat structures.
+                  Compiling high-precision vectorized shader nodes, binding vertex buffers, and loading real-time integrated GIS plat structures.
                 </p>
               </div>
               <div className="w-full space-y-2">
@@ -798,7 +798,7 @@ export function DigitalTwinView() {
               <div className="flex flex-col gap-2 text-xs">
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.5)] block shrink-0" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', transform: 'rotate(180deg)' }} />
-                  <span className="dark:text-slate-700 dark:text-slate-300 text-slate-700">Tucker family (Blue Cone Pin)</span>
+                  <span className="dark:text-slate-700 dark:text-slate-300 text-slate-700">Family homestead (Blue Cone Pin)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 bg-[#f59e0b] shadow-[0_0_8px_rgba(245,158,11,0.5)] rotate-45 block shrink-0" />
@@ -962,7 +962,7 @@ export function DigitalTwinView() {
         </div>
       </div>
       
-      {/* Right Sidebar - Analytics & Sovereign Hub */}
+      {/* Right Sidebar - Analytics & Family Registry Hub */}
       {!isFullscreen && (
         <div className="w-80 border-l dark:border-slate-200 dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white flex flex-col shrink-0 z-10">
           <div className="flex border-b dark:border-slate-200 dark:border-slate-800 border-slate-200 shrink-0">
@@ -988,7 +988,7 @@ export function DigitalTwinView() {
               )}
             >
               <Database size={13} />
-              Sovereign Hub
+              Registry Hub
             </button>
           </div>
 
@@ -1161,7 +1161,7 @@ export function DigitalTwinView() {
               <div className="space-y-3">
                 <div className="text-[10px] dark:text-slate-500 dark:text-slate-500 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-widest border-b dark:border-slate-200 dark:border-slate-800 border-slate-200 pb-1.5 flex items-center gap-1">
                   <Globe size={12} className="text-indigo-400" />
-                  Sovereign GIS & Tax Registry
+                  Tri-State GIS & Tax Registry
                 </div>
                 
                 {/* WTHGIS Portal */}

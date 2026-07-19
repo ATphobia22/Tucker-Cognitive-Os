@@ -160,7 +160,7 @@ export function ScientificProofOverlay({ onClose }: ScientificProofOverlayProps)
 \\section{Applicant Information}
 \\begin{tabular}{ll}
     \\textbf{Applicant Name:} & Tri-State Joint Infrastructure Council\\\\
-    \\textbf{Sovereign Region:} & ${stateObj.name} Department of Natural Resources\\\\
+    \\textbf{Tri-State Region:} & ${stateObj.name} Department of Natural Resources\\\\
     \\textbf{Address:} & 100 State Capitol Plaza, ${stateObj.name}\\\\
     \\textbf{Primary Contact:} & Technical Director, Hydrology \\& Mitigation Services\\\\
     \\textbf{Database ID Verification:} & \\texttt{DB-IN-POS-8422-COMP}\\\\
@@ -219,7 +219,7 @@ The matching ratio is rigorously validated to have a zero-discrepancy boundary (
 \\maketitle
 
 \\section{Project Goal \\& Hydrologic Problem}
-This technical proposal details the deployment of sovereign high-performance mitigation barriers along the Wabash-Ohio confluence zone. Point Township, Posey County represents a critical boundary area vulnerable to extreme inundation events. The proposed state budget request of \\textbf{\\$${stateObj.total.toLocaleString()}} addresses these structural vulnerabilities using verified scientific data.
+This technical proposal details the deployment of high-performance dynamic mitigation barriers along the Wabash-Ohio confluence zone. Point Township, Posey County represents a critical boundary area vulnerable to extreme inundation events. The proposed state budget request of \\textbf{\\$${stateObj.total.toLocaleString()}} addresses these structural vulnerabilities using verified scientific data.
 
 \\section{Hydrologic Science Basis \\& Mathematical Models}
 Traditional river models rely on empirical 1D Saint-Venant solvers that underpredict lateral backwater pressure surges. This project utilizes a 2D Shallow Water Equations (SWE) model executed directly via WebGPU parallel computing arrays.
@@ -253,7 +253,7 @@ At this rigorous numeric limit, boundary error is eliminated, ensuring reliable 
 \\section{State-wise Regulatory Compliance}
 The simulation conforms to all regional directives:
 \\begin{itemize}
-    \\item \\textbf{Sovereign Mandate Check:} Passed ${stateObj.complianceRule}.
+    \\item \\textbf{Regulatory Mandate Check:} Passed ${stateObj.complianceRule}.
     \\item \\textbf{Certified No-Rise Constraint:} Satisfied (maximum backwater ripple $\\Delta h < 0.005$ ft).
 \\end{itemize}
 
@@ -275,13 +275,13 @@ The simulation conforms to all regional directives:
 
 \\maketitle
 
-\\section{Sovereign Financial Reconciliation}
+\\section{Inter-State Financial Reconciliation}
 This ledger provides the audited and reconciled aggregate budget parameters for the Tri-State Digital Twin Initiative. These figures represent the combined funding from Indiana, Illinois, and Kentucky, ensuring full accountability across all jurisdictional boundaries.
 
 \\vspace{1.5em}
 \\begin{tabular}{lrrrr}
     \\toprule
-    \\textbf{Sovereign Jurisdiction} & \\textbf{Federal Share} & \\textbf{State Share} & \\textbf{Local Match} & \\textbf{Total Allocation (USD)} \\\\
+    \\textbf{State Jurisdiction} & \\textbf{Federal Share} & \\textbf{State Share} & \\textbf{Local Match} & \\textbf{Total Allocation (USD)} \\\\
     \\midrule
     Indiana (IN) & \\$${calculatedGrants[0].federal.toLocaleString(undefined, { minimumFractionDigits: 2 })} & \\$${calculatedGrants[0].stateShare.toLocaleString(undefined, { minimumFractionDigits: 2 })} & \\$${calculatedGrants[0].local.toLocaleString(undefined, { minimumFractionDigits: 2 })} & \\$${calculatedGrants[0].total.toLocaleString(undefined, { minimumFractionDigits: 2 })} \\\\
     Illinois (IL) & \\$${calculatedGrants[1].federal.toLocaleString(undefined, { minimumFractionDigits: 2 })} & \\$${calculatedGrants[1].stateShare.toLocaleString(undefined, { minimumFractionDigits: 2 })} & \\$${calculatedGrants[1].local.toLocaleString(undefined, { minimumFractionDigits: 2 })} & \\$${calculatedGrants[1].total.toLocaleString(undefined, { minimumFractionDigits: 2 })} \\\\
@@ -336,7 +336,7 @@ All budget models have been validated against live database endpoints. This ledg
 
       // Generate a detailed metadata verification summary
       const verificationLog = `===========================================================
-TRI-STATE DIGITAL TWIN SOVEREIGN GRANT PAPERWORK VERIFICATION LOG
+TRI-STATE DIGITAL TWIN JOINT GRANT PAPERWORK VERIFICATION LOG
 Generated at: ${new Date().toISOString()}
 Target Recipient: FEMA BRIC / State DNR Officers
 ===========================================================
@@ -394,7 +394,7 @@ Cryptographic Seal Status: SECURED & TIMESTAMPTED
           <ShieldCheck size={18} className="text-emerald-400" />
           <div className="flex flex-col">
             <span className="font-bold text-indigo-400 text-sm">Scientific Proof Panel</span>
-            <span className="text-[9px] text-slate-400">Sovereign Grants Accountant (FEMA)</span>
+            <span className="text-[9px] text-slate-400">Regional Grants Accountant (FEMA)</span>
           </div>
         </div>
         <button 
@@ -510,7 +510,7 @@ Cryptographic Seal Status: SECURED & TIMESTAMPTED
           </div>
         )}
 
-        {/* Tab 2: Sovereign Grants Accountant */}
+        {/* Tab 2: Regional Grants Accountant */}
         {activeTab === 'grants' && (
           <div className="space-y-4">
             {/* Interactive Calculator Variables */}
@@ -660,7 +660,7 @@ Cryptographic Seal Status: SECURED & TIMESTAMPTED
                 <li>SF-424 Financial Application Sheets</li>
                 <li>Hydrological Physics Narrative Form</li>
                 <li>State Match Certification Statement</li>
-                <li>Joint Sovereign Resale Ledgers</li>
+                <li>Joint Inter-State Ledgers</li>
               </ul>
             </div>
 

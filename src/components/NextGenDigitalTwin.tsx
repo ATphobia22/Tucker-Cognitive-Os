@@ -290,7 +290,7 @@ export default function NextGenDigitalTwin() {
               <div class="p-2 font-mono text-xs dark:bg-slate-100 dark:bg-slate-950 dark:text-slate-100 bg-white text-slate-900 border border-slate-200 dark:border-slate-800 rounded shadow-md">
                 <div class="font-bold text-yellow-400 border-b border-yellow-500/20 pb-1 mb-1 uppercase">${name}</div>
                 <div>Type: Historical Landmark</div>
-                <div>Status: Tracked in Sovereign Registry</div>
+                <div>Status: Tracked in Tri-State Registry</div>
                 <div class="mt-1 text-[10px] text-slate-600 dark:text-slate-400">Posey County, Indiana GIS</div>
               </div>
             `)
@@ -491,7 +491,7 @@ export default function NextGenDigitalTwin() {
                   INITIALIZING GIS MAP...
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
-                  Setting up hardware-accelerated Maplibre 3D Engine, building projection matrices, and loading sovereign telemetry structures.
+                  Setting up hardware-accelerated Maplibre 3D Engine, building projection matrices, and loading integrated telemetry structures.
                 </p>
               </div>
               <div className="w-full space-y-2">
@@ -521,7 +521,7 @@ export default function NextGenDigitalTwin() {
 
         {/* HUD Legend - Bottom Left */}
         <div className="absolute bottom-6 left-6 z-10 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-[10px] text-slate-900 dark:text-white font-mono space-y-2 shadow-xl pointer-events-auto">
-          <div className="font-bold border-b border-slate-200 dark:border-slate-800 pb-1 text-slate-700 dark:text-slate-300 uppercase tracking-widest text-[9px]">Sovereign Legend</div>
+          <div className="font-bold border-b border-slate-200 dark:border-slate-800 pb-1 text-slate-700 dark:text-slate-300 uppercase tracking-widest text-[9px]">Tri-State Legend</div>
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-red-500/50 border border-red-500 rounded" />
@@ -647,7 +647,7 @@ export default function NextGenDigitalTwin() {
           >
             <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 font-mono flex items-center gap-1 uppercase">
               <Layers className="w-3.5 h-3.5 text-indigo-400" />
-              Sovereign GIS Layers
+              Tri-State GIS Layers
             </span>
             {openMenus.layers ? <ChevronDown size={14} className="text-slate-600 dark:text-slate-400" /> : <ChevronRight size={14} className="text-slate-600 dark:text-slate-400" />}
           </div>

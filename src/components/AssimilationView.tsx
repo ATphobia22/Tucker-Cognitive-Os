@@ -121,7 +121,7 @@ export function AssimilationView() {
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b dark:border-slate-800 border-slate-200 pb-4">
         <div>
           <h2 className="text-xl font-bold tracking-tight">EnKF Data Assimilation Hub</h2>
-          <p className="text-xs dark:text-slate-400 text-slate-500 font-mono mt-0.5">Real-time telemetry integration, uncertainty bounding, and sovereign cryptographic sealing</p>
+          <p className="text-xs dark:text-slate-400 text-slate-500 font-mono mt-0.5">Real-time telemetry integration, uncertainty bounding, and secure cryptographic sealing</p>
         </div>
         <div className="flex items-center gap-2">
           <span className={cn(
@@ -245,7 +245,7 @@ export function AssimilationView() {
         {/* Live Gauges Registry & Diagnostics */}
         <div className="rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-[#0F172A] bg-white p-4 flex flex-col shadow-sm gap-4">
           <div className="text-xs font-bold uppercase tracking-wider dark:text-slate-400 text-slate-500 border-b dark:border-slate-800 border-slate-200 pb-2">
-            Sovereign Gauges Status
+            Telemetry Gauges Status
           </div>
 
           <div className="flex-1 space-y-3">

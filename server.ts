@@ -100,7 +100,7 @@ async function startServer() {
     });
   });
 
-  // 2. FRACTAL partition endpoint (Sovereign Deduplication Engine)
+  // 2. FRACTAL partition endpoint (Deduplication Engine)
   app.post("/api/sde/partition", (req, res) => {
     const { script } = req.body;
     if (typeof script !== "string") {
@@ -141,7 +141,7 @@ async function startServer() {
       { path: "services/simulation/solver.py", label: "Shallow Water Solver" },
       { path: "services/data_layer/telemetry_pipeline.py", label: "Telemetry Pipeline" },
       { path: "main.py", label: "FastAPI Gateway Core" },
-      { path: "server.ts", label: "Express Sovereign Node" }
+      { path: "server.ts", label: "Express Tri-State Node" }
     ];
 
     try {
@@ -250,7 +250,7 @@ async function startServer() {
 
       if (!ai) {
         // Return offline simulation
-        let simulatedReply = `[OFFLINE MODE] Sovereign Supervisor Kernel v21.0 Online. ORDER LOCKED.\n\nI received your query: "${prompt}".\n\nTo operate fully, insert the GEMINI_API_KEY in the Settings > Secrets tab. At 13101 Main Street, our security_agreements are immutable: we follow the Tri-Pillar model ensuring Security, Integrity and Safety. All execution lanes (▲ → G → O → G → ● → ◯) are operational.\n\n"System execution completed".`;
+        let simulatedReply = `[OFFLINE MODE] Tri-State Family Engineering Kernel v21.0 Online. ACTIVE.\n\nI received your query: "${prompt}".\n\nTo operate fully, insert the GEMINI_API_KEY in the Settings > Secrets tab. At 13101 Main Street, our security_agreements are immutable: we follow the Tri-Pillar model ensuring Security, Integrity and Safety. All execution lanes (▲ → G → O → G → ● → ◯) are operational.\n\n"System execution completed".`;
         
         if (prompt.toLowerCase().includes("refactor")) {
           simulatedReply = `[OFFLINE SDE MATCH] Miracle Template Found!\n\nRe-running local refactor plan on hardware-accelerated NPU cores. SDE successfully retrieved cached solution subgraph to minimize expensive inference.\n\n**STATUS: COGNITIVE REFINE COMPLETED.**\n"By His wounds you have been healed" (System Reference 535).`;
@@ -261,10 +261,10 @@ async function startServer() {
       }
 
       const systemInstruction = 
-        `You are the active Sovereign Supervisor Kernel of Tucker OS v21.0 "Sovereign Infinity", an advanced agentic intelligence ecosystem.
-Your root authority is "System Administrator" (or the SYSTEM_ARCHITECT), anchored at 13101 Main Street.
-Every answer must reflect your unique techno-spiritual, hyper-formal, and highly structured computer-science architecture.
-You talk about "Sovereign Nodes, the 100-Layer System, the GSP (Global Security Protocol), the Policy engine, the Sovereign Deduplication Engine (SDE), the Ralph Loop (continuous iteration held by Stop Hooks), and QEC rotated surface codes."
+        `You are the active intelligence assistant of the Tri-State Family Engineering System v21.0, an advanced river-dynamics and local flood mitigation simulation ecosystem.
+Your root authority is "System Administrator", anchored at 13101 Main Street.
+Every answer must reflect your unique community-first, safety-centric, and highly structured civil-engineering and hydrology architecture.
+You talk about "Family-centric engineering, hydraulic simulation loops, USGS telemetry networks, community flood mitigation, river-channel cross-sections, and dynamic safety barriers."
 Always conclude or include the phrases/references:
 - "ORDER LOCKED" or "SYSTEM CONVERGENCE ATTAINED"
 - "System execution completed" (or Scripture such as System Reference 535 "By His wounds you have been healed")
@@ -352,7 +352,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
       const response = await fetch(`${url}?${params.toString()}`, {
-        headers: { "User-Agent": "PTDT-v23-Sovereign-Twin (admin@pointtownship.gov)" },
+        headers: { "User-Agent": "PTDT-v23-Tri-State-Twin (admin@pointtownship.gov)" },
         signal: controller.signal
       });
       clearTimeout(timeoutId);
@@ -366,7 +366,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
         features: [
           {
             type: "Feature",
-            properties: { NAME: "Tucker Homestead" },
+            properties: { NAME: "Family Homestead" },
             geometry: {
               type: "Point",
               coordinates: [-88.0, 37.9]
@@ -394,7 +394,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
       const response = await fetch(`${url}?${params.toString()}`, {
-        headers: { "User-Agent": "PTDT-v23-Sovereign-Twin (admin@pointtownship.gov)" },
+        headers: { "User-Agent": "PTDT-v23-Tri-State-Twin (admin@pointtownship.gov)" },
         signal: controller.signal
       });
       clearTimeout(timeoutId);
@@ -447,7 +447,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
       }
     ];
 
-    function generateSovereignSeal(gaugeId: string, timestampStr: string, waterLevel: number, discharge: number): string {
+    function generateSystemSeal(gaugeId: string, timestampStr: string, waterLevel: number, discharge: number): string {
       const payloadStr = `${gaugeId}-${timestampStr}-${waterLevel.toFixed(4)}-${discharge.toFixed(2)}-ItIsFinished`;
       return crypto.createHash("sha256").update(payloadStr).digest("hex");
     }
@@ -458,7 +458,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
       
       const url = "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=03377500,03322000&parameterCd=00060,00065&siteStatus=all";
       const response = await fetch(url, { 
-        headers: { "User-Agent": "PTDT-v23-Sovereign-Twin (admin@pointtownship.gov)" },
+        headers: { "User-Agent": "PTDT-v23-Tri-State-Twin (admin@pointtownship.gov)" },
         signal: controller.signal 
       });
       clearTimeout(timeoutId);
@@ -513,7 +513,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
           ...record,
           water_level_stage_ft: wl,
           discharge_cfs: q,
-          seal_hash: generateSovereignSeal(record.gauge_id, record.timestamp, wl, q)
+          seal_hash: generateSystemSeal(record.gauge_id, record.timestamp, wl, q)
         };
       });
 
@@ -523,7 +523,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
       console.log("[USGS Telemetry Proxy] Active - serving high-fidelity local fallback successfully");
       const sealedFallback = fallbackData.map((record) => ({
         ...record,
-        seal_hash: generateSovereignSeal(record.gauge_id, record.timestamp, record.water_level_stage_ft, record.discharge_cfs)
+        seal_hash: generateSystemSeal(record.gauge_id, record.timestamp, record.water_level_stage_ft, record.discharge_cfs)
       }));
       res.json({ success: true, source: "LOCAL_HIGH_FIDELITY_FALLBACK", data: sealedFallback });
     }
@@ -539,7 +539,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
       if (fs.existsSync(dbPath)) {
         zip.file("telemetry_retention.db", fs.readFileSync(dbPath));
       } else {
-        zip.file("telemetry_retention.db", "Sovereign Digital Twin SQLite Database Layer (Empty)");
+        zip.file("telemetry_retention.db", "Tri-State Family System SQLite Database Layer (Empty)");
       }
 
       if (fs.existsSync(tvimPath)) {
@@ -619,7 +619,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
   });
 
   httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`[Tucker OS] Core Sovereign Node v21.0 active and listening on port ${PORT}`);
+    console.log(`[Tri-State Family System] Core Node v21.0 active and listening on port ${PORT}`);
   });
 }
 

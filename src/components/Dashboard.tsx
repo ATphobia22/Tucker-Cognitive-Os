@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Maximize2, Server, Zap } from 'lucide-react';
+import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Maximize2, Server, Zap, Settings, X, Music, Volume2, VolumeX, Power } from 'lucide-react';
 import { AssimilationView } from './AssimilationView';
 import { EvidenceView } from './EvidenceView';
 import { SystemTelemetry } from './SystemTelemetry';
@@ -14,10 +14,14 @@ import { TurbovecScorePlot } from './TurbovecScorePlot';
 import { MapComponent } from './MapComponent';
 import { TerminalOverlay } from './TerminalOverlay';
 import { useTheme } from '../context/ThemeContext';
+import { useAudioSystem } from '../context/AudioContext';
 
 export function Dashboard() {
   const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | null>('telemetry');
   const { theme, toggleTheme } = useTheme();
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const { isMuted, toggleMute, volume, setVolume, setSystemOn, currentSoundscape, setSoundscape } = useAudioSystem();
+
   const [layers, setLayers] = useState({
     geospatial: true,
     hydrodynamic: true,
@@ -83,15 +87,22 @@ export function Dashboard() {
         {/* Header */}
         <header className="flex items-center justify-between pointer-events-auto">
           <div className="bg-[#001428]/85 backdrop-blur-md border-l-4 border-[#00D4FF] py-2 px-4 shadow-xl">
-            <h1 className="text-sm font-bold tracking-wider text-[#00D4FF]">NODE: 13101 BONEBANK RD</h1>
+            <h1 className="text-sm font-bold tracking-wider text-[#00D4FF]">TRI-STATE FAMILY SYSTEM: NODE 13101</h1>
             <div className="text-[11px] font-mono text-slate-400 mt-1 uppercase tracking-widest flex items-center gap-2">
               <span>SYS_FRAME: <span className="text-white">{sysFrame}</span></span>
               <span className="h-3 w-px bg-slate-700"></span>
-              <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span> STATUS: SOVEREIGN SEALED</span>
+              <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#00D4FF] animate-pulse"></span> STATUS: ACTIVE SECURE</span>
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={toggleTheme} className="p-2 bg-[#001428]/85 backdrop-blur-md border border-slate-700/50 rounded hover:bg-[#003366] transition-colors shadow-xl">
+            <button 
+              onClick={() => setShowSettingsModal(true)} 
+              className="p-2 bg-[#001428]/85 backdrop-blur-md border border-slate-700/50 rounded hover:bg-[#003366] text-[#00D4FF] transition-colors shadow-xl cursor-pointer"
+              title="System Configuration Settings"
+            >
+              <Settings size={18} />
+            </button>
+            <button onClick={toggleTheme} className="p-2 bg-[#001428]/85 backdrop-blur-md border border-slate-700/50 rounded hover:bg-[#003366] transition-colors shadow-xl cursor-pointer">
               {theme === 'dark' ? <Sun size={18} className="text-[#00D4FF]" /> : <Moon size={18} className="text-slate-300" />}
             </button>
           </div>
@@ -181,7 +192,7 @@ export function Dashboard() {
                   onClick={handleBackupExport}
                   disabled={isExporting}
                   className="flex items-center gap-1.5 px-2.5 py-1 text-[9px] bg-[#00D4FF]/10 hover:bg-[#00D4FF]/20 border border-[#00D4FF]/30 hover:border-[#00D4FF]/60 disabled:opacity-50 text-[#00D4FF] rounded transition-all cursor-pointer font-bold font-mono"
-                  title="Export Sovereign Snapshot Archive (.ZIP)"
+                  title="Export System Snapshot Archive (.ZIP)"
                 >
                   <Database size={11} /> {isExporting ? "EXPORTING..." : "EXPORT BACKUP"}
                 </button>
@@ -216,6 +227,118 @@ export function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* System Settings & Ambient Music Config Overlay */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
+          <div className="bg-[#001428]/95 border border-indigo-500/30 p-6 rounded-lg w-full max-w-sm shadow-2xl font-sans relative">
+            <button 
+              onClick={() => setShowSettingsModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+            
+            <div className="flex items-center gap-2 text-[#00D4FF] font-bold tracking-widest text-xs uppercase mb-4 pb-2 border-b border-indigo-500/20 font-mono">
+              <Settings size={14} />
+              SYSTEM CONFIGURATION
+            </div>
+
+            {/* Background Music controls */}
+            <div className="space-y-4 mb-6">
+              <div>
+                <h3 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center gap-1.5 font-mono">
+                  <Music className="w-3.5 h-3.5 text-indigo-400" />
+                  Background Music Engine
+                </h3>
+                <p className="text-[9px] text-slate-500 mb-3 leading-normal">
+                  Procedural synth background ambient track dynamically synthesized via the Web Audio API.
+                </p>
+              </div>
+
+              <div className="bg-slate-900/60 border border-slate-800 rounded p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-slate-400 font-mono">AUDIO CORES:</span>
+                  <button 
+                    onClick={toggleMute}
+                    className={`px-2.5 py-1 text-[9px] font-mono font-bold rounded cursor-pointer transition-all border ${
+                      isMuted 
+                        ? 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700' 
+                        : 'bg-indigo-500/20 border-indigo-500/40 text-[#00D4FF] hover:bg-indigo-500/30'
+                    }`}
+                  >
+                    {isMuted ? 'MUTE ON' : 'PLAYING'}
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {isMuted ? <VolumeX className="w-3.5 h-3.5 text-slate-500" /> : <Volume2 className="w-3.5 h-3.5 text-indigo-400" />}
+                  <input 
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={volume}
+                    onChange={(e) => setVolume(parseFloat(e.target.value))}
+                    className="flex-1 accent-[#00D4FF] h-1 cursor-pointer"
+                  />
+                  <span className="text-[9px] font-mono text-slate-400 w-6 text-right">
+                    {Math.round(volume * 100)}%
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[8px] font-mono text-slate-500 uppercase tracking-wider block">Soundscapes</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setSoundscape('hydraulic')}
+                      className={`py-1 rounded text-[9px] font-mono font-bold border transition-all cursor-pointer uppercase ${
+                        currentSoundscape === 'hydraulic'
+                          ? 'bg-indigo-500/20 border-indigo-500/40 text-[#00D4FF]'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800'
+                      }`}
+                    >
+                      Hydraulic Pulse
+                    </button>
+                    <button
+                      onClick={() => setSoundscape('family')}
+                      className={`py-1 rounded text-[9px] font-mono font-bold border transition-all cursor-pointer uppercase ${
+                        currentSoundscape === 'family'
+                          ? 'bg-indigo-500/20 border-indigo-500/40 text-[#00D4FF]'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800'
+                      }`}
+                    >
+                      Family Harmony
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* System Power control */}
+            <div className="pt-4 border-t border-slate-800/80">
+              <h3 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center gap-1.5 font-mono">
+                <Power className="w-3.5 h-3.5 text-rose-500" />
+                Power Grid Settings
+              </h3>
+              <p className="text-[9px] text-slate-500 mb-3 leading-normal">
+                Suspend simulation calculations and transition the physical node into deep standby power-saver state.
+              </p>
+              
+              <button
+                onClick={() => {
+                  setSystemOn(false);
+                  setShowSettingsModal(false);
+                }}
+                className="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 hover:border-rose-500/60 text-rose-400 font-bold font-mono rounded text-[9px] tracking-wider transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Power size={11} />
+                SHUTDOWN CORES
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <TerminalOverlay />
     </div>

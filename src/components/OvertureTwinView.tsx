@@ -296,7 +296,7 @@ export function OvertureTwinView() {
             onClick={() => flyTo('node')}
             className="w-full text-left bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 px-3 py-2 text-xs transition-colors rounded font-medium text-slate-700 dark:text-slate-200"
           >
-            1. SOVEREIGN NODE (Home)
+            1. TRI-STATE CORE (Home)
           </button>
           <button 
             onClick={() => flyTo('dam')}

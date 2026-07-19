@@ -13,7 +13,7 @@ export function TerminalOverlay() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [history, setHistory] = useState<CommandEntry[]>([
-    { type: 'system', content: 'Tucker Sovereign Citadel Terminal v32.1', timestamp: new Date() },
+    { type: 'system', content: 'Tri-State Family System Terminal v32.1', timestamp: new Date() },
     { type: 'system', content: 'Type "help" for a list of available commands.', timestamp: new Date() }
   ]);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -47,10 +47,10 @@ export function TerminalOverlay() {
       case 'help':
         return [
           'Available commands:',
-          '  search [query]    - Search the Sovereign GIS datastore',
+          '  search [query]    - Search the Tri-State GIS datastore',
           '  analyze [target]  - Run deep analysis on target metric',
           '  status            - System operational status',
-          '  ask [question]    - Query the Sovereign Cognitive Kernel (Gemini AI)',
+          '  ask [question]    - Query the Tri-State Cognitive Kernel (Gemini AI)',
           '  clear             - Clear terminal output',
           '  exit              - Close terminal'
         ].join('\n');
@@ -64,7 +64,7 @@ export function TerminalOverlay() {
         return 'System Status: ONLINE\nActive Modules: WebGPU Twin, DAG Execution, Data Assimilation\nTelemetry: SYNCED (USGS, FEMA)';
       case 'search':
         if (args.length < 2) return 'Error: Missing search query. Usage: search [query]';
-        return `Searching for "${args.slice(1).join(' ')}"...\nFound 0 matching records in Sovereign database.`;
+        return `Searching for "${args.slice(1).join(' ')}"...\nFound 0 matching records in Tri-State database.`;
       case 'analyze':
         if (args.length < 2) return 'Error: Missing analysis target. Usage: analyze [target]';
         return `Initiating deep analysis on "${args.slice(1).join(' ')}"...\n[████████████] 100%\nAnalysis complete. No structural anomalies detected.`;
@@ -81,14 +81,14 @@ export function TerminalOverlay() {
             const data = await res.json();
             return data.reply;
           }
-          return `Error: Sovereign AI node returned status ${res.status}.`;
+          return `Error: Tri-State AI node returned status ${res.status}.`;
         } catch (e) {
-          return `Error: Failed to connect to the Sovereign AI pipeline.`;
+          return `Error: Failed to connect to the Tri-State AI pipeline.`;
         }
       case '':
         return null;
       default:
-        // Automatically ask the Sovereign Cognitive Kernel
+        // Automatically ask the Tri-State Cognitive Kernel
         try {
           const res = await fetch('/api/chat', {
             method: 'POST',
@@ -148,7 +148,7 @@ export function TerminalOverlay() {
       <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800/80 bg-slate-900/50">
         <div className="flex items-center gap-2 text-indigo-400">
           <TerminalIcon size={16} />
-          <span className="text-xs font-bold uppercase tracking-widest">Sovereign Command Line</span>
+          <span className="text-xs font-bold uppercase tracking-widest">Tri-State Command Line</span>
         </div>
         <div className="flex items-center gap-2 text-slate-500">
           <button onClick={() => setIsExpanded(!isExpanded)} className="hover:text-slate-300 p-1">
