@@ -1,9 +1,20 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react';
-import { Canvas, useFrame, ThreeEvent } from '@react-three/fiber';
+import { Canvas, useFrame, ThreeEvent, useThree } from '@react-three/fiber';
 import { OrbitControls, Sky, Environment, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { Ruler, Shield, X, Check } from 'lucide-react';
 import { ParcelInfo } from './DigitalTwinView';
+import { PDT3DAssets } from '../3d-assets';
+
+// Asset loader component
+const AssetLoader = () => {
+  const { scene } = useThree();
+  useEffect(() => {
+    const assets = new PDT3DAssets();
+    assets.loadEnvironment(scene);
+  }, [scene]);
+  return null;
+};
 
 export const PARCELS = [
   {
@@ -269,6 +280,7 @@ export const WebGPU3DValley: React.FC<WebGPU3DValleyProps> = ({ waterLevel = 2, 
           shadow-camera-bottom={-50}
         />
         <Environment preset="city" />
+        <AssetLoader />
         
         <Terrain 
           onPointerDown={handleTerrainPointerDown} 
