@@ -6,6 +6,8 @@ import crypto from "crypto";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import { TelemetryRecord, ptdtSchemaValidator } from "./src/schemas/ptdt";
+import { OpenMICouplingEngine, ISO23247CompliantTwin, validateAndAssimilate } from "./src/services/compliance";
 
 dotenv.config();
 
@@ -203,6 +205,22 @@ async function startServer() {
         details: error.message || String(error)
       });
     }
+  });
+
+  // 6. PTDT Telemetry Ingestion (OpenMI Compliant)
+  app.post("/api/v23/telemetry", (req, res) => {
+    const data = req.body as TelemetryRecord;
+    if (!ptdtSchemaValidator(data)) {
+      return res.status(422).json({ error: "Invalid schema" });
+    }
+    const result = validateAndAssimilate(data);
+    return res.json({ status: "ingested", ...result });
+  });
+
+  // 7. ISO 23247 Compliance endpoint
+  app.get("/api/v23/iso-compliance", (req, res) => {
+    const twin = new ISO23247CompliantTwin();
+    return res.json(twin.validateCompliance({ status: "verified" }));
   });
 
   // 3. Gemini Core Intelligent Chat (Mini Deni OS Persona)
