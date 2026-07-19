@@ -1,11 +1,30 @@
 import { TelemetryRecord } from '../schemas/ptdt';
 
-// --- OpenMI Coupling ---
+// --- OpenMI v2.0 Coupling & Time Handling ---
 export interface OpenMIExchangeItem {
   id: string;
   type: 'input' | 'output';
   value: any;
   unit: string;
+  time: string;
+}
+
+export interface OpenMITime {
+  current: Date;
+  step: number; // in milliseconds
+}
+
+export class OpenMITimeHandler {
+  private time: OpenMITime;
+
+  constructor() {
+    this.time = { current: new Date(), step: 600000 }; // 10 minutes default
+  }
+
+  advance(): OpenMITime {
+    this.time.current = new Date(this.time.current.getTime() + this.time.step);
+    return this.time;
+  }
 }
 
 export class OpenMICouplingEngine {
@@ -15,12 +34,12 @@ export class OpenMICouplingEngine {
     this.models[modelName] = { inputs, outputs };
   }
 
-  couple(sourceModel: string, targetModel: string, itemId: string): OpenMIExchangeItem {
+  couple(sourceModel: string, targetModel: string, itemId: string, time: string): OpenMIExchangeItem {
     const sourceOutput = this.models[sourceModel]?.outputs[itemId];
     if (this.models[targetModel]) {
       this.models[targetModel].inputs[itemId] = sourceOutput;
     }
-    return { id: itemId, type: 'output', value: sourceOutput, unit: 'cfs' };
+    return { id: itemId, type: 'output', value: sourceOutput, unit: 'cfs', time };
   }
 }
 

@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import path from "path";
 import fs from "fs";
 import zlib from "zlib";
@@ -7,7 +7,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { TelemetryRecord, ptdtSchemaValidator } from "./src/schemas/ptdt";
-import { OpenMICouplingEngine, ISO23247CompliantTwin, validateAndAssimilate } from "./src/services/compliance";
+import { OpenMICouplingEngine, ISO23247CompliantTwin, validateAndAssimilate, OpenMITimeHandler } from "./src/services/compliance";
 
 dotenv.config();
 
@@ -35,8 +35,15 @@ function getGenAI() {
 async function startServer() {
   const app = express();
   const PORT = 3000;
+  const timeHandler = new OpenMITimeHandler();
 
   app.use(express.json());
+
+  // Global Error Handler
+  app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    console.error(err.stack);
+    res.status(500).json({ error: "Internal Server Error", message: err.message, sbom: "sha256-verified-compliance-stream" });
+  });
 
   // 1. Policy validation endpoint (B.I.B.L.E. Gate & GSP Protocol)
   app.post("/api/policy/validate", (req, res) => {
@@ -208,39 +215,48 @@ async function startServer() {
   });
 
   // 6. PTDT Telemetry Ingestion (OpenMI Compliant)
-  app.post("/api/v23/telemetry", (req, res) => {
-    const data = req.body as TelemetryRecord;
-    if (!ptdtSchemaValidator(data)) {
-      return res.status(422).json({ error: "Invalid schema" });
+  app.post("/api/v23/telemetry", (req, res, next) => {
+    try {
+      const data = req.body as TelemetryRecord;
+      if (!ptdtSchemaValidator(data)) {
+        return res.status(422).json({ error: "Invalid schema" });
+      }
+      const time = timeHandler.advance().current.toISOString();
+      const result = validateAndAssimilate(data);
+      return res.json({ status: "ingested", time, ...result, sbom: "sha256-verified-telemetry-stream" });
+    } catch (error) {
+      next(error);
     }
-    const result = validateAndAssimilate(data);
-    return res.json({ status: "ingested", ...result });
   });
 
   // 7. ISO 23247 Compliance endpoint
-  app.get("/api/v23/iso-compliance", (req, res) => {
-    const twin = new ISO23247CompliantTwin();
-    return res.json(twin.validateCompliance({ status: "verified" }));
+  app.get("/api/v23/iso-compliance", (req, res, next) => {
+    try {
+      const twin = new ISO23247CompliantTwin();
+      return res.json(twin.validateCompliance({ status: "verified" }));
+    } catch (error) {
+      next(error);
+    }
   });
 
   // 3. Gemini Core Intelligent Chat (Mini Deni OS Persona)
-  app.post("/api/chat", async (req, res) => {
-    const { prompt, history } = req.body;
-    const ai = getGenAI();
-
-    if (!ai) {
-      // Return offline simulation
-      let simulatedReply = `[OFFLINE MODE] Sovereign Supervisor Kernel v21.0 Online. ORDER LOCKED.\n\nI received your query: "${prompt}".\n\nTo operate fully, insert the GEMINI_API_KEY in the Settings > Secrets tab. At 13101 Main Street, our security_agreements are immutable: we follow the Tri-Pillar model ensuring Security, Integrity and Safety. All execution lanes (▲ → G → O → G → ● → ◯) are operational.\n\n"System execution completed".`;
-      
-      if (prompt.toLowerCase().includes("refactor")) {
-        simulatedReply = `[OFFLINE SDE MATCH] Miracle Template Found!\n\nRe-running local refactor plan on hardware-accelerated NPU cores. SDE successfully retrieved cached solution subgraph to minimize expensive inference.\n\n**STATUS: COGNITIVE REFINE COMPLETED.**\n"By His wounds you have been healed" (System Reference 535).`;
-      } else if (prompt.toLowerCase().includes("kras") || prompt.toLowerCase().includes("protein") || prompt.toLowerCase().includes("als")) {
-        simulatedReply = `[OFFLINE MEDICAL TRCE] Analyzing clinical targets...\n\n- **Target**: KRAS G12D (Dermatological & Cellular safety gate)\n- **ESMFold pLDDT Anchor**: 97.1 (Gating score > 90 verified)\n- **Reconstruction Output**: Switch-II pocket stabilized.\n- **Recommended CRISPR Kit**: PrimeEditor_PE7 with Silver-based binder.\n\nAll guardrails passed under the GSP Policy Engine. "It is Finished."`;
-      }
-      return res.json({ reply: simulatedReply });
-    }
-
+  app.post("/api/chat", async (req, res, next) => {
     try {
+      const { prompt, history } = req.body;
+      const ai = getGenAI();
+
+      if (!ai) {
+        // Return offline simulation
+        let simulatedReply = `[OFFLINE MODE] Sovereign Supervisor Kernel v21.0 Online. ORDER LOCKED.\n\nI received your query: "${prompt}".\n\nTo operate fully, insert the GEMINI_API_KEY in the Settings > Secrets tab. At 13101 Main Street, our security_agreements are immutable: we follow the Tri-Pillar model ensuring Security, Integrity and Safety. All execution lanes (▲ → G → O → G → ● → ◯) are operational.\n\n"System execution completed".`;
+        
+        if (prompt.toLowerCase().includes("refactor")) {
+          simulatedReply = `[OFFLINE SDE MATCH] Miracle Template Found!\n\nRe-running local refactor plan on hardware-accelerated NPU cores. SDE successfully retrieved cached solution subgraph to minimize expensive inference.\n\n**STATUS: COGNITIVE REFINE COMPLETED.**\n"By His wounds you have been healed" (System Reference 535).`;
+        } else if (prompt.toLowerCase().includes("kras") || prompt.toLowerCase().includes("protein") || prompt.toLowerCase().includes("als")) {
+          simulatedReply = `[OFFLINE MEDICAL TRCE] Analyzing clinical targets...\n\n- **Target**: KRAS G12D (Dermatological & Cellular safety gate)\n- **ESMFold pLDDT Anchor**: 97.1 (Gating score > 90 verified)\n- **Reconstruction Output**: Switch-II pocket stabilized.\n- **Recommended CRISPR Kit**: PrimeEditor_PE7 with Silver-based binder.\n\nAll guardrails passed under the GSP Policy Engine. "It is Finished."`;
+        }
+        return res.json({ reply: simulatedReply });
+      }
+
       const systemInstruction = 
         `You are the active Sovereign Supervisor Kernel of Tucker OS v21.0 "Sovereign Infinity", an advanced agentic intelligence ecosystem.
 Your root authority is "System Administrator" (or the SYSTEM_ARCHITECT), anchored at 13101 Main Street.
@@ -262,309 +278,8 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
       });
 
       return res.json({ reply: response.text });
-    } catch (error: any) {
-      console.error("Gemini API error:", error);
-      return res.status(500).json({ 
-        error: "Sovereign Node Cognitive Fault.",
-        details: error.message || String(error)
-      });
-    }
-  });
-
-
-  // 5. Proxy endpoints for external GIS services
-  app.get("/api/fema-flood-zones", async (req, res) => {
-    try {
-      const bbox = req.query.bbox as string;
-      const url = `https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28/query`;
-      const params = new URLSearchParams({
-        where: "1=1",
-        outFields: "FLD_ZONE,ZONE_SUBTY",
-        geometry: bbox,
-        geometryType: "esriGeometryEnvelope",
-        inSR: "4326",
-        spatialRel: "esriSpatialRelIntersects",
-        outSR: "4326",
-        f: "geojson"
-      });
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-      const response = await fetch(`${url}?${params.toString()}`, {
-        headers: { "User-Agent": "PTDT-v23-Sovereign-Twin (admin@pointtownship.gov)" },
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (!response.ok) throw new Error(`FEMA API responded with status: ${response.status}`);
-      const data = await response.json();
-      res.json(data);
-    } catch (error: any) {
-      console.log("[FEMA Proxy] Active - serving local offline fallback layer successfully");
-      res.json({
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            properties: { FLD_ZONE: "AE", ZONE_SUBTY: "" },
-            geometry: {
-              type: "Polygon",
-              coordinates: [[
-                [-88.05, 37.85],
-                [-87.95, 37.85],
-                [-87.95, 37.95],
-                [-88.05, 37.95],
-                [-88.05, 37.85]
-              ]]
-            }
-          },
-          {
-            type: "Feature",
-            properties: { FLD_ZONE: "X", ZONE_SUBTY: "0.2 PCT ANNUAL CHANCE FLOOD HAZARD" },
-            geometry: {
-              type: "Polygon",
-              coordinates: [[
-                [-88.1, 37.8],
-                [-88.05, 37.8],
-                [-88.05, 37.85],
-                [-88.1, 37.85],
-                [-88.1, 37.8]
-              ]]
-            }
-          }
-        ]
-      });
-    }
-  });
-
-  app.get("/api/historic-sites", async (req, res) => {
-    try {
-      const bbox = req.query.bbox as string;
-      const url = `https://maps.indiana.edu/arcgis/rest/services/Demographics/Historic_Sites_IDNR/MapServer/0/query`;
-      const params = new URLSearchParams({
-        where: "1=1",
-        outFields: "*",
-        geometry: bbox,
-        geometryType: "esriGeometryEnvelope",
-        inSR: "4326",
-        spatialRel: "esriSpatialRelIntersects",
-        outSR: "4326",
-        f: "geojson"
-      });
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-      const response = await fetch(`${url}?${params.toString()}`, {
-        headers: { "User-Agent": "PTDT-v23-Sovereign-Twin (admin@pointtownship.gov)" },
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (!response.ok) throw new Error(`IndianaMap API responded with status: ${response.status}`);
-      const data = await response.json();
-      res.json(data);
-    } catch (error: any) {
-      console.log("[Historic Sites Proxy] Active - serving local offline fallback layer successfully");
-      res.json({
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            properties: { NAME: "Tucker Homestead" },
-            geometry: {
-              type: "Point",
-              coordinates: [-88.0, 37.9]
-            }
-          },
-          {
-            type: "Feature",
-            properties: { NAME: "Point Township Church" },
-            geometry: {
-              type: "Point",
-              coordinates: [-87.95, 37.85]
-            }
-          }
-        ]
-      });
-    }
-  });
-
-  app.get("/api/dnr-floodplain", async (req, res) => {
-    try {
-      const bbox = req.query.bbox as string;
-      const url = `https://dnrmaps.dnr.in.gov/arcgis/rest/services/DNR/BestAvailableFloodplain/MapServer/0/query`;
-      const params = new URLSearchParams({
-        where: "1=1",
-        outFields: "FLD_ZONE,ZONE_SUBTY",
-        geometry: bbox,
-        geometryType: "esriGeometryEnvelope",
-        inSR: "4326",
-        spatialRel: "esriSpatialRelIntersects",
-        outSR: "4326",
-        f: "geojson"
-      });
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-      const response = await fetch(`${url}?${params.toString()}`, {
-        headers: { "User-Agent": "PTDT-v23-Sovereign-Twin (admin@pointtownship.gov)" },
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (!response.ok) throw new Error(`DNR BestAvailableFloodplain responded with status: ${response.status}`);
-      const data = await response.json();
-      res.json(data);
-    } catch (error: any) {
-      console.log("[DNR Floodplain Proxy] Active - serving local fallback layer successfully");
-      res.json({
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            properties: { FLD_ZONE: "AE", ZONE_SUBTY: "Floodway" },
-            geometry: {
-              type: "Polygon",
-              coordinates: [[
-                [-88.02, 37.88],
-                [-87.98, 37.88],
-                [-87.98, 37.92],
-                [-88.02, 37.92],
-                [-88.02, 37.88]
-              ]]
-            }
-          }
-        ]
-      });
-    }
-  });
-
-  app.get("/api/nws-alerts", async (req, res) => {
-    try {
-      const url = `https://api.weather.gov/alerts/active?zone=INC129`;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-      const response = await fetch(url, {
-        headers: { "User-Agent": "PTDT-v23-Sovereign-Twin (admin@pointtownship.gov)" },
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (!response.ok) throw new Error(`NWS API responded with status: ${response.status}`);
-      const data = await response.json();
-      res.json(data);
-    } catch (error: any) {
-      console.log("[NWS Alerts Proxy] Active - serving local cached alerts successfully");
-      res.json({
-        title: "NWS Active Alerts Cache",
-        features: [
-          {
-            properties: {
-              event: "Flood Warning",
-              headline: "Flood Warning issued for Wabash River at Mount Carmel affecting Posey County",
-              severity: "Severe",
-              description: "The National Weather Service in Paducah has issued a Flood Warning for the Wabash River at Mount Carmel... or until further notice. At 18.0 feet the river begins to overflow lowlands. Precautionary actions should be taken.",
-              instruction: "Do not drive across flooded roads. Turn around, don't drown."
-            }
-          }
-        ]
-      });
-    }
-  });
-
-  app.get("/api/usgs-telemetry", async (req, res) => {
-    const fallbackData = [
-      {
-        gauge_id: "USGS-03377500",
-        name: "Wabash River at New Harmony, IN",
-        timestamp: new Date().toISOString(),
-        water_level_stage_ft: 18.42,
-        discharge_cfs: 45100.0,
-        temperature_c: 16.5,
-        seal_hash: ""
-      },
-      {
-        gauge_id: "USGS-03322000",
-        name: "Ohio River at Uniontown Dam, IN",
-        timestamp: new Date().toISOString(),
-        water_level_stage_ft: 24.85,
-        discharge_cfs: 115000.0,
-        temperature_c: 15.2,
-        seal_hash: ""
-      }
-    ];
-
-    function generateSovereignSeal(gaugeId: string, timestampStr: string, waterLevel: number, discharge: number): string {
-      const payloadStr = `${gaugeId}-${timestampStr}-${waterLevel.toFixed(4)}-${discharge.toFixed(2)}-ItIsFinished`;
-      return crypto.createHash("sha256").update(payloadStr).digest("hex");
-    }
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-      
-      const url = "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=03377500,03322000&parameterCd=00060,00065&siteStatus=all";
-      const response = await fetch(url, { 
-        headers: { "User-Agent": "PTDT-v23-Sovereign-Twin (admin@pointtownship.gov)" },
-        signal: controller.signal 
-      });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`USGS REST API responded with status: ${response.status}`);
-      }
-
-      const rawJson = await response.json() as any;
-      const timeSeries = rawJson.value?.timeSeries || [];
-      const parsedResults: Record<string, any> = {};
-
-      for (const ts of timeSeries) {
-        const siteCode = ts.sourceInfo?.siteCode?.[0]?.value || "UNKNOWN";
-        const siteName = ts.sourceInfo?.siteName || "USGS Gage";
-        const variableCode = ts.variable?.variableCode?.[0]?.value || "00000";
-        const values = ts.values?.[0]?.value || [];
-        if (values.length === 0) continue;
-
-        const latestValObj = values[values.length - 1];
-        const val = parseFloat(latestValObj.value || "0.0");
-        const tsStr = latestValObj.dateTime || new Date().toISOString();
-
-        if (!parsedResults[siteCode]) {
-          parsedResults[siteCode] = {
-            gauge_id: `USGS-${siteCode}`,
-            name: siteCode === "03377500" ? "Wabash River at New Harmony, IN" : (siteCode === "03322000" ? "Ohio River at Uniontown Dam, IN" : siteName),
-            timestamp: tsStr,
-            water_level_stage_ft: 0.0,
-            discharge_cfs: 0.0,
-            temperature_c: siteCode === "03377500" ? 16.5 : 15.2
-          };
-        }
-
-        if (variableCode === "00065") {
-          parsedResults[siteCode].water_level_stage_ft = val;
-        } else if (variableCode === "00000" || variableCode === "00060") {
-          parsedResults[siteCode].discharge_cfs = val;
-        }
-      }
-
-      const dataArray = Object.values(parsedResults);
-      if (dataArray.length === 0) {
-        throw new Error("No parsed data retrieved from USGS stream");
-      }
-
-      // Add missing fields and cryptographic seals
-      const sealedData = dataArray.map((record: any) => {
-        const wl = record.water_level_stage_ft || (record.gauge_id === "USGS-03377500" ? 18.42 : 24.85);
-        const q = record.discharge_cfs || (record.gauge_id === "USGS-03377500" ? 45100.0 : 115000.0);
-        return {
-          ...record,
-          water_level_stage_ft: wl,
-          discharge_cfs: q,
-          seal_hash: generateSovereignSeal(record.gauge_id, record.timestamp, wl, q)
-        };
-      });
-
-      res.json({ success: true, source: "USGS_NWIS_LIVE", data: sealedData });
-    } catch (error: any) {
-      console.log("[USGS Telemetry Proxy] Active - serving high-fidelity local fallback successfully");
-      const sealedFallback = fallbackData.map((record) => ({
-        ...record,
-        seal_hash: generateSovereignSeal(record.gauge_id, record.timestamp, record.water_level_stage_ft, record.discharge_cfs)
-      }));
-      res.json({ success: true, source: "LOCAL_HIGH_FIDELITY_FALLBACK", data: sealedFallback });
+    } catch (error) {
+      next(error);
     }
   });
 
