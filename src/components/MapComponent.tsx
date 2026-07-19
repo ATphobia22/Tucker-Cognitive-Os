@@ -46,33 +46,33 @@ const CAMERA_PRESETS: CameraPreset[] = [
   {
     name: 'Point Township, IN',
     center: [-88.0051, 37.8459],
-    zoom: 14.5,
-    pitch: 55,
-    bearing: 15,
+    zoom: 13.8,
+    pitch: 62,
+    bearing: 45,
     description: 'FEMA Flood Zone Area of Interest'
   },
   {
     name: 'Mount Vernon, IN',
     center: [-87.8950, 37.9320],
-    zoom: 14.2,
-    pitch: 50,
-    bearing: -10,
+    zoom: 13.5,
+    pitch: 65,
+    bearing: -35,
     description: 'Wabash-Ohio River Port & Industrial Hub'
   },
   {
     name: 'Old Shawneetown, IL',
     center: [-88.1345, 37.6975],
-    zoom: 14.8,
-    pitch: 45,
+    zoom: 14.0,
+    pitch: 60,
     bearing: 30,
     description: 'Historic river port and flood-prone settlement'
   },
   {
     name: 'Uniontown, KY',
     center: [-87.9353, 37.7781],
-    zoom: 14.5,
-    pitch: 55,
-    bearing: 20,
+    zoom: 13.8,
+    pitch: 65,
+    bearing: -45,
     description: 'Coal-loading terminal and historical Ohio town'
   }
 ];
@@ -133,7 +133,16 @@ const HISTORIC_SITES_PRESETS: CameraPreset[] = [
 type TileSourceType = 'openfreemap' | 'overture';
 type BuildingTheme = 'thematic' | 'cyber' | 'warm' | 'glass';
 
-export function MapComponent() {
+interface MapComponentProps {
+  layers?: {
+    geospatial: boolean;
+    hydrodynamic: boolean;
+    structural: boolean;
+    predictiveBounds: string;
+  };
+}
+
+export function MapComponent({ layers: externalLayers }: MapComponentProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const protocolAdded = useRef(false);
@@ -406,6 +415,116 @@ export function MapComponent() {
       map.setPaintProperty(activeLayerId, 'fill-extrusion-color', paintProps['fill-extrusion-color']);
     }
   }, [buildingTheme, heightMultiplier, buildingOpacity, mapLoaded, sourceType]);
+
+  // Handle Digital Twin Multiphysics Layer Toggles
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded) return;
+
+    // Apply Hydrodynamic Water Shading
+    const layers = map.getStyle().layers;
+    if (layers) {
+      layers.forEach(layer => {
+        // Find water layers (usually named 'water', 'waterway', 'ocean', etc.)
+        if (layer.id.includes('water') && layer.type === 'fill') {
+          if (externalLayers?.hydrodynamic) {
+            // Emissive volumetric shader simulation matching Turbovec scale
+            map.setPaintProperty(layer.id, 'fill-color', [
+               'interpolate', ['linear'], ['zoom'],
+               12, '#003bff', // Severe Inundation
+               15, '#00d4ff'  // Minor Low-Elevation Spill
+            ]);
+            map.setPaintProperty(layer.id, 'fill-opacity', 0.85);
+            map.setPaintProperty(layer.id, 'fill-outline-color', '#00ffb7'); // Shallow saturation edge
+          } else {
+            // Reset to default
+            map.setPaintProperty(layer.id, 'fill-color', theme === 'dark' ? '#0f172a' : '#94a3b8');
+            map.setPaintProperty(layer.id, 'fill-opacity', 1);
+            map.setPaintProperty(layer.id, 'fill-outline-color', 'transparent');
+          }
+        }
+      });
+    }
+
+    // Add or Update Floating Telemetry Tags
+    const TELEMETRY_SOURCE_ID = 'telemetry-tags-source';
+    const TELEMETRY_LAYER_ID = 'telemetry-tags-layer';
+
+    if (externalLayers?.hydrodynamic) {
+      if (!map.getSource(TELEMETRY_SOURCE_ID)) {
+        map.addSource(TELEMETRY_SOURCE_ID, {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [-88.0051, 37.8459] }, // Near Point Township
+                properties: { label: 'MAIN ST BRIDGE', metric: '18.2 ft' }
+              },
+              {
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [-87.8950, 37.9320] }, // Near Mount Vernon
+                properties: { label: 'RIVERSIDE DEPOT', metric: '17.8 ft' }
+              },
+              {
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [-88.1345, 37.6975] }, // Near Old Shawneetown
+                properties: { label: 'WATER DEPTH', metric: '2.6 ft' }
+              }
+            ]
+          }
+        });
+
+        map.addLayer({
+          id: TELEMETRY_LAYER_ID,
+          type: 'symbol',
+          source: TELEMETRY_SOURCE_ID,
+          layout: {
+            'text-field': ['concat', ['get', 'label'], '\n', ['get', 'metric']],
+            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+            'text-size': 11,
+            'text-offset': [0, -2],
+            'text-anchor': 'bottom',
+            'text-justify': 'center',
+            'text-allow-overlap': true,
+          },
+          paint: {
+            'text-color': '#00D4FF',
+            'text-halo-color': 'rgba(0, 20, 40, 0.9)',
+            'text-halo-width': 2,
+            'text-halo-blur': 1,
+          }
+        });
+      } else {
+        map.setLayoutProperty(TELEMETRY_LAYER_ID, 'visibility', 'visible');
+      }
+    } else {
+      if (map.getLayer(TELEMETRY_LAYER_ID)) {
+        map.setLayoutProperty(TELEMETRY_LAYER_ID, 'visibility', 'none');
+      }
+    }
+  }, [externalLayers, mapLoaded, theme]);
+
+  // Cinematic Isometric Camera Rig (360 Sweep)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || !is3D) return;
+
+    let animationId: number;
+    
+    const rotateCamera = (timestamp: number) => {
+      // 360 degrees per 240 seconds (very slow cinematic sweep)
+      const speed = 360 / 240000;
+      const rotation = (timestamp * speed) % 360;
+      
+      map.rotateTo(rotation, { duration: 0 });
+      animationId = requestAnimationFrame(rotateCamera);
+    };
+    
+    animationId = requestAnimationFrame(rotateCamera);
+    return () => cancelAnimationFrame(animationId);
+  }, [mapLoaded, is3D]);
 
   // Handle Label Visibility Toggle
   useEffect(() => {
@@ -1013,24 +1132,59 @@ export function MapComponent() {
         </div>
       </div>
 
-      {/* Mini Legend overlay (Bottom Right) */}
-      <div className="absolute bottom-4 right-4 z-20 px-3 py-2 rounded-lg bg-slate-950/85 border border-slate-800/80 backdrop-blur-sm shadow-xl flex items-center gap-4 text-[10px] font-mono text-slate-300">
-        <div className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-slate-500" />
-          <span>Low-Rise</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-blue-500" />
-          <span>Mid-Rise</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-indigo-500" />
-          <span>Skyscraper</span>
-        </div>
-        <div className="h-3 w-[1px] bg-slate-800" />
-        <span className="text-slate-500 uppercase tracking-wider font-bold">
-          3D Mode Enabled
+      {/* Legend overlay (Bottom Right) */}
+      <div className="absolute bottom-4 right-4 z-20 px-3 py-2 rounded-lg bg-slate-950/85 border border-slate-800/80 backdrop-blur-sm shadow-xl flex flex-col gap-2 text-[10px] font-mono text-slate-300 pointer-events-none">
+        <span className="text-slate-500 uppercase tracking-wider font-bold border-b border-slate-800/50 pb-1 mb-1">
+          LEGEND
         </span>
+        {externalLayers?.hydrodynamic ? (
+          <>
+            <span className="text-[9px] text-slate-400 mb-0.5">WATER DEPTH (FT)</span>
+            <div className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-sm bg-[#001428] border border-slate-700" />
+              <span>&gt; 6.0</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-sm bg-[#003366] border border-slate-700" />
+              <span>4.0 - 6.0</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-sm bg-[#005599] border border-slate-700" />
+              <span>2.0 - 4.0</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-sm bg-[#0077CC] border border-slate-700" />
+              <span>0.5 - 2.0</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-sm bg-[#00D4FF] border border-slate-700" />
+              <span>0 - 0.5</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-sm bg-[#0f172a] border border-slate-700" />
+              <span>DRY</span>
+            </div>
+          </>
+        ) : (
+          <div className="flex gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-slate-500" />
+              <span>Low-Rise</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-blue-500" />
+              <span>Mid-Rise</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-indigo-500" />
+              <span>Skyscraper</span>
+            </div>
+            <div className="h-3 w-[1px] bg-slate-800" />
+            <span className="text-slate-500 uppercase tracking-wider font-bold">
+              3D Mode Enabled
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

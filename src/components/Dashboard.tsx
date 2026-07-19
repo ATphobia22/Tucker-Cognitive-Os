@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Maximize2, Server, Zap } from 'lucide-react';
 import { AssimilationView } from './AssimilationView';
 import { EvidenceView } from './EvidenceView';
 import { SystemTelemetry } from './SystemTelemetry';
 import { UpgradesView } from './UpgradesView';
+import { RiverCrossSection } from './RiverCrossSection';
+import { MultiphysicsControls } from './MultiphysicsControls';
+import { AssetRiskSummary } from './AssetRiskSummary';
+import { DepthLegend } from './DepthLegend';
+import { TurbovecPatternEngine } from './TurbovecPatternEngine';
 import { MapComponent } from './MapComponent';
 import { TerminalOverlay } from './TerminalOverlay';
 import { useTheme } from '../context/ThemeContext';
@@ -12,30 +17,58 @@ import { useTheme } from '../context/ThemeContext';
 export function Dashboard() {
   const [activePanel, setActivePanel] = useState<'telemetry' | 'evidence' | 'system' | 'upgrades' | null>('telemetry');
   const { theme, toggleTheme } = useTheme();
+  const [layers, setLayers] = useState({
+    geospatial: true,
+    hydrodynamic: true,
+    structural: false,
+    predictiveBounds: "100year",
+  });
+  
+  const [surgeStage, setSurgeStage] = useState(377.2);
+  const [sysFrame, setSysFrame] = useState('0000');
+  const [scenarioHorizon, setScenarioHorizon] = useState(0);
+  
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}`);
+    
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'TELEMETRY_UPDATE') {
+          setSurgeStage(data.stage);
+          setSysFrame(data.frame.toString().padStart(4, '0'));
+        }
+      } catch (err) {
+        console.error('Error parsing telemetry stream:', err);
+      }
+    };
+    
+    return () => ws.close();
+  }, []);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-slate-950 text-slate-100 font-sans">
       {/* Background Map - Full Screen */}
       <div className="absolute inset-0 z-0">
-        <MapComponent />
+        <MapComponent layers={layers} />
       </div>
 
       {/* HUD - Overlay */}
       <div className="absolute inset-0 z-10 p-6 pointer-events-none flex flex-col justify-between">
         {/* Header */}
         <header className="flex items-center justify-between pointer-events-auto">
-          <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-md p-3 rounded-lg border border-slate-700">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold">
-              <Globe size={20} />
-            </div>
-            <div>
-              <h1 className="text-sm font-bold tracking-tight">Tri-State Engineering Console</h1>
-              <span className="text-[10px] text-emerald-400 font-mono uppercase">v32.1 Operational</span>
+          <div className="bg-[#001428]/85 backdrop-blur-md border-l-4 border-[#00D4FF] py-2 px-4 shadow-xl">
+            <h1 className="text-sm font-bold tracking-wider text-[#00D4FF]">NODE: 13101 BONEBANK RD</h1>
+            <div className="text-[11px] font-mono text-slate-400 mt-1 uppercase tracking-widest flex items-center gap-2">
+              <span>SYS_FRAME: <span className="text-white">{sysFrame}</span></span>
+              <span className="h-3 w-px bg-slate-700"></span>
+              <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span> STATUS: SOVEREIGN SEALED</span>
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={toggleTheme} className="p-2 bg-slate-900/80 backdrop-blur-md border border-slate-700 rounded-lg hover:bg-slate-800 transition-colors">
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            <button onClick={toggleTheme} className="p-2 bg-[#001428]/85 backdrop-blur-md border border-slate-700/50 rounded hover:bg-[#003366] transition-colors shadow-xl">
+              {theme === 'dark' ? <Sun size={18} className="text-[#00D4FF]" /> : <Moon size={18} className="text-slate-300" />}
             </button>
           </div>
         </header>
@@ -73,23 +106,82 @@ export function Dashboard() {
             )}
           </div>
           <div className="flex-1"></div>
+          
+          {/* Right Panel - Multiphysics Controls */}
+          <div className="w-80 pointer-events-auto">
+            <Card className="bg-slate-900/80 backdrop-blur-md border-slate-700 text-slate-100 shadow-xl">
+              <CardContent className="p-4">
+                <MultiphysicsControls layers={layers} setLayers={setLayers} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        {/* Footer/Navigation HUD */}
-        <footer className="pointer-events-auto flex gap-2">
-          <button onClick={() => setActivePanel('telemetry')} className={`p-3 rounded-lg border transition-colors ${activePanel === 'telemetry' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700'}`} title="Map Assimilation">
-            <Activity size={18} />
-          </button>
-          <button onClick={() => setActivePanel('evidence')} className={`p-3 rounded-lg border transition-colors ${activePanel === 'evidence' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700'}`} title="Evidence Log">
-            <Shield size={18} />
-          </button>
-          <button onClick={() => setActivePanel('system')} className={`p-3 rounded-lg border transition-colors ${activePanel === 'system' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700'}`} title="System Telemetry">
-            <Server size={18} />
-          </button>
-          <button onClick={() => setActivePanel('upgrades')} className={`p-3 rounded-lg border transition-colors ${activePanel === 'upgrades' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700'}`} title="Strategic Upgrades">
-            <Zap size={18} />
-          </button>
-        </footer>
+        {/* UPDATED BOTTOM HUB CONTAINER: MATCHING EXACT PLACEMENT PATTERNS */}
+        <div style={{
+          position: "absolute",
+          bottom: "24px",
+          left: "24px",
+          right: "24px",
+          display: "flex",
+          gap: "24px",
+          pointerEvents: "auto",
+          height: "220px"
+        }}>
+          {/* Left Section: Dynamic D3 Cross-Section Graph */}
+          <div style={{ width: "630px", flexShrink: 0 }}>
+            <RiverCrossSection surgeStage={surgeStage + scenarioHorizon * 0.15} />
+          </div>
+        
+          {/* Middle Section: Scenario Control Deck */}
+          <div style={{
+            flex: 1,
+            background: "rgba(0, 10, 20, 0.8)",
+            backdropFilter: "blur(16px)",
+            border: "1px solid rgba(0, 212, 255, 0.15)",
+            borderRadius: "6px",
+            padding: "16px",
+            display: "flex",
+            flexDirection: "column",
+          }}>
+             <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className="text-[#00D4FF] text-[13px] font-bold tracking-wider">
+                    ANALYTICS & PREDICTIVE INSIGHTS
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Scenario Horizon: <span className="text-white font-mono">{scenarioHorizon} Hrs</span> | Vector Lookup Active
+                  </p>
+                </div>
+             </div>
+             
+             {/* Slider */}
+             <div className="mb-4 mt-2 px-2">
+               <input 
+                 type="range" 
+                 min="0" max="72" 
+                 value={scenarioHorizon} 
+                 onChange={(e) => setScenarioHorizon(Number(e.target.value))}
+                 className="w-full accent-[#00D4FF] cursor-pointer" 
+               />
+               <div className="flex justify-between text-[9px] text-slate-500 font-mono mt-1">
+                 <span>T+0 (LIVE)</span>
+                 <span>T+36</span>
+                 <span>T+72 (FORECAST)</span>
+               </div>
+             </div>
+
+             <div className="flex-1 grid grid-cols-2 gap-4 h-[80px]">
+                <AssetRiskSummary />
+                <TurbovecPatternEngine frameCount={Number(sysFrame) + scenarioHorizon} />
+             </div>
+          </div>
+        
+          {/* Right Section: Color Depth Metric Scale Block */}
+          <div style={{ width: "260px", flexShrink: 0 }}>
+            <DepthLegend />
+          </div>
+        </div>
       </div>
 
       <TerminalOverlay />

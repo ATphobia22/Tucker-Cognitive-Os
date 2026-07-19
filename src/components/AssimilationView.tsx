@@ -88,12 +88,12 @@ export function AssimilationView() {
   // Generate EnKF stochastic ensemble paths converging on the live USGS observation
   const chartData = (() => {
     const data = [];
-    const baseHeight = wabashGage.water_level_stage_ft;
-    const baseTime = new Date(wabashGage.timestamp || new Date());
+    const baseHeight = wabashGage?.water_level_stage_ft ?? 18.42;
+    const baseTime = new Date(wabashGage?.timestamp || new Date());
     
     for (let i = 8; i >= 0; i--) {
       const timePoint = new Date(baseTime.getTime() - i * 3600 * 1000);
-      const timeLabel = timePoint.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const timeLabel = timePoint.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       
       // Simulate historical trend
       const trend = Math.sin((8 - i) * 0.5) * 1.2;
@@ -258,14 +258,14 @@ export function AssimilationView() {
               <div className="grid grid-cols-2 gap-2 mt-1">
                 <div>
                   <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Stage Height</span>
-                  <span className="text-sm font-bold font-mono text-indigo-400">{wabashGage.water_level_stage_ft.toFixed(2)} ft</span>
+                  <span className="text-sm font-bold font-mono text-indigo-400">{(wabashGage?.water_level_stage_ft ?? 18.42).toFixed(2)} ft</span>
                 </div>
                 <div>
                   <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Discharge Rate</span>
-                  <span className="text-sm font-bold font-mono text-emerald-400">{wabashGage.discharge_cfs.toLocaleString()} cfs</span>
+                  <span className="text-sm font-bold font-mono text-emerald-400">{(wabashGage?.discharge_cfs ?? 45100).toLocaleString()} cfs</span>
                 </div>
               </div>
-              {wabashGage.seal_hash && (
+              {wabashGage?.seal_hash && (
                 <div className="text-[8px] text-indigo-400/80 font-mono truncate mt-1 pt-1.5 border-t dark:border-slate-800 border-slate-200/50 flex justify-between items-center">
                   <span>BLOCK SEAL: {wabashGage.seal_hash.substring(0, 14)}...</span>
                   <span className="text-emerald-400">✔ VERIFIED</span>
@@ -282,14 +282,14 @@ export function AssimilationView() {
               <div className="grid grid-cols-2 gap-2 mt-1">
                 <div>
                   <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Stage Height</span>
-                  <span className="text-sm font-bold font-mono text-indigo-400">{ohioGage.water_level_stage_ft.toFixed(2)} ft</span>
+                  <span className="text-sm font-bold font-mono text-indigo-400">{(ohioGage?.water_level_stage_ft ?? 24.85).toFixed(2)} ft</span>
                 </div>
                 <div>
                   <span className="text-[8px] dark:text-slate-500 text-slate-400 uppercase font-mono block">Discharge Rate</span>
-                  <span className="text-sm font-bold font-mono text-emerald-400">{ohioGage.discharge_cfs.toLocaleString()} cfs</span>
+                  <span className="text-sm font-bold font-mono text-emerald-400">{(ohioGage?.discharge_cfs ?? 115000).toLocaleString()} cfs</span>
                 </div>
               </div>
-              {ohioGage.seal_hash && (
+              {ohioGage?.seal_hash && (
                 <div className="text-[8px] text-indigo-400/80 font-mono truncate mt-1 pt-1.5 border-t dark:border-slate-800 border-slate-200/50 flex justify-between items-center">
                   <span>BLOCK SEAL: {ohioGage.seal_hash.substring(0, 14)}...</span>
                   <span className="text-emerald-400">✔ VERIFIED</span>
