@@ -1,11 +1,16 @@
+import { useState } from 'react';
 import { Dashboard } from './components/Dashboard';
+import { DigitalTwinView } from './components/DigitalTwinView';
+import NextGenDigitalTwin from './components/NextGenDigitalTwin';
+import { OvertureTwinView } from './components/OvertureTwinView';
 import { useTheme } from './context/ThemeContext';
 import { useAudioSystem } from './context/AudioContext';
-import { Power } from 'lucide-react';
+import { Power, Activity, Cpu, Layers, Globe, Shield } from 'lucide-react';
 
 function App() {
   const { theme } = useTheme();
   const { isSystemOn, setSystemOn } = useAudioSystem();
+  const [activeSystemView, setActiveSystemView] = useState<'tactical' | 'webgpu' | 'nextgen' | 'overture'>('tactical');
 
   if (!isSystemOn) {
     return (
@@ -42,9 +47,61 @@ function App() {
     );
   }
 
+  const renderActiveView = () => {
+    switch (activeSystemView) {
+      case 'tactical':
+        return <Dashboard />;
+      case 'webgpu':
+        return <DigitalTwinView />;
+      case 'nextgen':
+        return <NextGenDigitalTwin />;
+      case 'overture':
+        return <OvertureTwinView />;
+      default:
+        return <Dashboard />;
+    }
+  };
+
   return (
-    <div className={theme === 'dark' ? 'dark' : ''}>
-      <Dashboard />
+    <div className={`${theme === 'dark' ? 'dark' : ''} w-screen h-screen overflow-hidden relative`}>
+      {/* Universal Floating Cockpit Control Dock */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] pointer-events-auto flex items-center gap-2 px-3 py-1.5 dark:bg-[#001428]/95 bg-white/95 backdrop-blur-md dark:border-indigo-500/35 border-slate-200 border rounded-full shadow-2xl transition-all duration-300">
+        <div className="flex items-center gap-1.5 pr-2 mr-1 border-r border-slate-200 dark:border-indigo-500/20 text-xs font-mono font-bold dark:text-[#00D4FF] text-indigo-700">
+          <Shield size={13} className="animate-pulse" />
+          <span className="hidden xs:inline text-[10px] tracking-widest">PTDT COMMAND</span>
+        </div>
+        <div className="flex items-center gap-1">
+          {[
+            { id: 'tactical', name: 'Tactical GIS', icon: Activity, desc: 'Primary dashboard & real-time telemetry console' },
+            { id: 'webgpu', name: 'WebGPU 3D Sim', icon: Cpu, desc: 'WebAudio & Three.js physics multi-physics twin' },
+            { id: 'nextgen', name: 'NextGen Workbench', icon: Layers, desc: 'Multi-layer GIS analytical mapping stack' },
+            { id: 'overture', name: 'Overture PMT', icon: Globe, desc: 'Overture vector tiles & 3D buildings explorer' }
+          ].map((sys) => {
+            const active = activeSystemView === sys.id;
+            const Icon = sys.icon;
+            return (
+              <button
+                key={sys.id}
+                onClick={() => setActiveSystemView(sys.id as any)}
+                title={sys.desc}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold transition-all cursor-pointer ${
+                  active
+                    ? 'bg-indigo-600 text-white shadow-lg'
+                    : 'dark:text-slate-400 text-slate-600 hover:dark:text-white hover:text-slate-900 hover:dark:bg-slate-800 hover:bg-slate-100'
+                }`}
+              >
+                <Icon size={12} className={active ? 'animate-bounce text-[#00D4FF]' : ''} />
+                <span className="hidden md:inline text-[9px] uppercase tracking-wider">{sys.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Main View Container */}
+      <div className="w-full h-full relative">
+        {renderActiveView()}
+      </div>
     </div>
   );
 }

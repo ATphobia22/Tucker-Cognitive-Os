@@ -165,6 +165,40 @@ export function SystemTelemetry() {
           <RealtimeChart data={netData} color="#fbbf24" yLabel="Mbps" maxVal={100} />
         </div>
       </div>
+
+      {/* Sovereign System Architecture & Monorepo Controls */}
+      <div className="bg-slate-950/50 border border-slate-800 rounded-lg p-3.5 space-y-3 font-sans mt-2">
+        <div className="flex items-center gap-2 text-indigo-400 border-b border-slate-800/60 pb-1.5">
+          <Database size={13} />
+          <h3 className="text-xs font-bold uppercase tracking-wider font-mono">Sovereign Monorepo Controls</h3>
+        </div>
+        <p className="text-[10px] text-slate-400 leading-relaxed">
+          Operating as a unified sovereign node anchored at the geographical boundaries of 13101 Bonebank Road, Point Township, Posey County, Indiana. Platform services are initialized according to a strict priority hierarchy:
+        </p>
+        <div className="space-y-2 mt-2">
+          {[
+            { id: 'ptdt.hal', namespace: 'ptdt::hal', lang: 'C++20', pri: 100, role: 'Hardware Abstraction Layer. CPU topology, Vulkan/Metal context, high-resolution clocks.' },
+            { id: 'ptdt.kernel.sim_core', namespace: 'ptdt::kernel', lang: 'C++20', pri: 150, role: 'Central simulation orchestrator. Manages clock cycles and steps physical coordinate engines.' },
+            { id: 'ptdt.audit_logger', namespace: 'ptdt::audit', lang: 'Rust 1.78', pri: 200, role: 'Sovereignty auditing. Rust-backed append-only Merkle tree ledger mapping system transformations.' },
+            { id: 'ptdt.integration.bus', namespace: 'ptdt::bus', lang: 'Python 3.11', pri: 250, role: 'gRPC & ZeroMQ message-broker bus managing real-time data transfers and OpenMI 2.0 mapping.' },
+            { id: 'ptdt.cognitive.os', namespace: 'ptdt::cognition', lang: 'Python 3.11', pri: 300, role: 'ReAct loop execution: coordinates continuous self-healing, data retrieval, and agent workflows.' }
+          ].map((mod) => (
+            <div key={mod.id} className="p-2 dark:bg-[#020617] bg-slate-900 border border-slate-800/80 rounded font-mono text-[9px] space-y-1">
+              <div className="flex justify-between items-center text-[10px] font-bold text-indigo-300">
+                <span>{mod.id}</span>
+                <span className="px-1.5 py-0.5 bg-indigo-500/10 text-[#00D4FF] rounded text-[8px]">PRIORITY {mod.pri}</span>
+              </div>
+              <div className="grid grid-cols-2 text-[8px] text-slate-500">
+                <span>Namespace: <span className="text-slate-400 font-bold">{mod.namespace}</span></span>
+                <span className="text-right">Lang: <span className="text-slate-400 font-bold">{mod.lang}</span></span>
+              </div>
+              <p className="text-[9px] text-slate-400 mt-1 font-sans leading-normal">
+                {mod.role}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
