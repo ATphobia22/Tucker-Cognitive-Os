@@ -4,6 +4,7 @@ import fs from "fs";
 import zlib from "zlib";
 import crypto from "crypto";
 import { createServer as createViteServer } from "vite";
+import JSZip from "jszip";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { WebSocketServer, WebSocket } from "ws";
@@ -525,6 +526,35 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
         seal_hash: generateSovereignSeal(record.gauge_id, record.timestamp, record.water_level_stage_ft, record.discharge_cfs)
       }));
       res.json({ success: true, source: "LOCAL_HIGH_FIDELITY_FALLBACK", data: sealedFallback });
+    }
+  });
+
+  app.get("/api/turbovec/backup", async (req, res, next) => {
+    try {
+      const zip = new JSZip();
+      
+      const dbPath = path.join(process.cwd(), "telemetry_retention.db");
+      const tvimPath = path.join(process.cwd(), "render_output/digital_twin_vectors.tvim");
+
+      if (fs.existsSync(dbPath)) {
+        zip.file("telemetry_retention.db", fs.readFileSync(dbPath));
+      } else {
+        zip.file("telemetry_retention.db", "Sovereign Digital Twin SQLite Database Layer (Empty)");
+      }
+
+      if (fs.existsSync(tvimPath)) {
+        zip.file("digital_twin_vectors.tvim", fs.readFileSync(tvimPath));
+      } else {
+        zip.file("digital_twin_vectors.tvim", "Turbovec Quantized SIMD Vector Index Layer (Empty)");
+      }
+
+      const content = await zip.generateAsync({ type: "nodebuffer" });
+      
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", "attachment; filename=digital_twin_backup.zip");
+      return res.send(content);
+    } catch (error) {
+      next(error);
     }
   });
 

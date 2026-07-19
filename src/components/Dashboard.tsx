@@ -10,6 +10,7 @@ import { MultiphysicsControls } from './MultiphysicsControls';
 import { AssetRiskSummary } from './AssetRiskSummary';
 import { DepthLegend } from './DepthLegend';
 import { TurbovecPatternEngine } from './TurbovecPatternEngine';
+import { TurbovecScorePlot } from './TurbovecScorePlot';
 import { MapComponent } from './MapComponent';
 import { TerminalOverlay } from './TerminalOverlay';
 import { useTheme } from '../context/ThemeContext';
@@ -27,6 +28,29 @@ export function Dashboard() {
   const [surgeStage, setSurgeStage] = useState(377.2);
   const [sysFrame, setSysFrame] = useState('0000');
   const [scenarioHorizon, setScenarioHorizon] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleBackupExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/turbovec/backup');
+      if (!response.ok) throw new Error("Backup response failed");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `digital_twin_backup_${new Date().toISOString().slice(0,10)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (err) {
+      console.error("Error downloading backup:", err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
   
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -144,37 +168,46 @@ export function Dashboard() {
             display: "flex",
             flexDirection: "column",
           }}>
-             <div className="flex justify-between items-start mb-2">
+              <div className="flex justify-between items-center mb-2">
                 <div>
                   <div className="text-[#00D4FF] text-[13px] font-bold tracking-wider">
                     ANALYTICS & PREDICTIVE INSIGHTS
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
+                  <p className="text-[10px] text-slate-400 mt-0.5">
                     Scenario Horizon: <span className="text-white font-mono">{scenarioHorizon} Hrs</span> | Vector Lookup Active
                   </p>
                 </div>
-             </div>
-             
-             {/* Slider */}
-             <div className="mb-4 mt-2 px-2">
-               <input 
-                 type="range" 
-                 min="0" max="72" 
-                 value={scenarioHorizon} 
-                 onChange={(e) => setScenarioHorizon(Number(e.target.value))}
-                 className="w-full accent-[#00D4FF] cursor-pointer" 
-               />
-               <div className="flex justify-between text-[9px] text-slate-500 font-mono mt-1">
-                 <span>T+0 (LIVE)</span>
-                 <span>T+36</span>
-                 <span>T+72 (FORECAST)</span>
-               </div>
-             </div>
+                <button
+                  onClick={handleBackupExport}
+                  disabled={isExporting}
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-[9px] bg-[#00D4FF]/10 hover:bg-[#00D4FF]/20 border border-[#00D4FF]/30 hover:border-[#00D4FF]/60 disabled:opacity-50 text-[#00D4FF] rounded transition-all cursor-pointer font-bold font-mono"
+                  title="Export Sovereign Snapshot Archive (.ZIP)"
+                >
+                  <Database size={11} /> {isExporting ? "EXPORTING..." : "EXPORT BACKUP"}
+                </button>
+              </div>
+              
+              {/* Slider */}
+              <div className="mb-4 mt-2 px-2">
+                <input 
+                  type="range" 
+                  min="0" max="72" 
+                  value={scenarioHorizon} 
+                  onChange={(e) => setScenarioHorizon(Number(e.target.value))}
+                  className="w-full accent-[#00D4FF] cursor-pointer" 
+                />
+                <div className="flex justify-between text-[9px] text-slate-500 font-mono mt-1">
+                  <span>T+0 (LIVE)</span>
+                  <span>T+36</span>
+                  <span>T+72 (FORECAST)</span>
+                </div>
+              </div>
 
-             <div className="flex-1 grid grid-cols-2 gap-4 h-[80px]">
-                <AssetRiskSummary />
-                <TurbovecPatternEngine frameCount={Number(sysFrame) + scenarioHorizon} />
-             </div>
+              <div className="flex-1 grid grid-cols-3 gap-4 h-[80px]">
+                 <AssetRiskSummary />
+                 <TurbovecPatternEngine frameCount={Number(sysFrame) + scenarioHorizon} />
+                 <TurbovecScorePlot scenarioHorizon={scenarioHorizon} />
+              </div>
           </div>
         
           {/* Right Section: Color Depth Metric Scale Block */}

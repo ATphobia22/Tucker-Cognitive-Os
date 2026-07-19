@@ -40,8 +40,8 @@ export function AssimilationView() {
           console.error("Invalid telemetry data format:", json);
           throw new Error("Invalid telemetry data format");
         }
-      } catch (err) {
-        console.error("Error loading telemetry in AssimilationView:", err);
+      } catch (err: any) {
+        console.log("USGS Telemetry rate-limited or offline. Applying high-fidelity fallback layer.", err?.message || err);
         // Fallback for UI if API fails completely
         setUsgsGages([
           {
