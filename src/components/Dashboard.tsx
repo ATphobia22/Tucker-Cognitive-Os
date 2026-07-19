@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Activity, Database, MonitorPlay, Network, Shield, AlertTriangle, Cpu, Globe, Sun, Moon, Maximize2 } from 'lucide-react';
 import { AssimilationView } from './AssimilationView';
 import { EvidenceView } from './EvidenceView';
