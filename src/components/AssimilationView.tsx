@@ -26,12 +26,19 @@ export function AssimilationView() {
     const fetchTelemetry = async () => {
       try {
         const res = await fetch('/api/usgs-telemetry');
-        if (!res.ok) throw new Error("Failed to load telemetry");
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`Failed to load telemetry: ${res.status} ${res.statusText} - ${errorText}`);
+        }
         const json = await res.json();
-        if (json.success && isMounted) {
-          setUsgsGages(json.data || []);
-          setSource(json.source);
+        
+        if (json && Array.isArray(json.data)) {
+          setUsgsGages(json.data);
+          setSource(json.source || "UNKNOWN");
           setLoading(false);
+        } else {
+          console.error("Invalid telemetry data format:", json);
+          throw new Error("Invalid telemetry data format");
         }
       } catch (err) {
         console.error("Error loading telemetry in AssimilationView:", err);

@@ -514,6 +514,7 @@ Be extremely intelligent, helpful, rigorous, and technical. Output your plans, e
         };
       });
 
+      console.log("Sending telemetry data:", sealedData);
       res.json({ success: true, source: "USGS_NWIS_LIVE", data: sealedData });
     } catch (error: any) {
       console.log("[USGS Telemetry Proxy] Active - serving high-fidelity local fallback successfully");
