@@ -163,7 +163,7 @@ export function MapComponent({ layers: externalLayers }: MapComponentProps) {
   const [showProof, setShowProof] = useState<boolean>(false);
 
   // High-performance states to minimize initial memory overhead
-  const [isIntersecting, setIsIntersecting] = useState(false);
+  const [isIntersecting, setIsIntersecting] = useState(true);
   const [terrainLoaded, setTerrainLoaded] = useState(false);
   const [terrainActive, setTerrainActive] = useState(false);
 
