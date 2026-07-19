@@ -42,6 +42,25 @@ export function AssimilationView() {
         }
       } catch (err) {
         console.error("Error loading telemetry in AssimilationView:", err);
+        // Fallback for UI if API fails completely
+        setUsgsGages([
+          {
+            gauge_id: "USGS-03377500",
+            name: "Wabash River at New Harmony, IN",
+            water_level_stage_ft: 18.42,
+            discharge_cfs: 45100.0,
+            timestamp: new Date().toISOString()
+          },
+          {
+            gauge_id: "USGS-03322000",
+            name: "Ohio River at Uniontown Dam, IN",
+            water_level_stage_ft: 24.85,
+            discharge_cfs: 115000.0,
+            timestamp: new Date().toISOString()
+          }
+        ]);
+        setSource("OFFLINE_FALLBACK");
+        setLoading(false);
       }
     };
     fetchTelemetry();

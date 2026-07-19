@@ -9,7 +9,9 @@ export function UpgradesView() {
       description: 'Integrate advanced machine learning for predictive flood modeling, improving lead times by 48+ hours over traditional physics-based models.',
       icon: <Layers size={16} className="text-indigo-400" />,
       status: 'Proposed',
-      priority: 'High'
+      priority: 'High',
+      metric: 'Data Training',
+      progress: 25
     },
     {
       id: 'usace-sync',
@@ -17,7 +19,9 @@ export function UpgradesView() {
       description: 'Direct API integration with US Army Corps of Engineers (USACE) reservoir schedules to account for upstream dam releases in real-time.',
       icon: <GitPullRequest size={16} className="text-emerald-400" />,
       status: 'In Review',
-      priority: 'Critical'
+      priority: 'Critical',
+      metric: 'Integration Test',
+      progress: 65
     },
     {
       id: 'fema-hazus',
@@ -25,7 +29,9 @@ export function UpgradesView() {
       description: 'Automated export of flood inundation polygons directly into FEMA HAZUS format for rapid economic damage assessment.',
       icon: <CheckCircle2 size={16} className="text-amber-400" />,
       status: 'Planned',
-      priority: 'Medium'
+      priority: 'Medium',
+      metric: 'Schema Design',
+      progress: 10
     },
     {
       id: 'fed-auth',
@@ -33,7 +39,9 @@ export function UpgradesView() {
       description: 'Upgrade identity and access management to meet FedRAMP Moderate baseline, enabling federal agency adoption.',
       icon: <ShieldCheck size={16} className="text-blue-400" />,
       status: 'Active',
-      priority: 'High'
+      priority: 'High',
+      metric: 'Audit Prep',
+      progress: 85
     }
   ];
 
@@ -69,10 +77,29 @@ export function UpgradesView() {
                 </span>
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
               {item.description}
             </p>
-            <div className="mt-3 pt-2 border-t border-slate-800/50 flex justify-between items-center">
+            
+            <div className="mb-3">
+              <div className="flex justify-between items-center mb-1 text-[9px] font-mono uppercase text-slate-500">
+                <span>Phase: {item.metric}</span>
+                <span>{item.progress}%</span>
+              </div>
+              <div className="h-1 w-full bg-slate-900 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full rounded-full ${
+                    item.status === 'Active' ? 'bg-blue-500' :
+                    item.status === 'In Review' ? 'bg-emerald-500' :
+                    item.status === 'Proposed' ? 'bg-indigo-500' :
+                    'bg-slate-500'
+                  }`}
+                  style={{ width: `${item.progress}%` }}
+                ></div>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-800/50 flex justify-between items-center">
               <span className="text-[10px] text-slate-500 font-mono uppercase">Status: <span className={item.status === 'Active' ? 'text-blue-400' : 'text-slate-300'}>{item.status}</span></span>
               <button className="text-[10px] text-indigo-400 flex items-center gap-1 hover:text-indigo-300 transition-colors">
                 View Spec <ArrowUpRight size={10} />
